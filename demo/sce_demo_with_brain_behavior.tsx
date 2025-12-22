@@ -12,6 +12,11 @@ const SCEClaudeDemo = () => {
   const [iteration, setIteration] = useState(0);
   const [error, setError] = useState('');
   const [weightChanges, setWeightChanges] = useState([]);
+  const [prunedNodes, setPrunedNodes] = useState([]);
+  const [showStats, setShowStats] = useState(false);
+  const [graphStats, setGraphStats] = useState(null);
+  const [newNodes, setNewNodes] = useState([]);
+  const [extractionDebug, setExtractionDebug] = useState(null);
 
   // Enhanced graph with actual content
   const initialGraph = {
@@ -112,7 +117,35 @@ const SCEClaudeDemo = () => {
 
   useEffect(() => {
     setGraph(initialGraph);
+    calculateGraphStats(initialGraph);
   }, []);
+
+  // Calculate graph statistics
+  const calculateGraphStats = (g) => {
+    if (!g) return;
+    
+    const nodeCount = Object.keys(g.nodes).length;
+    const synapseCount = g.synapses.length;
+    const avgWeight = g.synapses.reduce((sum, s) => sum + s.weight, 0) / synapseCount;
+    
+    // Find densest hub
+    const connections = {};
+    g.synapses.forEach(s => {
+      connections[s.source] = (connections[s.source] || 0) + 1;
+    });
+    const densestHub = Object.entries(connections).sort((a, b) => b[1] - a[1])[0];
+    
+    // Count new synapses
+    const newSynapses = g.synapses.filter(s => s.coActivations <= 1).length;
+    
+    setGraphStats({
+      nodeCount,
+      synapseCount,
+      avgWeight,
+      densestHub: densestHub ? { id: densestHub[0], count: densestHub[1] } : null,
+      newSynapses
+    });
+  };
 
   // Spreading activation
   const spreadingActivation = (seeds, maxDepth = 3, gamma = 0.8, theta = 0.3) => {
@@ -186,6 +219,91 @@ const SCEClaudeDemo = () => {
     return activated;
   };
 
+  // Information-theoretic pruning with MMR
+  const pruneWithMMR = (activated, queryText, maxResults = 8) => {
+    if (activated.length === 0) return [];
+    
+    const selected = [];
+    const candidates = [...activated];
+    const pruningLog = [];
+    
+    // Simple relevance scoring
+    const relevance = (node) => {
+      const label = graph.nodes[node]?.label?.toLowerCase() || '';
+      const content = graph.nodes[node]?.content?.toLowerCase() || '';
+      const queryLower = queryText.toLowerCase();
+      const words = queryLower.split(' ');
+      
+      let score = 0;
+      words.forEach(word => {
+        if (label.includes(word)) score += 2;
+        if (content.includes(word)) score += 1;
+      });
+      
+      return score > 0 ? score / 10 : 0.1;
+    };
+    
+    // Greedy MMR selection
+    while (selected.length < maxResults && candidates.length > 0) {
+      let bestIdx = 0;
+      let bestGain = -Infinity;
+      let bestMetrics = null;
+      
+      for (let i = 0; i < candidates.length; i++) {
+        const candidate = candidates[i];
+        const rel = relevance(candidate.node);
+        
+        // Calculate redundancy
+        let maxRedundancy = 0;
+        selected.forEach(s => {
+          const sameType = graph.nodes[s.node]?.type === graph.nodes[candidate.node]?.type;
+          if (sameType) maxRedundancy = Math.max(maxRedundancy, 0.5);
+        });
+        
+        const gain = (rel * candidate.biasedEnergy) / (1 + maxRedundancy);
+        
+        if (gain > bestGain) {
+          bestGain = gain;
+          bestIdx = i;
+          bestMetrics = {
+            node: candidate.node,
+            relevance: rel,
+            redundancy: maxRedundancy,
+            energy: candidate.biasedEnergy,
+            informationGain: gain,
+            selected: true
+          };
+        }
+      }
+      
+      pruningLog.push(bestMetrics);
+      selected.push(candidates[bestIdx]);
+      candidates.splice(bestIdx, 1);
+    }
+    
+    // Log rejected nodes
+    candidates.slice(0, 3).forEach(c => {
+      const rel = relevance(c.node);
+      let maxRedundancy = 0;
+      selected.forEach(s => {
+        const sameType = graph.nodes[s.node]?.type === graph.nodes[c.node]?.type;
+        if (sameType) maxRedundancy = Math.max(maxRedundancy, 0.5);
+      });
+      
+      pruningLog.push({
+        node: c.node,
+        relevance: rel,
+        redundancy: maxRedundancy,
+        energy: c.biasedEnergy,
+        informationGain: (rel * c.biasedEnergy) / (1 + maxRedundancy),
+        selected: false
+      });
+    });
+    
+    setPrunedNodes(pruningLog);
+    return selected;
+  };
+
   // Entity extraction using Claude
   const extractEntitiesWithClaude = async (queryText) => {
     const entityList = Object.entries(graph.nodes)
@@ -208,42 +326,74 @@ const SCEClaudeDemo = () => {
 And these available entities in the knowledge graph:
 ${entityList}
 
-Extract which entity IDs are relevant to this query. Consider:
-- Direct mentions (if query mentions "Sarah", return contact_sarah)
-- Semantic relevance (if query about "design", consider tool_figma, contact_sarah, doc_guidelines)
-- Context (if about presentations, include related docs and preferences)
+Extract which entity IDs are ACTUALLY relevant to this query.
 
-Return ONLY a JSON array of entity IDs, nothing else. Example: ["project_apollo", "contact_sarah"]`
+IMPORTANT MATCHING RULES:
+- Only match if the entity is CLEARLY mentioned or directly relevant
+- "Sasu" should NOT match "Sarah" - they are different people
+- "presentation" should match "Client Presentation" 
+- Be precise, not fuzzy - close spelling doesn't mean same entity
+- If you're unsure if something matches, DON'T include it
+
+Return ONLY a JSON array of entity IDs that are DEFINITELY relevant.
+Example: ["project_apollo", "contact_sarah"]
+
+If NO entities match, return: []`
           }]
         })
       });
 
       const data = await response.json();
       const textContent = data.content?.find(c => c.type === 'text')?.text || '[]';
-      const entities = JSON.parse(textContent.replace(/```json\n?|\n?```/g, '').trim());
+      const cleanText = textContent.replace(/```json\n?|\n?```/g, '').trim();
+      const entities = JSON.parse(cleanText);
       return entities;
     } catch (err) {
       console.error('Entity extraction error:', err);
-      // Fallback to keyword matching
+      // Fallback: only match exact word matches, case-insensitive
       const entities = [];
-      const lower = queryText.toLowerCase();
+      const queryWords = queryText.toLowerCase().split(/\s+/);
+      
       Object.entries(graph.nodes).forEach(([id, node]) => {
-        const label = node.label.toLowerCase();
-        if (label.split(' ').some(word => lower.includes(word))) {
+        const labelWords = node.label.toLowerCase().split(/\s+/);
+        // Only match if there's at least one exact word match
+        const hasExactMatch = labelWords.some(labelWord => 
+          queryWords.some(queryWord => queryWord === labelWord && queryWord.length > 3)
+        );
+        if (hasExactMatch) {
           entities.push(id);
         }
       });
+      
       return entities;
     }
   };
 
   // Query Claude with context
   const queryClaudeWithContext = async (query, contextNodes) => {
-    const context = contextNodes
-      .map(n => `[${graph.nodes[n.node]?.label}]\n${graph.nodes[n.node]?.content}`)
-      .join('\n\n---\n\n');
+    let context = '';
+    
+    if (contextNodes.length > 0) {
+      context = contextNodes
+        .map(n => `[${graph.nodes[n.node]?.label}]\n${graph.nodes[n.node]?.content}`)
+        .join('\n\n---\n\n');
+    }
 
     try {
+      const prompt = contextNodes.length > 0
+        ? `You are an AI assistant with access to a knowledge graph memory system. Here is relevant context retrieved via spreading activation through the graph:
+
+${context}
+
+User Query: ${query}
+
+Provide a helpful response using the context above. Be specific and reference the relevant information from the context.`
+        : `You are an AI assistant. The user asked a question that didn't match any information in their knowledge graph.
+
+User Query: ${query}
+
+Provide a helpful response. Note that this query appears to be outside the scope of the available knowledge graph (which contains information about projects, documents, contacts, and preferences).`;
+
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -254,13 +404,7 @@ Return ONLY a JSON array of entity IDs, nothing else. Example: ["project_apollo"
           max_tokens: 2000,
           messages: [{
             role: 'user',
-            content: `You are an AI assistant with access to a knowledge graph memory system. Here is relevant context retrieved via spreading activation through the graph:
-
-${context}
-
-User Query: ${query}
-
-Provide a helpful response using the context above. Be specific and reference the relevant information from the context.`
+            content: prompt
           }]
         })
       });
@@ -273,7 +417,201 @@ Provide a helpful response using the context above. Be specific and reference th
     }
   };
 
-  // Update weights (Hebbian learning)
+  // Extract new information and create nodes
+  const createNewNodesFromResponse = async (query, response, contextNodes) => {
+    try {
+      // Get existing node names for similarity checking
+      const existingNames = Object.values(graph.nodes).map(n => n.label.toLowerCase());
+      
+      // Simpler, more direct prompt
+      const extractionPrompt = `Look at this conversation and extract what NEW information should be saved to memory.
+
+User said: "${query}"
+Assistant said: "${response}"
+
+CRITICAL RULES FOR EXTRACTION:
+1. ONLY extract things that are BRAND NEW from the user's message
+2. DO NOT extract things that were already in the provided context
+3. If user says "meeting with X" or "X is the new Y" - that's NEW information
+4. Be careful with names - "Sasu" and "Sarah" are DIFFERENT people
+5. "Sisu" and "Sasu" are DIFFERENT people (don't assume typos)
+
+Existing people/entities in the graph:
+${Object.values(graph.nodes).map(n => n.label).join(', ')}
+
+For each NEW entity:
+- id: unique (e.g., "meeting_sasu_dec22", "contact_sisu")
+- type: meeting, contact, document, fact, preference, tool, project, config
+- label: exact name from conversation
+- content: what was said about it
+- connectTo: related entity IDs (can be empty [])
+
+Return JSON:
+{
+  "newNodes": [
+    {
+      "id": "meeting_sasu_20241222",
+      "type": "meeting",
+      "label": "Meeting with Sasu",
+      "content": "Meeting scheduled with Sasu",
+      "connectTo": []
+    }
+  ]
+}
+
+If nothing new: {"newNodes": []}
+
+Extract NEW information:`;
+
+      console.log('=== STARTING NODE EXTRACTION ===');
+      console.log('Query:', query);
+      console.log('Response:', response);
+
+      const extractResponse = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2000,
+          messages: [{
+            role: 'user',
+            content: extractionPrompt
+          }]
+        })
+      });
+
+      if (!extractResponse.ok) {
+        throw new Error(`API returned ${extractResponse.status}`);
+      }
+
+      const data = await extractResponse.json();
+      const textContent = data.content?.find(c => c.type === 'text')?.text || '{"newNodes":[]}';
+      
+      console.log('=== RAW EXTRACTION RESPONSE ===');
+      console.log(textContent);
+      
+      setExtractionDebug(textContent);
+      
+      // Parse JSON
+      let cleanJson = textContent.trim();
+      cleanJson = cleanJson.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanJson = jsonMatch[0];
+      }
+      
+      console.log('=== CLEANED JSON ===');
+      console.log(cleanJson);
+      
+      const extracted = JSON.parse(cleanJson);
+      
+      console.log('=== PARSED RESULT ===');
+      console.log('newNodes array:', extracted.newNodes);
+      console.log('Array length:', extracted.newNodes?.length || 0);
+
+      if (!extracted.newNodes || extracted.newNodes.length === 0) {
+        console.log('❌ NO NODES TO CREATE');
+        setNewNodes([]);
+        return 0;
+      }
+
+      console.log('✅ FOUND', extracted.newNodes.length, 'NODES TO CREATE');
+
+      const updatedGraph = { ...graph };
+      const addedNodes = [];
+
+      extracted.newNodes.forEach((node, idx) => {
+        console.log(`Processing node ${idx + 1}:`, node);
+        
+        // Check if node ID already exists
+        if (updatedGraph.nodes[node.id]) {
+          console.log('⚠️  Node ID already exists, skipping:', node.id);
+          return;
+        }
+
+        // Check for similar names (fuzzy duplicate detection)
+        const nodeLabelLower = node.label.toLowerCase();
+        const similarExists = existingNames.some(existingName => {
+          // Check if names are very similar (edit distance < 2 or contains)
+          if (existingName === nodeLabelLower) return true;
+          if (existingName.includes(nodeLabelLower) || nodeLabelLower.includes(existingName)) {
+            // Only flag as duplicate if length difference is small
+            return Math.abs(existingName.length - nodeLabelLower.length) < 3;
+          }
+          return false;
+        });
+
+        if (similarExists) {
+          console.log('⚠️  Similar name already exists, skipping:', node.label);
+          return;
+        }
+
+        // Add new node
+        updatedGraph.nodes[node.id] = {
+          type: node.type,
+          label: node.label,
+          content: node.content,
+          heat: 0.9
+        };
+
+        addedNodes.push({
+          id: node.id,
+          label: node.label,
+          type: node.type
+        });
+
+        console.log('✅ Created node:', node.id, '-', node.label);
+
+        // Create connections
+        const connectTo = node.connectTo || [];
+        
+        // Connect to Active Focus
+        if (activeFocus && !connectTo.includes(activeFocus)) {
+          connectTo.push(activeFocus);
+        }
+
+        // Add synapses
+        connectTo.forEach(targetId => {
+          if (updatedGraph.nodes[targetId]) {
+            updatedGraph.synapses.push({
+              source: node.id,
+              target: targetId,
+              weight: 0.5,
+              coActivations: 1
+            });
+            console.log('✅ Created synapse:', node.id, '→', targetId);
+          } else {
+            console.log('⚠️  Target node not found:', targetId);
+          }
+        });
+      });
+
+      if (addedNodes.length > 0) {
+        console.log('=== UPDATING GRAPH ===');
+        console.log('Total nodes added:', addedNodes.length);
+        console.log('New graph has', Object.keys(updatedGraph.nodes).length, 'nodes');
+        
+        setGraph(updatedGraph);
+        setNewNodes(addedNodes);
+        calculateGraphStats(updatedGraph);
+        
+        return addedNodes.length;
+      } else {
+        console.log('❌ NO NODES WERE ADDED (all filtered out)');
+        setNewNodes([]);
+        return 0;
+      }
+
+    } catch (err) {
+      console.error('=== NODE CREATION ERROR ===');
+      console.error(err);
+      setError(`Failed to create new nodes: ${err.message}`);
+      setNewNodes([]);
+      return 0;
+    }
+  };
   const updateWeights = (activatedNodes) => {
     const eta = 0.1;
     const updatedGraph = { ...graph };
@@ -334,6 +672,7 @@ Provide a helpful response using the context above. Be specific and reference th
     setGraph(updatedGraph);
     setIteration(iteration + 1);
     setWeightChanges(changes);
+    calculateGraphStats(updatedGraph);
   };
 
   // Main query handler
@@ -345,6 +684,7 @@ Provide a helpful response using the context above. Be specific and reference th
     setExtractedEntities([]);
     setActivatedNodes([]);
     setClaudeResponse('');
+    setNewNodes([]);
 
     try {
       // Step 1: Extract entities using Claude
@@ -357,18 +697,33 @@ Provide a helpful response using the context above. Be specific and reference th
       // Step 2: Spreading activation
       const seeds = [activeFocus, ...entities].filter((v, i, a) => a.indexOf(v) === i);
       const activated = spreadingActivation(seeds);
-      const topActivated = activated.slice(0, 8);
-      setActivatedNodes(topActivated);
+      setActivatedNodes(activated);
+      
+      // Check if we got any results
+      if (activated.length === 0) {
+        setStage('querying');
+        // No context found - still ask Claude but without graph context
+        const response = await queryClaudeWithContext(query, []);
+        setClaudeResponse(response);
+        setStage('complete');
+        return;
+      }
+      
+      // Step 2.5: MMR Pruning
+      const topActivated = pruneWithMMR(activated, query, 8);
       
       setStage('querying');
       await new Promise(r => setTimeout(r, 500));
       
       // Step 3: Query Claude with context
-      const response = await queryClaudeWithContext(query, topActivated);
+      const response = await queryClaudeWithContext(query, topActivated.map(n => ({ node: n.node })));
       setClaudeResponse(response);
       
-      // Step 4: Update weights
-      updateWeights(topActivated);
+      // Step 4: Create new nodes from response
+      const newNodeCount = await createNewNodesFromResponse(query, response, topActivated);
+      
+      // Step 5: Update weights
+      updateWeights(topActivated.map(n => ({ node: n.node })));
       
       setStage('complete');
     } catch (err) {
@@ -422,8 +777,83 @@ Provide a helpful response using the context above. Be specific and reference th
             <span className="text-green-300">
               Memory Updates: <strong>{weightChanges.length}</strong>
             </span>
+            <button
+              onClick={() => setShowStats(!showStats)}
+              className="ml-auto bg-cyan-600/30 hover:bg-cyan-600/50 px-3 py-1 rounded border border-cyan-500 transition-colors text-xs"
+            >
+              {showStats ? '📊 Hide Stats' : '📊 Show Stats'}
+            </button>
           </div>
         </div>
+
+        {/* Graph Statistics Panel */}
+        {showStats && graphStats && (
+          <div className="bg-cyan-900/20 border-2 border-cyan-500 rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-4 text-cyan-400">📊 Graph Analytics</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-slate-800/50 p-4 rounded">
+                <div className="text-sm text-gray-400">Total Nodes</div>
+                <div className="text-2xl font-bold text-cyan-400">{graphStats.nodeCount}</div>
+              </div>
+              <div className="bg-slate-800/50 p-4 rounded">
+                <div className="text-sm text-gray-400">Total Synapses</div>
+                <div className="text-2xl font-bold text-purple-400">{graphStats.synapseCount}</div>
+                {graphStats.newSynapses > 0 && (
+                  <div className="text-xs text-green-400 mt-1">+{graphStats.newSynapses} new</div>
+                )}
+              </div>
+              <div className="bg-slate-800/50 p-4 rounded">
+                <div className="text-sm text-gray-400">Avg Weight</div>
+                <div className="text-2xl font-bold text-yellow-400">{graphStats.avgWeight.toFixed(3)}</div>
+              </div>
+              <div className="bg-slate-800/50 p-4 rounded">
+                <div className="text-sm text-gray-400">Densest Hub</div>
+                <div className="text-sm font-bold text-orange-400">
+                  {graph?.nodes[graphStats.densestHub?.id]?.label || 'N/A'}
+                </div>
+                <div className="text-xs text-gray-500">{graphStats.densestHub?.count} connections</div>
+              </div>
+            </div>
+            
+            {/* Activation Heatmap */}
+            {activatedNodes.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-sm font-semibold mb-3 text-cyan-300">Activation Heatmap</h3>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(graph.nodes).map(([id, node]) => {
+                    const activated = activatedNodes.find(a => a.node === id);
+                    const energy = activated?.biasedEnergy || 0;
+                    
+                    let colorClass = 'bg-slate-700 text-gray-400';
+                    if (energy > 0.7) colorClass = 'bg-red-600 text-white';
+                    else if (energy > 0.3) colorClass = 'bg-yellow-600 text-white';
+                    else if (energy > 0) colorClass = 'bg-blue-600 text-white';
+                    
+                    return (
+                      <div key={id} className={`${colorClass} px-2 py-1 rounded text-xs`}>
+                        {node.label.split(' ')[0]}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-4 mt-2 text-xs">
+                  <span className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-red-600 rounded"></div> Strong (&gt;0.7)
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-yellow-600 rounded"></div> Medium (0.3-0.7)
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-blue-600 rounded"></div> Weak (&lt;0.3)
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-slate-700 rounded"></div> Inactive
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Active Focus */}
         <div className="bg-white/10 backdrop-blur rounded-lg p-6 mb-6">
@@ -431,6 +861,12 @@ Provide a helpful response using the context above. Be specific and reference th
             <Zap className="w-5 h-5 text-yellow-400" />
             <h2 className="text-xl font-semibold">Active Focus (Persistent Context)</h2>
           </div>
+          <p className="text-sm text-gray-300 mb-3">
+            Automatically syncs with your current workspace - like which project page you're viewing or what task you're working on. 
+            In a production Digital Twin system, this would update when you navigate between projects, switch contexts, or open different views. 
+            It anchors all queries to the right data without you having to specify "I'm in Project Apollo" every time. 
+            Think of it as the system knowing WHERE you are and WHAT you're focused on.
+          </p>
           <select
             value={activeFocus}
             onChange={(e) => setActiveFocus(e.target.value)}
@@ -443,6 +879,9 @@ Provide a helpful response using the context above. Be specific and reference th
               ))
             }
           </select>
+          <p className="text-xs text-gray-400 mt-2">
+            💡 In production: This would auto-update based on UI navigation (project pages, task views, etc.)
+          </p>
         </div>
 
         {/* Query Interface */}
@@ -451,6 +890,11 @@ Provide a helpful response using the context above. Be specific and reference th
             <MessageSquare className="w-5 h-5 text-blue-400" />
             <h2 className="text-xl font-semibold">Ask Claude (with SCE Memory)</h2>
           </div>
+          <p className="text-sm text-gray-300 mb-3">
+            Ask anything! Claude will use spreading activation to find relevant information from the knowledge graph, 
+            then respond with context-aware answers. The graph learns from each interaction, getting smarter over time. 
+            Try asking the same question twice to see the memory improvement!
+          </p>
           
           <div className="flex gap-2 mb-4">
             <input
@@ -516,6 +960,13 @@ Provide a helpful response using the context above. Be specific and reference th
                 </h3>
                 {stage === 'activating' ? (
                   <p className="text-gray-400">Energy propagating through knowledge graph...</p>
+                ) : activatedNodes.length === 0 ? (
+                  <div className="bg-orange-900/30 border border-orange-500 rounded p-4">
+                    <p className="text-orange-300">
+                      ⚠️ No nodes activated - query appears to be outside the knowledge graph scope. 
+                      Claude will respond without graph context.
+                    </p>
+                  </div>
                 ) : (
                   <>
                     <p className="text-sm text-gray-300 mb-4">
@@ -562,14 +1013,74 @@ Provide a helpful response using the context above. Be specific and reference th
               </div>
             )}
 
+            {/* Step 2.5: Information-Theoretic Pruning */}
+            {prunedNodes.length > 0 && (
+              <div className="bg-white/10 backdrop-blur rounded-lg p-6">
+                <h3 className="text-lg font-semibold mb-3 text-orange-400">
+                  Step 2.5: Information-Theoretic Pruning (MMR)
+                </h3>
+                <p className="text-sm text-gray-300 mb-4">
+                  Maximum Marginal Relevance selects nodes with high information gain: 
+                  <code className="bg-slate-800 px-2 py-1 rounded text-xs ml-2">
+                    Gain = (Relevance × Energy) / (1 + Redundancy)
+                  </code>
+                </p>
+                <div className="space-y-2">
+                  {prunedNodes.map((item, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`p-3 rounded border ${
+                        item.selected 
+                          ? 'bg-green-900/30 border-green-600' 
+                          : 'bg-red-900/20 border-red-600/50'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            {item.selected ? (
+                              <span className="text-green-400 font-bold">✓</span>
+                            ) : (
+                              <span className="text-red-400 font-bold">✗</span>
+                            )}
+                            <span className={`font-semibold ${item.selected ? 'text-green-300' : 'text-red-300'}`}>
+                              {graph?.nodes[item.node]?.label}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-2 grid grid-cols-4 gap-2">
+                            <div>
+                              <span className="text-gray-500">Rel:</span> {item.relevance.toFixed(2)}
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Red:</span> {item.redundancy.toFixed(2)}
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Energy:</span> {item.energy.toFixed(3)}
+                            </div>
+                            <div className="font-semibold">
+                              <span className="text-gray-500">Gain:</span> {item.informationGain.toFixed(3)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 text-xs text-gray-400 bg-slate-800/30 p-2 rounded">
+                  ✅ <strong>{prunedNodes.filter(n => n.selected).length} nodes selected</strong> for maximum information density | 
+                  ❌ <strong className="ml-2">{prunedNodes.filter(n => !n.selected).length} rejected</strong> as redundant
+                </div>
+              </div>
+            )}
+
             {/* Step 3: Claude Response */}
             {(stage === 'querying' || claudeResponse) && (
               <div className={`bg-white/10 backdrop-blur rounded-lg p-6 ${stage === 'querying' ? 'animate-pulse' : ''}`}>
                 <h3 className="text-lg font-semibold mb-3 text-yellow-400">
-                  Step 3: Claude Responds (Using Retrieved Context)
+                  Step 3: Claude Responds (Context-Aware)
                 </h3>
                 {stage === 'querying' ? (
-                  <p className="text-gray-400">Claude processing with graph context...</p>
+                  <p className="text-gray-400">Claude processing with selected context...</p>
                 ) : (
                   <div className="bg-slate-800/50 p-4 rounded border border-yellow-600">
                     <p className="text-gray-200 whitespace-pre-wrap">{claudeResponse}</p>
@@ -578,14 +1089,69 @@ Provide a helpful response using the context above. Be specific and reference th
               </div>
             )}
 
-            {/* Step 4: Weight Updates */}
+            {/* Step 4: New Node Creation */}
+            {stage === 'complete' && (
+              <div className={`border-2 rounded-lg p-6 mb-6 ${
+                newNodes.length > 0 
+                  ? 'bg-blue-900/20 border-blue-500' 
+                  : 'bg-gray-900/20 border-gray-600'
+              }`}>
+                <div className="flex items-center gap-2 text-blue-400 mb-4">
+                  <Brain className="w-6 h-6" />
+                  <h3 className="text-xl font-semibold">
+                    Step 4: Memory Expansion {newNodes.length > 0 ? '(New Nodes Created!)' : '(No New Nodes)'}
+                  </h3>
+                </div>
+                {newNodes.length > 0 ? (
+                  <>
+                    <p className="text-sm text-gray-300 mb-3">
+                      The system learned new information from this conversation and added it to the graph!
+                    </p>
+                    <div className="space-y-2">
+                      {newNodes.map((node, idx) => (
+                        <div key={idx} className="bg-blue-900/50 p-3 rounded border border-blue-400">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-block bg-blue-600 text-xs px-2 py-1 rounded">NEW</span>
+                            <span className="text-blue-200 font-semibold">{node.label}</span>
+                            <span className="text-xs text-gray-400">({node.type})</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 text-xs text-gray-300 bg-slate-800/50 p-2 rounded">
+                      🌱 <strong>Graph expanded!</strong> {newNodes.length} new node(s) added and connected to existing knowledge.
+                      The memory is growing organically from conversations!
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-gray-400">
+                    <p className="mb-2">
+                      No new information detected to add to the graph.
+                    </p>
+                    {extractionDebug && (
+                      <details className="mt-3 bg-slate-800 p-3 rounded text-xs">
+                        <summary className="cursor-pointer text-yellow-400 mb-2">🔍 Show Extraction Debug</summary>
+                        <pre className="whitespace-pre-wrap text-gray-300 overflow-auto max-h-48">
+                          {extractionDebug}
+                        </pre>
+                      </details>
+                    )}
+                    <p className="mt-2 text-xs text-yellow-400">
+                      💡 Try: "Add meeting with [name] tomorrow" or "Jack is the new CTO"
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 5: Weight Updates */}
             {stage === 'complete' && weightChanges.length > 0 && (
               <div className="bg-green-900/20 border-2 border-green-600 rounded-lg p-6 animate-pulse">
                 <div className="flex items-center gap-2 text-green-400 mb-4">
                   <Activity className="w-6 h-6" />
-                  <h3 className="text-xl font-semibold">Step 4: Memory Learning (Hebbian Updates)</h3>
+                  <h3 className="text-xl font-semibold">Step {newNodes.length > 0 ? '5' : '4'}: Memory Learning (Hebbian Updates)</h3>
                 </div>
-                <div className="space-y-2 max-h-64 overflow-y-auto mb-4">
+                <div className="space-y-2 max-h-96 overflow-y-auto mb-4">
                   {weightChanges.map((change, idx) => (
                     <div key={idx} className="bg-slate-800/70 p-3 rounded border border-green-500/50">
                       <div className="flex justify-between items-center">
@@ -629,35 +1195,49 @@ Provide a helpful response using the context above. Be specific and reference th
         {/* Explanation */}
         {stage === 'idle' && (
           <div className="bg-white/5 backdrop-blur rounded-lg p-8 border border-purple-500/30 mt-6">
-            <h3 className="text-2xl font-semibold mb-4 text-purple-400">🚀 How To Use</h3>
+            <h3 className="text-2xl font-semibold mb-4 text-purple-400">🚀 How To Use This Demo</h3>
             <div className="space-y-4 text-gray-300">
               <div className="bg-blue-900/20 border border-blue-500 rounded p-4">
-                <p className="font-semibold text-blue-300 mb-2">📋 Copy & Paste Demo:</p>
-                <ol className="list-decimal list-inside space-y-1 text-sm">
-                  <li>Copy this artifact code from GitHub</li>
-                  <li>Paste into a Claude chat</li>
-                  <li>Say "create an artifact from this"</li>
-                  <li>Start asking questions!</li>
+                <p className="font-semibold text-blue-300 mb-2">📋 Quick Start (Copy & Paste):</p>
+                <ol className="list-decimal list-inside space-y-2 text-sm">
+                  <li>Go to <a href="https://github.com/sasus-dev/synapse-context-engine" target="_blank" className="text-blue-400 underline">GitHub repo</a> and copy this artifact code</li>
+                  <li>Open a new Claude chat</li>
+                  <li>Paste the code and say "create an artifact from this"</li>
+                  <li><strong className="text-yellow-400">Optional but recommended:</strong> Paste the SCE paper/blueprint into the chat so Claude understands the theory</li>
+                  <li>Start asking questions and watch the magic happen! 🎩✨</li>
                 </ol>
               </div>
               <p>
-                <strong className="text-white">How It Works:</strong>
+                <strong className="text-white">What's Happening Behind The Scenes:</strong>
               </p>
               <p>
-                <strong className="text-white">1. Entity Extraction:</strong> Claude identifies relevant concepts from your query
+                <strong className="text-white">Step 1 - Entity Extraction:</strong> Claude identifies which concepts in the knowledge graph relate to your query
               </p>
               <p>
-                <strong className="text-white">2. Spreading Activation:</strong> Energy propagates through the knowledge graph finding related information
+                <strong className="text-white">Step 2 - Spreading Activation:</strong> Energy propagates through connections, finding related concepts (even ones not mentioned!)
               </p>
               <p>
-                <strong className="text-white">3. Context Retrieval:</strong> Retrieved nodes are sent to Claude as context
+                <strong className="text-white">Step 2.5 - Smart Pruning (MMR):</strong> Selects the most informative nodes while avoiding redundancy. 
+                Picks nodes with high <code className="bg-slate-800 px-1 rounded text-xs">Information Gain = (Relevance × Energy) / (1 + Redundancy)</code>
               </p>
               <p>
-                <strong className="text-white">4. Hebbian Learning:</strong> Connections strengthen based on co-activation
+                <strong className="text-white">Step 3 - Context Injection:</strong> Selected nodes are sent to Claude as context for a smarter answer
+              </p>
+              <p>
+                <strong className="text-white">Step 4 - Memory Expansion:</strong> New information from Claude's response is extracted and added as new nodes in the graph
+              </p>
+              <p>
+                <strong className="text-white">Step 5 - Hebbian Learning:</strong> Connections strengthen when concepts are used together (the graph learns!)
               </p>
               <p className="text-yellow-400 font-semibold">
-                ✨ The memory gets smarter with each query! Try asking the same question twice to see the difference.
+                ✨ Try asking the same question twice! The second answer will be better because the memory improved.
               </p>
+              <div className="bg-purple-900/20 border border-purple-500 rounded p-3 mt-4">
+                <p className="text-sm">
+                  <strong>💡 Pro Tip:</strong> Use the "📊 Show Stats" button to see graph analytics, activation heatmaps, 
+                  and watch exactly which nodes get selected/rejected during pruning!
+                </p>
+              </div>
             </div>
           </div>
         )}
