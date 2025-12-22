@@ -369,7 +369,7 @@ If NO entities match, return: []`
     }
   };
 
-  // Query Claude with context
+  // Query Claude with context AND extract new nodes in one call
   const queryClaudeWithContext = async (query, contextNodes) => {
     let context = '';
     
@@ -379,6 +379,8 @@ If NO entities match, return: []`
         .join('\n\n---\n\n');
     }
 
+    const existingNames = Object.values(graph.nodes).map(n => n.label).join(', ');
+
     try {
       const prompt = contextNodes.length > 0
         ? `You are an AI assistant with access to a knowledge graph memory system. Here is relevant context retrieved via spreading activation through the graph:
@@ -387,12 +389,55 @@ ${context}
 
 User Query: ${query}
 
-Provide a helpful response using the context above. Be specific and reference the relevant information from the context.`
-        : `You are an AI assistant. The user asked a question that didn't match any information in their knowledge graph.
+TASK 1: Provide a helpful response using the context above. Be specific and reference the relevant information.
+
+TASK 2: After answering, extract any NEW information from the user's query that should be saved to memory.
+
+Existing entities: ${existingNames}
+
+NEW INFO RULES:
+- Only extract BRAND NEW information from the user's query
+- Don't extract things already in context
+- Be careful with names: "Sasu" ≠ "Sarah", "Sisu" ≠ "Sasu"
+- If user says "meeting with X" or "X is the new Y", that's NEW
+
+Format your response like this:
+
+ANSWER:
+[Your helpful response here]
+
+NEW_NODES:
+\`\`\`json
+{
+  "newNodes": [
+    {
+      "id": "meeting_sasu_20241222",
+      "type": "meeting",
+      "label": "Meeting with Sasu",
+      "content": "Meeting details",
+      "connectTo": []
+    }
+  ]
+}
+\`\`\`
+
+If no new information, use: {"newNodes": []}`
+        : `You are an AI assistant. The user asked a question outside the available knowledge graph.
 
 User Query: ${query}
 
-Provide a helpful response. Note that this query appears to be outside the scope of the available knowledge graph (which contains information about projects, documents, contacts, and preferences).`;
+TASK 1: Provide a helpful response.
+
+TASK 2: Extract any NEW information to remember.
+
+Format:
+ANSWER:
+[Your response]
+
+NEW_NODES:
+\`\`\`json
+{"newNodes": [...]}
+\`\`\``;
 
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -401,7 +446,7 @@ Provide a helpful response. Note that this query appears to be outside the scope
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 2000,
+          max_tokens: 3000,
           messages: [{
             role: 'user',
             content: prompt
@@ -410,102 +455,45 @@ Provide a helpful response. Note that this query appears to be outside the scope
       });
 
       const data = await response.json();
-      return data.content?.find(c => c.type === 'text')?.text || 'No response generated';
+      const fullText = data.content?.find(c => c.type === 'text')?.text || '';
+      
+      console.log('=== COMBINED RESPONSE ===');
+      console.log(fullText);
+      
+      // Parse answer and new nodes from single response
+      const answerMatch = fullText.match(/ANSWER:\s*([\s\S]*?)(?=NEW_NODES:|$)/i);
+      const nodesMatch = fullText.match(/NEW_NODES:\s*```json\s*([\s\S]*?)```/i);
+      
+      const answer = answerMatch ? answerMatch[1].trim() : fullText;
+      const nodesJson = nodesMatch ? nodesMatch[1].trim() : '{"newNodes":[]}';
+      
+      console.log('=== PARSED ANSWER ===');
+      console.log(answer);
+      console.log('=== PARSED NODES JSON ===');
+      console.log(nodesJson);
+      
+      // Store for node creation
+      window._extractedNodes = nodesJson;
+      
+      return answer;
     } catch (err) {
       console.error('Claude query error:', err);
       throw new Error(`Failed to query Claude: ${err.message}`);
     }
   };
 
-  // Extract new information and create nodes
-  const createNewNodesFromResponse = async (query, response, contextNodes) => {
+  // Extract new information from stored response
+  const createNewNodesFromResponse = async (query, response) => {
     try {
-      // Get existing node names for similarity checking
-      const existingNames = Object.values(graph.nodes).map(n => n.label.toLowerCase());
+      // Get nodes JSON from combined response (stored by queryClaudeWithContext)
+      const nodesJson = window._extractedNodes || '{"newNodes":[]}';
       
-      // Simpler, more direct prompt
-      const extractionPrompt = `Look at this conversation and extract what NEW information should be saved to memory.
-
-User said: "${query}"
-Assistant said: "${response}"
-
-CRITICAL RULES FOR EXTRACTION:
-1. ONLY extract things that are BRAND NEW from the user's message
-2. DO NOT extract things that were already in the provided context
-3. If user says "meeting with X" or "X is the new Y" - that's NEW information
-4. Be careful with names - "Sasu" and "Sarah" are DIFFERENT people
-5. "Sisu" and "Sasu" are DIFFERENT people (don't assume typos)
-
-Existing people/entities in the graph:
-${Object.values(graph.nodes).map(n => n.label).join(', ')}
-
-For each NEW entity:
-- id: unique (e.g., "meeting_sasu_dec22", "contact_sisu")
-- type: meeting, contact, document, fact, preference, tool, project, config
-- label: exact name from conversation
-- content: what was said about it
-- connectTo: related entity IDs (can be empty [])
-
-Return JSON:
-{
-  "newNodes": [
-    {
-      "id": "meeting_sasu_20241222",
-      "type": "meeting",
-      "label": "Meeting with Sasu",
-      "content": "Meeting scheduled with Sasu",
-      "connectTo": []
-    }
-  ]
-}
-
-If nothing new: {"newNodes": []}
-
-Extract NEW information:`;
-
-      console.log('=== STARTING NODE EXTRACTION ===');
-      console.log('Query:', query);
-      console.log('Response:', response);
-
-      const extractResponse = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 2000,
-          messages: [{
-            role: 'user',
-            content: extractionPrompt
-          }]
-        })
-      });
-
-      if (!extractResponse.ok) {
-        throw new Error(`API returned ${extractResponse.status}`);
-      }
-
-      const data = await extractResponse.json();
-      const textContent = data.content?.find(c => c.type === 'text')?.text || '{"newNodes":[]}';
+      console.log('=== CREATING NODES FROM COMBINED RESPONSE ===');
+      console.log('Nodes JSON:', nodesJson);
       
-      console.log('=== RAW EXTRACTION RESPONSE ===');
-      console.log(textContent);
+      setExtractionDebug(nodesJson);
       
-      setExtractionDebug(textContent);
-      
-      // Parse JSON
-      let cleanJson = textContent.trim();
-      cleanJson = cleanJson.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-      const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        cleanJson = jsonMatch[0];
-      }
-      
-      console.log('=== CLEANED JSON ===');
-      console.log(cleanJson);
-      
-      const extracted = JSON.parse(cleanJson);
+      const extracted = JSON.parse(nodesJson);
       
       console.log('=== PARSED RESULT ===');
       console.log('newNodes array:', extracted.newNodes);
@@ -521,6 +509,7 @@ Extract NEW information:`;
 
       const updatedGraph = { ...graph };
       const addedNodes = [];
+      const existingNames = Object.values(graph.nodes).map(n => n.label.toLowerCase());
 
       extracted.newNodes.forEach((node, idx) => {
         console.log(`Processing node ${idx + 1}:`, node);
@@ -531,13 +520,11 @@ Extract NEW information:`;
           return;
         }
 
-        // Check for similar names (fuzzy duplicate detection)
+        // Check for similar names
         const nodeLabelLower = node.label.toLowerCase();
         const similarExists = existingNames.some(existingName => {
-          // Check if names are very similar (edit distance < 2 or contains)
           if (existingName === nodeLabelLower) return true;
           if (existingName.includes(nodeLabelLower) || nodeLabelLower.includes(existingName)) {
-            // Only flag as duplicate if length difference is small
             return Math.abs(existingName.length - nodeLabelLower.length) < 3;
           }
           return false;
@@ -567,12 +554,10 @@ Extract NEW information:`;
         // Create connections
         const connectTo = node.connectTo || [];
         
-        // Connect to Active Focus
         if (activeFocus && !connectTo.includes(activeFocus)) {
           connectTo.push(activeFocus);
         }
 
-        // Add synapses
         connectTo.forEach(targetId => {
           if (updatedGraph.nodes[targetId]) {
             updatedGraph.synapses.push({
@@ -582,8 +567,6 @@ Extract NEW information:`;
               coActivations: 1
             });
             console.log('✅ Created synapse:', node.id, '→', targetId);
-          } else {
-            console.log('⚠️  Target node not found:', targetId);
           }
         });
       });
@@ -591,7 +574,6 @@ Extract NEW information:`;
       if (addedNodes.length > 0) {
         console.log('=== UPDATING GRAPH ===');
         console.log('Total nodes added:', addedNodes.length);
-        console.log('New graph has', Object.keys(updatedGraph.nodes).length, 'nodes');
         
         setGraph(updatedGraph);
         setNewNodes(addedNodes);
