@@ -1,0 +1,238 @@
+
+export type NodeType = 'project' | 'document' | 'contact' | 'preference' | 'behavior' | 'tool' | 'config' | 'meeting' | 'fact' | 'benchmark' | 'concept';
+
+export interface Node {
+  id: string;
+  type: NodeType;
+  label: string;
+  content: string;
+  heat: number;
+  pulseIndex?: number;
+  previousEnergy?: number;
+  origin?: string;
+  energyHistory?: number[];
+  dbSource?: string;
+  isNew?: boolean;
+  embedding?: number[]; // Vector representation for Orthogonality
+}
+
+export interface Synapse {
+  source: string;
+  target: string;
+  weight: number;
+  coActivations: number;
+  pulseIndex?: number;
+  weightHistory?: number[];
+  firedByRule?: string;
+  type?: 'association' | 'contradiction' | 'inference';
+}
+
+export interface Hyperedge {
+  id: string;
+  nodes: string[]; // Connected nodes (n > 2)
+  weight: number;
+  label: string;
+}
+
+export interface KnowledgeGraph {
+  nodes: Record<string, Node>;
+  synapses: Synapse[];
+  hyperedges: Hyperedge[];
+}
+
+export type ExtractionMode = 'rules-only' | 'small-llm' | 'output-llm';
+
+export type LLMProvider = 'gemini' | 'ollama' | 'groq';
+export type ExtractionStrategy = 'rules-only' | 'llm';
+
+export interface EngineConfig {
+  // Physics Parameters
+  gamma: number;
+  theta: number;
+  heatBias: number;
+  mmrLambda: number;
+  maxActivationDepth: number;
+  enableHebbian: boolean;
+  enableMemoryExpansion: boolean;
+  enablePruning: boolean;
+  enableSpreadingActivation: boolean;
+  safeMode: boolean;
+  repulsionStrength?: number;
+  hybridRules: boolean;
+
+  // Pipeline Configuration
+  extractionProvider: LLMProvider | 'rules-only' | 'none';
+  extractionModel: string; // Specific model name (e.g. "llama3-8b")
+  inferenceProvider: LLMProvider;
+  inferenceModel: string; // Specific model name (e.g. "llama3-70b")
+
+  // Provider Settings
+  apiKeys: {
+    gemini?: string;
+    groq?: string;
+    ollama?: string;
+  };
+  baseUrls: {
+    gemini?: string;
+    groq?: string;
+    ollama?: string;
+  };
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  latency?: number;
+  nodesActivated?: number;
+  sourceNodes?: string[]; // IDs
+  newNodes?: string[];    // IDs of nodes created in this turn
+}
+
+export interface ApiCall {
+  id: string;
+  type: 'EXTRACTION' | 'SYNTHESIS' | 'PRUNING' | 'REASONING';
+  timestamp: string;
+  input: string;
+  output: string;
+  latency: number;
+  tokens: number;
+  model: string;
+  status: 'success' | 'error';
+}
+
+export interface SecurityRuleResult {
+  ruleId: number;
+  ruleDescription: string;
+  passed: boolean;
+  timestamp: string;
+}
+
+export interface PromptDebug {
+  id: string;
+  query: string;
+  calls: ApiCall[];
+  securityResults: SecurityRuleResult[];
+}
+
+export interface SystemPrompt {
+  id: string;
+  name: string;
+  content: string;
+  description: string;
+}
+
+export interface TelemetryPoint {
+  timestamp: string;
+  globalEnergy: number;
+  graphDensity: number;
+  nodeCount: number;
+  synapseCount: number;
+  latency: number;
+  pruningRate: number;
+  activationPct: number;
+  adaptationDelta: number;
+}
+
+export interface AuditLog {
+  id: string;
+  timestamp: string;
+  type: 'activation' | 'security' | 'synthesis' | 'weight_update' | 'benchmark' | 'system' | 'extraction' | 'pruning';
+  message: string;
+  details?: any;
+  status: 'info' | 'warning' | 'error' | 'success';
+}
+
+export interface ActivatedNode {
+  node: string;
+  energy: number;
+  heat: number;
+  biasedEnergy: number;
+  depth: number;
+  path: string[];
+}
+
+export interface PruningLog {
+  node: string;
+  relevance: number;
+  redundancy: number;
+  energy: number;
+  informationGain: number;
+  selected: boolean;
+}
+
+export interface ExtractedNode {
+  id: string;
+  type: string;
+  label: string;
+  content: string;
+  connectTo?: string[];
+}
+
+export type PipelineStage = 'idle' | 'activating' | 'querying' | 'complete' | 'security_blocked';
+
+export type AppView = 'dashboard' | 'explorer' | 'rules' | 'eval' | 'sessions' | 'integrations' | 'prompts' | 'data_rules' | 'about' | 'architecture' | 'math' | 'concepts';
+
+export interface SecurityRule {
+  id: number;
+  ruleNumber: number;
+  type: 'block' | 'structural' | 'contradiction' | 'validation';
+  patternString?: string;
+  pattern?: RegExp;
+  description: string;
+  action: string;
+  category: 'Safety' | 'Logic' | 'Privacy' | 'Tool Gov';
+  isActive: boolean;
+  explanation?: string;
+}
+
+export interface ExtractionRule {
+  id: string;
+  ruleNumber: number;
+  name: string;
+  pattern: string; // Regex string
+  targetLabel: string; // "Project Delta" or "$1" for capture groups
+  targetType: string; // "concept", "person", "task"
+  isActive: boolean;
+  description?: string;
+}
+
+/**
+ * BenchmarkResult interface for tracking performance and validation metrics across system evaluations.
+ */
+export interface BenchmarkResult {
+  id: string;
+  name: string;
+  timestamp: string;
+  metrics: {
+    latency: number;
+    densityDelta: number;
+    energyPeak: number;
+    contradictionsFound: number;
+    recallScore: number;
+  };
+  configSnapshot?: EngineConfig;
+}
+
+export interface Session {
+  id: string;
+  name: string;
+  created: number;
+  lastActive: number;
+
+  // Data Isolation
+  graph: KnowledgeGraph;
+  chatHistory: ChatMessage[];
+
+  // Logic Isolation
+  config: EngineConfig;
+  securityRules: SecurityRule[];
+  extractionRules: ExtractionRule[];
+  systemPrompts: SystemPrompt[];
+
+  // Analytics
+  auditLogs: AuditLog[];
+  debugLogs: PromptDebug[];
+  telemetry: TelemetryPoint[];
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Synapse Context Engine  (SCE) v0.3",
+  "description": "A sophisticated knowledge graph memory system that uses spreading activation, information-theoretic pruning, and Hebbian learning to provide context-aware responses via Gemini API.",
+  "requestFramePermissions": []
+}
