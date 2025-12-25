@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    temp_tauri_lib::run()
+    synapse_context_engine_lib::run()
 }
