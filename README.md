@@ -145,13 +145,17 @@ Not about making AI more capable—about making it **safer as it becomes more ca
 
 ---
 
-<div align="center">
-    <h3>A first-principles approach to AI memory and safety</h3>
-    <sub>Built by one developer... now it's your turn.</sub><br><br>
-    
-    <a href="https://github.com/sasus-dev/synapse-context-engine">⭐ Star this repo</a> if you believe AI safety needs new approaches
-    <br><br>
-    <a href="https://claude.ai">🔬 Try the demo via Claude</a> | 
-    <a href="https://github.com/sasus-dev/synapse-context-engine/fork">🍴 Fork and experiment</a> | 
-    <a href="https://github.com/sasus-dev/synapse-context-engine/discussions">💬 Join the discussion</a>
-</div>
+<p align="center">
+  <b>A first-principles approach to AI memory and safety</b><br>
+  <sub>Built by one developer... now it's your turn.</sub>
+</p>
+
+<p align="center">
+  <a href="https://github.com/sasus-dev/synapse-context-engine">⭐ Star this repo</a> if you believe AI safety needs new approaches
+</p>
+
+<p align="center">
+  <a href="https://claude.ai">🔬 Try the demo via Claude</a> •
+  <a href="https://github.com/sasus-dev/synapse-context-engine/fork">🍴 Fork and experiment</a> •
+  <a href="https://github.com/sasus-dev/synapse-context-engine/discussions">💬 Join the discussion</a>
+</p>
