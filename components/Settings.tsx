@@ -43,8 +43,8 @@ const Settings: React.FC<SettingsProps> = ({ config, setConfig, addAuditLog }) =
     };
 
     return (
-        <div className="p-8 lg:p-12 space-y-10 animate-in fade-in duration-500 max-w-[1400px] mx-auto h-full overflow-y-auto">
-            <div>
+        <div className="h-full flex flex-col bg-transparent animate-in fade-in duration-300 max-w-[1400px] mx-auto overflow-y-auto p-8 lg:p-12">
+            <div className="mb-8">
                 <h2 className="text-4xl font-black uppercase tracking-tighter text-white">Settings</h2>
                 <p className="text-slate-500 font-bold uppercase tracking-widest text-[11px] mt-1">Manage AI Providers, API Keys, and Pipeline Strategy</p>
             </div>
@@ -74,7 +74,7 @@ const Settings: React.FC<SettingsProps> = ({ config, setConfig, addAuditLog }) =
                             <h3 className="text-[12px] font-black uppercase tracking-widest">Extraction Strategy (Input Analysis)</h3>
                         </div>
 
-                        <div className="bg-[#0a0a0f] p-8 rounded-[2rem] border border-white/5 space-y-6">
+                        <div className="bg-black/20 backdrop-blur-md p-8 rounded-[2rem] border border-white/5 space-y-6">
                             <label className="block space-y-2">
                                 <span className="text-[11px] font-bold text-slate-500 uppercase">Provider</span>
                                 <select
@@ -147,7 +147,7 @@ const Settings: React.FC<SettingsProps> = ({ config, setConfig, addAuditLog }) =
                             <h3 className="text-[12px] font-black uppercase tracking-widest">Synthesis Provider (Output Generation)</h3>
                         </div>
 
-                        <div className="bg-[#0a0a0f] p-8 rounded-[2rem] border border-white/5 space-y-6">
+                        <div className="bg-black/20 backdrop-blur-md p-8 rounded-[2rem] border border-white/5 space-y-6">
                             <label className="block space-y-2">
                                 <span className="text-[11px] font-bold text-slate-500 uppercase">Provider</span>
                                 <select
@@ -206,7 +206,7 @@ const Settings: React.FC<SettingsProps> = ({ config, setConfig, addAuditLog }) =
             {activeTab === 'providers' && (
                 <div className="space-y-10 pb-20">
                     {/* Gemini Config */}
-                    <div className="bg-[#0a0a0f] p-8 rounded-[2rem] border border-white/5 space-y-6">
+                    <div className="bg-black/20 backdrop-blur-md p-8 rounded-[2rem] border border-white/5 space-y-6">
                         <div className="flex items-center gap-4 border-b border-white/5 pb-4">
                             <Zap className="w-6 h-6 text-blue-400" />
                             <div>
@@ -230,7 +230,7 @@ const Settings: React.FC<SettingsProps> = ({ config, setConfig, addAuditLog }) =
                     </div>
 
                     {/* Groq Config */}
-                    <div className="bg-[#0a0a0f] p-8 rounded-[2rem] border border-emerald-500/20 space-y-6">
+                    <div className="bg-black/20 backdrop-blur-md p-8 rounded-[2rem] border border-emerald-500/20 space-y-6">
                         <div className="flex items-center gap-4 border-b border-white/5 pb-4">
                             <Sparkles className="w-6 h-6 text-orange-400" />
                             <div>
@@ -269,7 +269,7 @@ const Settings: React.FC<SettingsProps> = ({ config, setConfig, addAuditLog }) =
                     </div>
 
                     {/* Ollama Config */}
-                    <div className="bg-[#0a0a0f] p-8 rounded-[2rem] border border-white/5 space-y-6">
+                    <div className="bg-black/20 backdrop-blur-md p-8 rounded-[2rem] border border-white/5 space-y-6">
                         <div className="flex items-center gap-4 border-b border-white/5 pb-4">
                             <Database className="w-6 h-6 text-white" />
                             <div>

@@ -143,6 +143,15 @@ export const INITIAL_GRAPH: KnowledgeGraph = {
       id: 'contact_mike', type: 'contact', label: 'Mike Ross',
       content: 'Senior Engineer (Propulsion). Fixing the thermal issues on Icarus.',
       heat: 0.7, isNew: false
+    },
+    'archived_node': {
+      id: 'archived_node',
+      label: 'Old Project 2023',
+      type: 'project',
+      content: 'This project is finished and archived.',
+      heat: 0.0,
+      isArchived: true,
+      created: Date.now() - 100000000
     }
   },
   synapses: [
@@ -258,8 +267,11 @@ export const INITIAL_SYSTEM_PROMPTS: SystemPrompt[] = [
        - **CONTENT**: Store the semantic meaning or details of the entity.
        - **CONNECT**: Connect it to relevant existing nodes if possible.
     5. **NEGATIVE CONSTRAINT**: Do NOT use IDs or timestamps from the EXAMPLES below. Generate unique IDs based on the ACTUAL USER QUERY.
-    6. DO NOT start your answer with "Based on the provided context". Just answer.
-    7. YOUR RESPONSE MUST BE VALID JSON.
+    6. **CONFLICT PROTOCOL**: If the user's new info CONTRADICTS existing context (e.g. "Sasu is NOT the creator"), create a 'contradiction' link between the new node and the old node.
+       - Synapse Type: "contradiction"
+       - Weight: 1.0
+    7. DO NOT start your answer with "Based on the provided context". Just answer.
+    8. YOUR RESPONSE MUST BE VALID JSON.
 
     FORMAT:
     {

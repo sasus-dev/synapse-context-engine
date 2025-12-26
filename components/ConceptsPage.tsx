@@ -36,9 +36,10 @@ const ConceptsPage = () => {
 
                     <ConceptCard
                         icon={Brain}
-                        title="Hebbian Learning"
-                        desc="A neuroscientific theory: 'Cells that fire together, wire together'. The system increases the connection weight between two nodes if they are frequently activated in the same context."
+                        title="Hebbian Learning (v2)"
+                        desc="Updated Dec 26: Now uses 'Joint Activation' (E_i * E_j). Weak co-occurrences now cause synaptic decay, preventing graph saturation. 'Cells that fire together, wire together' - but only if they fire strongly."
                         color="text-pink-400"
+                        badge="v0.2.1 Updated"
                     />
 
                     <ConceptCard
@@ -109,12 +110,19 @@ const ConceptsPage = () => {
     );
 };
 
-const ConceptCard = ({ icon: Icon, title, desc, color }: any) => (
-    <div className="bg-[#0c0e12] p-8 rounded-[2rem] border border-white/5 hover:border-white/10 transition-all hover:-translate-y-1 group relative overflow-hidden">
+const ConceptCard = ({ icon: Icon, title, desc, color, badge }: any) => (
+    <div className="bg-white/5 backdrop-blur-md p-8 rounded-[2rem] border border-white/5 hover:border-white/10 transition-all hover:-translate-y-1 group relative overflow-hidden shadow-xl">
         <div className={`absolute top-4 right-4 p-2 rounded-xl bg-white/5 opacity-50 group-hover:opacity-100 transition-opacity ${color}`}>
             <Icon className="w-5 h-5" />
         </div>
-        <div className="space-y-4">
+
+        {badge && (
+            <div className="absolute top-4 left-4 px-2 py-1 rounded-md bg-indigo-500/20 border border-indigo-500/30">
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">{badge}</span>
+            </div>
+        )}
+
+        <div className="space-y-4 pt-4">
             <h3 className="text-lg font-black text-white uppercase tracking-wide pr-8">{title}</h3>
             <p className="text-sm text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
                 {desc}

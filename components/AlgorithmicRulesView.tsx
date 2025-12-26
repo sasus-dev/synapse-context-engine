@@ -154,7 +154,7 @@ const AlgorithmicRulesView: React.FC<AlgorithmicRulesViewProps> = ({ rules, setR
     const activeCount = rules.filter(r => r.isActive).length;
 
     return (
-        <div className="flex flex-col h-full bg-[#02040a] text-slate-200 overflow-hidden relative">
+        <div className="flex flex-col h-full bg-transparent text-slate-200 overflow-hidden relative">
             <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none" />
 
             {/* FLOATING HEADER */}
@@ -243,7 +243,7 @@ const AlgorithmicRulesView: React.FC<AlgorithmicRulesViewProps> = ({ rules, setR
                             className={`
                                 group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer
                                 ${isExpanded
-                                    ? 'bg-[#0a0c10] border-purple-500/30 shadow-[0_4px_20px_rgba(0,0,0,0.3)] ring-1 ring-white/5'
+                                    ? 'bg-black/20 backdrop-blur-md border-purple-500/30 shadow-[0_4px_20px_rgba(0,0,0,0.3)] ring-1 ring-white/5'
                                     : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'
                                 }
                             `}
@@ -293,7 +293,7 @@ const AlgorithmicRulesView: React.FC<AlgorithmicRulesViewProps> = ({ rules, setR
                             {isExpanded && (
                                 <div className="px-5 pb-5 pl-14 animate-in slide-in-from-top-2 duration-200 cursor-default" onClick={e => e.stopPropagation()}>
                                     {isEditing ? (
-                                        <div className="space-y-4 bg-black/30 p-4 rounded-xl border border-white/5">
+                                        <div className="space-y-4 bg-black/20 backdrop-blur-md p-4 rounded-xl border border-white/5">
                                             <div className="flex justify-between items-center bg-blue-500/5 p-2 rounded-lg border border-blue-500/10">
                                                 <div className="flex items-center gap-2">
                                                     <Sparkles className="w-4 h-4 text-blue-400" />

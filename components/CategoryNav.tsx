@@ -2,7 +2,7 @@
 import React from 'react';
 import {
   MessageSquare, Cpu, LayoutGrid, Activity,
-  Shield, FileCode, Zap, Database, ScrollText
+  Shield, FileCode, Zap, Database, ScrollText, BookOpen
 } from 'lucide-react';
 
 interface TopBar2Props {
@@ -15,19 +15,17 @@ const CATEGORIES = [
   { id: 'CHAT', icon: MessageSquare, label: 'CHAT' },
   { id: 'SYNAPSE', icon: Cpu, label: 'SYNAPSE' },
   { id: 'VISUAL_GRAPH', icon: LayoutGrid, label: 'LATTICE' },
-  { id: 'PERFORMANCE', icon: Activity, label: 'METRICS' },
   { id: 'SECURITY', icon: Shield, label: 'SAFETY' },
   { id: 'API_CALLS', icon: FileCode, label: 'TRACE' },
-  { id: 'RDATA', icon: Zap, label: 'MATH' },
+
   { id: 'DATABASE', icon: Database, label: 'STORAGE' },
-  { id: 'LOGS', icon: ScrollText, label: 'LOGS' },
 ];
 
 const CategoryNav: React.FC<TopBar2Props> = ({ category, setCategory, visible }) => {
   if (!visible) return null;
 
   return (
-    <div className="shrink-0 border-b border-white/[0.06] bg-[#05070a]/90 backdrop-blur-xl z-[100] px-6 py-3 flex flex-wrap items-center gap-2">
+    <div className="shrink-0 border-b border-white/[0.06] bg-transparent z-[100] px-6 py-3 flex flex-wrap items-center gap-2">
       {CATEGORIES.map(cat => (
         <button
           key={cat.id}

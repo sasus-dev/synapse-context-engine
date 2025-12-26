@@ -46,7 +46,7 @@ const RuleInspector: React.FC<RuleInspectorProps> = ({ rule }) => {
                     <h3 className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2">
                         <Activity className="w-3 h-3" /> Logic Logic
                     </h3>
-                    <div className="bg-black/40 border border-white/5 rounded-lg p-3">
+                    <div className="bg-black/20 border border-white/5 rounded-lg p-3">
                         <code className="text-[10px] font-mono text-emerald-300 break-all text-wrap">
                             /{rule.patternString}/i
                         </code>

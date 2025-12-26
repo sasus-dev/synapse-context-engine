@@ -47,22 +47,28 @@ const SessionsManager: React.FC<SessionsManagerProps> = ({
                 telemetry: []
             };
         } else {
-            // Create empty session
-            // Keeping System Prompts as they are essential for engine operation, but clearing data/rules.
-            const base = sessions[0];
+            // Create empty session - explicitly clean slate
             newSession = {
-                ...base,
                 id: newId,
                 name: `New Session ${sessions.length + 1}`,
                 created: timestamp,
                 lastActive: timestamp,
-                graph: { nodes: {}, synapses: [] },
+                // Use a completely fresh graph object
+                graph: {
+                    nodes: {},
+                    synapses: [],
+                    hyperedges: []
+                },
+                // Clone config from ACTIVE session to preserve user keys/settings
+                config: { ...activeSession.config },
+                // Empty mutable lists
                 chatHistory: [],
                 auditLogs: [],
                 debugLogs: [],
                 telemetry: [],
-                securityRules: [], // Completely empty
-                extractionRules: [] // Completely empty
+                securityRules: [],
+                extractionRules: [],
+                systemPrompts: [...sessions[0].systemPrompts] // Keep prompts
             };
         }
 
@@ -181,7 +187,7 @@ const SessionsManager: React.FC<SessionsManagerProps> = ({
               flex flex-col gap-6
               ${activeSessionId === session.id
                                 ? 'bg-purple-600/5 border-purple-500/30 ring-1 ring-purple-500/20 shadow-2xl shadow-purple-900/10'
-                                : 'bg-[#0a0a0f] border-white/5 hover:border-white/10 hover:bg-white/[0.02]'
+                                : 'bg-gradient-to-br from-white/5 to-transparent backdrop-blur-xl border-white/10 hover:border-white/20 hover:bg-white/5 hover:shadow-2xl shadow-lg'
                             }
             `}
                     >

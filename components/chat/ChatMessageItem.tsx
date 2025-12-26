@@ -42,10 +42,10 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ msg, onNodeClick, gra
             {isAssistant && (msg.sourceNodes?.length || msg.newNodes?.length) ? (
                 <div className="flex flex-wrap gap-2 max-w-[85%] px-1 mt-1 mb-2">
                     {msg.sourceNodes?.map(id => (
-                        <button key={`src-${id}`} onClick={() => onNodeClick(id)} className="px-2 py-0.5 bg-white/5 border border-white/5 rounded text-[10px] font-mono text-slate-400 hover:bg-white/10 hover:text-white transition-all flex items-center gap-1" title={`Source Node: ${id}`}><div className="w-1 h-1 rounded-full bg-slate-500" />{getNodeLabel(id)}</button>
+                        <button key={`src-${id}`} onClick={() => onNodeClick(id)} className="px-3 py-1 bg-white/5 border border-white/5 rounded-full text-[10px] font-mono text-slate-400 hover:bg-white/10 hover:text-white transition-all flex items-center gap-1 backdrop-blur-sm shadow-sm hover:scale-105 active:scale-95 duration-200" title={`Source Node: ${id}`}><div className="w-1.5 h-1.5 rounded-full bg-slate-500" />{getNodeLabel(id)}</button>
                     ))}
                     {msg.newNodes?.map(id => (
-                        <button key={`new-${id}`} onClick={() => onNodeClick(id)} className="group px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[10px] font-mono text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-2" title={`New Node: ${id}`}>{getNodeLabel(id)} <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 group-hover:bg-white animate-pulse" /></button>
+                        <button key={`new-${id}`} onClick={() => onNodeClick(id)} className="group px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] font-mono text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-2 backdrop-blur-sm shadow-sm hover:scale-105 active:scale-95 duration-200" title={`New Node: ${id}`}>{getNodeLabel(id)} <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 group-hover:bg-white animate-pulse" /></button>
                     ))}
                 </div>
             ) : null}

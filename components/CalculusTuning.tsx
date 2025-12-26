@@ -40,7 +40,7 @@ const CalculusTuning: React.FC<CalculusTuningProps> = ({ config, setConfig }) =>
             max={0.9}
             step={0.05}
           />
-          <p className="text-[9px] text-slate-600 leading-relaxed">
+          <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
             Minimum energy required for synaptic transmission. Higher values reduce noise.
           </p>
         </div>
@@ -57,7 +57,7 @@ const CalculusTuning: React.FC<CalculusTuningProps> = ({ config, setConfig }) =>
             max={0.95}
             step={0.05}
           />
-          <p className="text-[9px] text-slate-600 leading-relaxed">
+          <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
             Energy retention per hop. Lower values localize activation to immediate neighbors.
           </p>
         </div>
@@ -101,7 +101,7 @@ const CalculusTuning: React.FC<CalculusTuningProps> = ({ config, setConfig }) =>
             </div>
           )}
 
-          <p className="text-[9px] text-slate-600 leading-relaxed">
+          <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
             Maximum propagation hops from seed nodes.
           </p>
         </div>
@@ -118,7 +118,7 @@ const CalculusTuning: React.FC<CalculusTuningProps> = ({ config, setConfig }) =>
             max={1.0}
             step={0.1}
           />
-          <p className="text-[9px] text-slate-600 leading-relaxed">
+          <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
             Influence of node historical heat on current activation pathing.
           </p>
         </div>

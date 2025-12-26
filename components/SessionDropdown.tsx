@@ -40,7 +40,7 @@ const SessionDropdown: React.FC<SessionDropdownProps> = ({
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-[#0a0a0f] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[9999] animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute top-full left-0 mt-2 w-[320px] bg-[#09090b] border border-zinc-800 rounded-xl shadow-2xl z-[150] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5">
                         {sessions.map((session) => (
                             <button

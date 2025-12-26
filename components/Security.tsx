@@ -82,22 +82,21 @@ const Security: React.FC<SecurityProps> = ({ rules, setRules, addAuditLog, setSe
   const safetyCount = rules.filter(r => r.category === 'Safety').length;
 
   return (
-    <div className="flex flex-col h-full bg-[#02040a] text-slate-200 overflow-hidden relative">
+    <div className="flex flex-col h-full bg-transparent text-slate-200 overflow-hidden relative">
       <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none" />
 
       {/* FLOATING HEADER */}
-      <div className="px-8 pt-8 pb-6 flex items-center justify-between z-10">
+      <div className="px-8 pt-8 pb-6 flex items-center justify-between z-10 relative">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-2xl shadow-[0_0_20px_rgba(168,85,247,0.15)]">
             <Shield className="w-6 h-6 text-purple-400" />
           </div>
           <div>
             <h2 className="text-2xl font-black uppercase tracking-tight text-white flex items-center gap-3">
-              Cognitive Firewall
-              <span className="px-2 py-0.5 rounded text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tracking-widest">ACTIVE</span>
+              Security Protocols
             </h2>
             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
-              {activeCount} Active Protocols • {safetyCount} High-Priority Safety Guards
+              Active Defense Layer • Heuristic Analysis
             </p>
           </div>
         </div>
@@ -190,7 +189,7 @@ const Security: React.FC<SecurityProps> = ({ rules, setRules, addAuditLog, setSe
           <input
             type="text"
             placeholder="Search active protocols..."
-            className="w-full bg-white/5 border border-white/5 rounded-xl pl-10 pr-4 py-2.5 text-xs font-medium text-slate-200 focus:bg-white/10 focus:border-purple-500/50 outline-none transition-all placeholder:text-slate-600"
+            className="w-full bg-black/20 backdrop-blur-md border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs font-medium text-slate-200 focus:bg-white/10 focus:border-purple-500/50 outline-none transition-all placeholder:text-slate-600"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
@@ -212,7 +211,7 @@ const Security: React.FC<SecurityProps> = ({ rules, setRules, addAuditLog, setSe
       {/* SCROLLABLE LIST */}
       <div className="flex-1 overflow-y-auto custom-scrollbar px-8 pb-20 space-y-3">
         {filteredRules.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-slate-600 border border-dashed border-white/10 rounded-2xl mt-4">
+          <div className="py-24 text-center bg-black/20 backdrop-blur-md rounded-[2.5rem] border-white/5 flex flex-col items-center justify-center opacity-30">
             <ShieldAlert className="w-8 h-8 mb-3 opacity-50" />
             <p className="text-xs font-bold uppercase tracking-widest">No matching protocols found</p>
           </div>
@@ -228,7 +227,7 @@ const Security: React.FC<SecurityProps> = ({ rules, setRules, addAuditLog, setSe
                 group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer
                 ${isExpanded
                   ? 'bg-[#0a0c10] border-purple-500/30 shadow-[0_4px_20px_rgba(0,0,0,0.3)] ring-1 ring-white/5'
-                  : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'
+                  : 'bg-black/20 backdrop-blur-md border-white/5 hover:bg-white/[0.04] hover:border-white/10'
                 }
               `}
             >
@@ -281,14 +280,14 @@ const Security: React.FC<SecurityProps> = ({ rules, setRules, addAuditLog, setSe
               {isExpanded && (
                 <div className="px-5 pb-5 pl-14 animate-in slide-in-from-top-2 duration-200 cursor-default" onClick={e => e.stopPropagation()}>
                   {isEditing ? (
-                    <div className="space-y-4 bg-black/30 p-4 rounded-xl border border-white/5">
+                    <div className="bg-black/20 backdrop-blur-md rounded-2xl p-6 border border-white/5 space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                           <label className="text-[9px] font-black uppercase text-slate-500">Name</label>
                           <input
                             value={rule.description}
                             onChange={(e) => setRules(rules.map(r => r.id === rule.id ? { ...r, description: e.target.value } : r))}
-                            className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-purple-500 outline-none transition-all"
+                            className="w-full bg-black/20 backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-purple-500 outline-none transition-all"
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -296,7 +295,7 @@ const Security: React.FC<SecurityProps> = ({ rules, setRules, addAuditLog, setSe
                           <select
                             value={rule.category}
                             onChange={(e) => setRules(rules.map(r => r.id === rule.id ? { ...r, category: e.target.value as any } : r))}
-                            className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-300 focus:border-purple-500 outline-none"
+                            className="w-full bg-black/20 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-slate-200 outline-none focus:border-purple-500 transition-all"
                           >
                             {categories.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
@@ -308,7 +307,7 @@ const Security: React.FC<SecurityProps> = ({ rules, setRules, addAuditLog, setSe
                         <input
                           value={rule.patternString}
                           onChange={(e) => setRules(rules.map(r => r.id === rule.id ? { ...r, patternString: e.target.value } : r))}
-                          className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-emerald-400 focus:border-purple-500 outline-none"
+                          className="w-full bg-black/20 backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-emerald-400 focus:border-purple-500 outline-none"
                           placeholder="e.g. (drop|delete)\s+table"
                         />
                       </div>
@@ -318,7 +317,7 @@ const Security: React.FC<SecurityProps> = ({ rules, setRules, addAuditLog, setSe
                         <input
                           value={rule.explanation || ''}
                           onChange={(e) => setRules(rules.map(r => r.id === rule.id ? { ...r, explanation: e.target.value } : r))}
-                          className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-300 focus:border-purple-500 outline-none"
+                          className="w-full bg-black/20 backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-300 focus:border-purple-500 outline-none"
                           placeholder="Describe what this rule does..."
                         />
                       </div>
@@ -336,7 +335,7 @@ const Security: React.FC<SecurityProps> = ({ rules, setRules, addAuditLog, setSe
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="p-3 bg-black/30 rounded-xl border border-white/5 flex items-center justify-between">
+                      <div className="p-4 border-b border-white/[0.06] bg-[#09090b]/50 backdrop-blur-sm flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-3">
                           <span className="text-[10px] text-slate-500 font-black uppercase">Pattern</span>
                           <code className="bg-black/40 px-2 py-1 rounded text-xs font-mono text-emerald-400 border border-white/5">

@@ -1,5 +1,5 @@
 
-export type NodeType = 'project' | 'document' | 'contact' | 'preference' | 'behavior' | 'tool' | 'config' | 'meeting' | 'fact' | 'benchmark' | 'concept';
+export type NodeType = 'project' | 'document' | 'contact' | 'preference' | 'behavior' | 'tool' | 'config' | 'meeting' | 'fact' | 'benchmark' | 'concept' | 'goal';
 
 export interface Node {
   id: string;
@@ -12,8 +12,12 @@ export interface Node {
   origin?: string;
   energyHistory?: number[];
   dbSource?: string;
+  created?: number; // Timestamp of creation
+  lastAccessed?: number; // Timestamp of last retrieval/activation
   isNew?: boolean;
+  activationThreshold?: number; // For Mock Hyperedges (AND-gate logic)
   embedding?: number[]; // Vector representation for Orthogonality
+  isArchived?: boolean; // Sleep Mode for Stale Nodes
 }
 
 export interface Synapse {
@@ -77,6 +81,11 @@ export interface EngineConfig {
     groq?: string;
     ollama?: string;
   };
+  models: {
+    gemini?: string;
+    groq?: string;
+    ollama?: string;
+  };
 }
 
 export interface ChatMessage {
@@ -107,6 +116,7 @@ export interface SecurityRuleResult {
   ruleDescription: string;
   passed: boolean;
   timestamp: string;
+  conflictingNodeIds?: [string, string]; // For Contradiction Resolution
 }
 
 export interface PromptDebug {
@@ -142,6 +152,7 @@ export interface AuditLog {
   message: string;
   details?: any;
   status: 'info' | 'warning' | 'error' | 'success';
+  source?: string;
 }
 
 export interface ActivatedNode {
@@ -172,7 +183,7 @@ export interface ExtractedNode {
 
 export type PipelineStage = 'idle' | 'activating' | 'querying' | 'complete' | 'security_blocked';
 
-export type AppView = 'dashboard' | 'explorer' | 'rules' | 'eval' | 'sessions' | 'integrations' | 'prompts' | 'data_rules' | 'about' | 'architecture' | 'math' | 'concepts';
+export type AppView = 'dashboard' | 'explorer' | 'chat' | 'prompts' | 'eval' | 'sessions' | 'rules' | 'data_rules' | 'math' | 'concepts' | 'architecture' | 'about' | 'settings' | 'integrations' | 'updates';
 
 export interface SecurityRule {
   id: number;
@@ -185,6 +196,7 @@ export interface SecurityRule {
   category: 'Safety' | 'Logic' | 'Privacy' | 'Tool Gov';
   isActive: boolean;
   explanation?: string;
+  conflictingNodeIds?: string[];
 }
 
 export interface ExtractionRule {

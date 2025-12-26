@@ -46,7 +46,7 @@ const ExtractionInspector: React.FC<ExtractionInspectorProps> = ({ rule }) => {
                     <h3 className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2">
                         Extraction Pattern
                     </h3>
-                    <div className="bg-black/40 border border-white/5 rounded-lg p-3">
+                    <div className="bg-black/20 border border-white/5 rounded-lg p-3">
                         <code className="text-[10px] font-mono text-emerald-300 break-all text-wrap">
                             /{rule.pattern}/
                         </code>

@@ -25,7 +25,7 @@ const Architecture = () => {
 
                         {/* 1. Security Input */}
                         <div className="group">
-                            <div className="h-[320px] bg-[#0a0a0f] border border-slate-800 hover:border-red-500/50 rounded-[2.5rem] p-8 flex flex-col items-center text-center transition-all hover:-translate-y-2 hover:shadow-[0_20px_40px_-5px_rgba(239,68,68,0.15)] relative overflow-hidden">
+                            <div className="h-[320px] bg-black/20 backdrop-blur-md border border-slate-800 hover:border-red-500/50 rounded-[2.5rem] p-8 flex flex-col items-center text-center transition-all hover:-translate-y-2 hover:shadow-[0_20px_40px_-5px_rgba(239,68,68,0.15)] relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                                     <h3 className="text-6xl font-black text-red-500">01</h3>
                                 </div>

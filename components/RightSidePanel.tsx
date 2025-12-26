@@ -5,7 +5,7 @@ import NodeInspector from './NodeInspector';
 import RuleInspector from './RuleInspector';
 import ExtractionInspector from './ExtractionInspector';
 import CalculusTuning from './CalculusTuning';
-import { Node, ActivatedNode, EngineConfig, SecurityRule, ExtractionRule } from '../types';
+import { Node, ActivatedNode, EngineConfig, SecurityRule, ExtractionRule, NodeType } from '../types';
 
 interface RightSidePanelProps {
   isCollapsed: boolean;
@@ -17,7 +17,7 @@ interface RightSidePanelProps {
   selectedNodeId: string | null;
   config: EngineConfig;
   setConfig: React.Dispatch<React.SetStateAction<EngineConfig>>;
-  onUpdateNode?: (nodeId: string, content: string, label?: string, type?: string) => void;
+  onUpdateNode?: (nodeId: string, content: string, label?: string, type?: NodeType) => void;
   graph?: any;
   onSelectNode?: (id: string) => void;
   view?: string; // NEW PROP
@@ -33,7 +33,7 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
   return (
     <aside className="relative h-full shrink-0 z-[100] flex">
       <div className={`
-        h-full bg-[#05070a] border-l border-white/[0.04] transition-all duration-300 ease-in-out flex flex-col overflow-hidden
+        h-full bg-black/20 backdrop-blur-xl border-l border-white/[0.04] transition-all duration-300 ease-in-out flex flex-col overflow-hidden
         ${isCollapsed ? 'w-0 opacity-0' : 'w-[280px] xl:w-[320px] opacity-100'}
       `}>
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8 min-w-[280px] pb-24">
@@ -58,7 +58,7 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
             </div>
           ) : (
             /* EMPTY STATE / EVAL SUMMARY */
-            <div className="p-6 border-b border-white/5 bg-[#0a0a0f]">
+            <div className="p-6 border-b border-white/5 bg-transparent">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-indigo-500/10 rounded-lg">
                   <History className="w-5 h-5 text-indigo-400" />

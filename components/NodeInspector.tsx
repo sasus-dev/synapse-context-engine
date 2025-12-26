@@ -104,7 +104,7 @@ const NodeViewer = ({ node, energy, onEdit }: { node: Node; energy: number; onEd
 };
 
 const MetricBox = ({ label, value, icon: Icon, color }: any) => (
-  <div className="bg-white/[0.02] border border-white/[0.04] p-3 rounded-2xl flex items-center justify-between group hover:bg-white/[0.04] transition-all">
+  <div className="bg-black/20 backdrop-blur-md border border-white/[0.04] p-3 rounded-2xl flex items-center justify-between group hover:bg-white/[0.04] transition-all">
     <div className="flex flex-col gap-1">
       <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{label}</span>
       <span className={`text-[14px] font-mono font-black ${color} tabular-nums leading-none`}>{value}</span>

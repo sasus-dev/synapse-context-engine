@@ -35,8 +35,8 @@ const Prompts: React.FC<PromptsProps> = ({ prompts, setPrompts, addAuditLog }) =
               key={p.id}
               onClick={() => setSelectedId(p.id)}
               className={`w-full text-left p-6 rounded-[2rem] border transition-all ${selectedId === p.id
-                  ? 'bg-purple-600/10 border-purple-500/40'
-                  : 'bg-[#0a0a0f] border-white/5 hover:border-white/10'
+                ? 'bg-purple-600/10 border-purple-500/40'
+                : 'bg-black/20 backdrop-blur-md border-white/5 hover:border-white/10'
                 }`}
             >
               <h4 className="font-black uppercase text-sm text-white tracking-tight">{p.name}</h4>
@@ -73,7 +73,7 @@ const Prompts: React.FC<PromptsProps> = ({ prompts, setPrompts, addAuditLog }) =
           </div>
         </div>
 
-        <div className="lg:col-span-8 bg-[#0a0a0f] rounded-[3rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl">
+        <div className="lg:col-span-8 bg-black/20 backdrop-blur-md rounded-[3rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl">
           <div className="p-8 border-b border-white/5 flex items-center justify-between bg-black/40">
             <div className="flex items-center gap-4">
               <Terminal className="w-5 h-5 text-emerald-500" />

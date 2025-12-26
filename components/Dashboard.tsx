@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { KnowledgeGraph, TelemetryPoint, BenchmarkResult, AppView } from '../types';
 import { Zap, Activity, ShieldCheck, Database, ArrowRight, PlayCircle } from 'lucide-react';
@@ -19,7 +18,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView, graph, telemetry, benchm
   const density = nodeCount > 0 ? (synapseCount / nodeCount).toFixed(2) : "0.00";
 
   return (
-    <div className="p-8 lg:p-12 space-y-12 animate-in fade-in duration-500 max-w-[1400px] mx-auto min-h-full">
+    <div className="p-8 lg:p-12 space-y-12 animate-in fade-in duration-500 max-w-[1400px] mx-auto min-h-full bg-transparent">
 
       {/* HERO SECTION - Responsive Stacking */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
@@ -51,7 +50,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView, graph, telemetry, benchm
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* CHART PANEL */}
-        <div className="lg:col-span-2 bg-[#0a0a0f] border border-white/[0.04] p-10 rounded-[2.5rem] space-y-8 shadow-inner overflow-hidden">
+        <div className="lg:col-span-2 bg-black/20 backdrop-blur-md border border-white/[0.04] p-10 rounded-[2.5rem] space-y-8 shadow-inner overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-500">System Activity</h3>
             <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/5 border border-emerald-500/10 rounded-full">
@@ -80,7 +79,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView, graph, telemetry, benchm
         <div className="space-y-8">
 
           {/* Cool Data: Tensor Flow */}
-          <div className="bg-[#0a0a0f] border border-white/[0.04] p-10 rounded-[2.5rem] space-y-4 shadow-inner">
+          <div className="bg-black/20 backdrop-blur-md border border-white/[0.04] p-10 rounded-[2.5rem] space-y-4 shadow-inner">
             <div className="flex items-center gap-3 mb-2">
               <Activity className="w-5 h-5 text-blue-500" />
               <h3 className="text-[12px] font-black uppercase tracking-widest text-slate-500">Tensor Flow</h3>
@@ -114,7 +113,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView, graph, telemetry, benchm
 };
 
 const StatPill = ({ icon: Icon, label, value, trend }: any) => (
-  <div className="bg-[#0a0a0f] border border-white/[0.04] p-8 rounded-[2.5rem] flex flex-col justify-between h-[180px] hover:border-white/10 transition-all group shadow-inner">
+  <div className="bg-black/20 backdrop-blur-md border border-white/[0.04] p-8 rounded-[2.5rem] flex flex-col justify-between h-[180px] hover:border-white/10 transition-all group shadow-inner">
     <div className="flex flex-wrap items-center gap-3">
       <div className="p-3 bg-white/5 rounded-2xl group-hover:bg-purple-600/10 transition-colors shadow-sm">
         <Icon className="w-5 h-5 text-slate-600 group-hover:text-purple-400" />

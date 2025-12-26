@@ -73,6 +73,7 @@ const CreateContextModal: React.FC<CreateContextModalProps> = ({ isOpen, onClose
                                 <option value="Project" />
                                 <option value="Research" />
                                 <option value="General Context" />
+                                <option value="Goal" />
                             </datalist>
                         </div>
                     </div>

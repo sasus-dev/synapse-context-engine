@@ -2,7 +2,7 @@ import React from 'react';
 import { BookOpen, GitBranch, Box, Layers, Zap, Divide, Network } from 'lucide-react';
 
 const BlueprintBlock = ({ title, subtitle, formula, desc, color, borderColor, fullWidth, icon: Icon }: any) => (
-    <div className={`bg-[#0c0e12] p-8 rounded-[2.5rem] border ${borderColor} flex flex-col gap-6 shadow-xl group hover:bg-[#12141a] transition-all hover:-translate-y-1 relative overflow-hidden ${fullWidth ? 'w-full' : ''}`}>
+    <div className={`bg-black/20 backdrop-blur-md p-8 rounded-[2.5rem] border ${borderColor} flex flex-col gap-6 shadow-xl group hover:bg-black/30 transition-all hover:-translate-y-1 relative overflow-hidden ${fullWidth ? 'w-full' : ''}`}>
 
         {/* Background Glow */}
         <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${color.replace('text-', 'from-')}/10 to-transparent blur-3xl opacity-20 -z-0 pointer-events-none rounded-full`} />
@@ -93,7 +93,7 @@ const MathPage = () => {
 
                 {/* Explainer Section */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-[#0a0a0f] p-8 rounded-[2rem] border border-white/5 space-y-4 hover:border-white/10 transition-colors">
+                    <div className="bg-black/20 backdrop-blur-md p-8 rounded-[2rem] border border-white/5 space-y-4 hover:border-white/10 transition-colors">
                         <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mb-4">
                             <Divide className="w-6 h-6 text-slate-400" />
                         </div>
@@ -102,7 +102,7 @@ const MathPage = () => {
                             We use the Laplacian matrix to calculate the "smoothness" of the signal over the graph, allowing us to detect clusters of relevant information effectively.
                         </p>
                     </div>
-                    <div className="bg-[#0a0a0f] p-8 rounded-[2rem] border border-white/5 space-y-4 hover:border-white/10 transition-colors">
+                    <div className="bg-black/20 backdrop-blur-md p-8 rounded-[2rem] border border-white/5 space-y-4 hover:border-white/10 transition-colors">
                         <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mb-4">
                             <Box className="w-6 h-6 text-slate-400" />
                         </div>
@@ -111,7 +111,7 @@ const MathPage = () => {
                             Implemented: By enforcing orthogonality in key concept vectors, we prevent semantic drift and ensure distinct concepts remain distinct in the latent space.
                         </p>
                     </div>
-                    <div className="bg-[#0a0a0f] p-8 rounded-[2rem] border border-white/5 space-y-4 hover:border-white/10 transition-colors">
+                    <div className="bg-black/20 backdrop-blur-md p-8 rounded-[2rem] border border-white/5 space-y-4 hover:border-white/10 transition-colors">
                         <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mb-4">
                             <Layers className="w-6 h-6 text-slate-400" />
                         </div>

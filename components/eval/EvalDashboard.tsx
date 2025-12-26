@@ -111,7 +111,7 @@ const EvalDashboard: React.FC<EvalDashboardProps> = ({ graph, config, addAuditLo
             {/* Resources Modal */}
             {showResourcesModal && (
                 <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowResourcesModal(false)}>
-                    <div className="bg-[#0a0a0f] border border-white/10 rounded-3xl p-8 max-w-2xl w-full space-y-6 shadow-2xl relative animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                    <div className="bg-zinc-950/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 max-w-2xl w-full space-y-6 shadow-2xl relative animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <button onClick={() => { setShowResourcesModal(false); setResourceView('menu'); }} className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors">
                             <Plus className="w-6 h-6 rotate-45" />
                         </button>
@@ -240,7 +240,7 @@ const EvalDashboard: React.FC<EvalDashboardProps> = ({ graph, config, addAuditLo
                 <div className="lg:col-span-4 space-y-6">
 
                     {/* Dataset Loader (Always Visible, Disabled when running) */}
-                    <div className={`bg-[#0a0a0f] border border-white/5 rounded-3xl p-6 space-y-4 transition-all ${isRunning ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+                    <div className={`bg-black/20 backdrop-blur-md border border-white/5 rounded-3xl p-6 space-y-4 transition-all ${isRunning ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <FileText className="w-5 h-5 text-indigo-400" />
@@ -289,7 +289,7 @@ const EvalDashboard: React.FC<EvalDashboardProps> = ({ graph, config, addAuditLo
                     </div>
 
                     {/* Info Card - Config Snapshot */}
-                    <div className="bg-[#0a0a0f] border border-white/5 rounded-3xl p-6">
+                    <div className="bg-black/20 backdrop-blur-md border border-white/5 rounded-3xl p-6">
                         <h4 className="font-bold text-slate-400 text-xs uppercase tracking-wide mb-4">Engine Config Snapshot</h4>
                         <div className="space-y-2 text-xs font-mono text-slate-300">
                             <div className="flex justify-between"><span>Max Depth</span><span className="text-white">{config.maxActivationDepth}</span></div>
@@ -300,7 +300,7 @@ const EvalDashboard: React.FC<EvalDashboardProps> = ({ graph, config, addAuditLo
                     </div>
 
                     {/* Bulk Data Connector */}
-                    <div className="bg-[#0a0a0f] border border-white/5 rounded-3xl p-6 relative overflow-hidden group hover:border-white/10 transition-colors">
+                    <div className="bg-black/20 backdrop-blur-md border border-white/5 rounded-3xl p-6 relative overflow-hidden group hover:border-white/10 transition-colors">
                         <div className="flex items-center gap-3 mb-4">
                             <Database className="w-5 h-5 text-emerald-500" />
                             <h4 className="font-bold text-white text-sm uppercase tracking-wide">Bulk Data Connector</h4>
@@ -335,7 +335,7 @@ const EvalDashboard: React.FC<EvalDashboardProps> = ({ graph, config, addAuditLo
                     </div>
 
                     {/* Documentation Link (Resources) */}
-                    <div className="bg-[#1e1e24] border border-white/5 rounded-3xl p-6 cursor-pointer hover:border-indigo-500/30 transition-all" onClick={() => setShowResourcesModal(true)}>
+                    <div className="bg-black/20 backdrop-blur-md border border-white/5 rounded-3xl p-6 cursor-pointer hover:border-indigo-500/30 transition-all" onClick={() => setShowResourcesModal(true)}>
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-3">
                                 <BookOpen className="w-5 h-5 text-indigo-400" />
@@ -356,7 +356,7 @@ const EvalDashboard: React.FC<EvalDashboardProps> = ({ graph, config, addAuditLo
                             dataset={activeDataset}
                             config={config} // Pass live config
                             onComplete={handleRunComplete}
-                            onLog={addAuditLog}
+                            onLog={(log) => addAuditLog(log.type, log.message, log.status)}
                             handleRunQuery={handleRunQuery}
                         />
                     ) : (

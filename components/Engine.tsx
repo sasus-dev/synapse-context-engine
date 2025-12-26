@@ -59,7 +59,7 @@ const Engine: React.FC<EngineProps> = ({ config, setConfig, addAuditLog }) => {
                      <h3 className="text-[12px] font-black uppercase tracking-widest">Extraction Strategy (Input Analysis)</h3>
                   </div>
 
-                  <div className="bg-[#0a0a0f] p-8 rounded-[2rem] border border-white/5 space-y-6">
+                  <div className="bg-black/10 backdrop-blur-lg p-8 rounded-[2rem] border border-white/5 space-y-6">
                      <label className="block space-y-2">
                         <span className="text-[11px] font-bold text-slate-500 uppercase">Active Provider</span>
                         <select
@@ -111,7 +111,7 @@ const Engine: React.FC<EngineProps> = ({ config, setConfig, addAuditLog }) => {
                         </select>
                      </label>
 
-                     <div className="p-4 bg-[#05070a] border border-white/10 rounded-xl">
+                     <div className="bg-black/30 border border-white/5 rounded-2xl p-6 h-full shadow-inner">
                         <p className="text-xs text-slate-400">
                            Current Model: <span className="text-white font-mono">{config.models[config.inferenceProvider]}</span>
                         </p>

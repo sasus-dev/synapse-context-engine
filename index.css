@@ -4,7 +4,9 @@
 
 @layer base {
   body {
-    @apply bg-[#02040a] text-slate-200 antialiased font-sans selection:bg-purple-900/30;
+    @apply text-zinc-200 antialiased font-sans selection:bg-zinc-700/30;
+    background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #09090b 100%);
+    background-attachment: fixed;
   }
 }
 
@@ -12,17 +14,21 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
   }

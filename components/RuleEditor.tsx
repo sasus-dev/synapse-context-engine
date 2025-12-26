@@ -68,7 +68,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({ rules, setRules, addAuditLog })
           <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-1">Configure structural and content safety protocols</p>
         </div>
         <div className="flex gap-3">
-          <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1 shrink-0">
+          <div className="flex bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-1 shrink-0">
             {categories.map(cat => (
               <button
                 key={cat}
@@ -91,7 +91,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({ rules, setRules, addAuditLog })
         <input
           type="text"
           placeholder="Search protocols by description or type..."
-          className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-xs font-bold uppercase tracking-widest outline-none focus:border-purple-500/50 transition-all placeholder:text-slate-700"
+          className="w-full bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-xs font-bold uppercase tracking-widest outline-none focus:border-purple-500/50 transition-all placeholder:text-slate-700"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
@@ -99,14 +99,14 @@ const RuleEditor: React.FC<RuleEditorProps> = ({ rules, setRules, addAuditLog })
 
       <div className="grid grid-cols-1 gap-4">
         {filteredRules.length === 0 ? (
-          <div className="py-24 text-center glass-card rounded-[2.5rem] border-white/5 flex flex-col items-center justify-center opacity-30">
+          <div className="py-24 text-center bg-black/20 backdrop-blur-md rounded-[2.5rem] border-white/5 flex flex-col items-center justify-center opacity-30">
             <Filter className="w-12 h-12 mb-4" />
             <p className="text-[10px] font-black uppercase tracking-widest">No matching protocols found in registry</p>
           </div>
         ) : filteredRules.map(rule => {
           const isEditing = editingId === rule.id;
           return (
-            <div key={rule.id} className={`glass-card p-6 rounded-[2.5rem] border transition-all duration-300 ${isEditing ? 'border-purple-500 shadow-xl shadow-purple-900/10 bg-purple-950/5' : 'border-white/5 hover:border-white/10'}`}>
+            <div key={rule.id} className={`bg-black/20 backdrop-blur-md p-6 rounded-[2.5rem] border transition-all duration-300 ${isEditing ? 'border-purple-500 shadow-xl shadow-purple-900/10 bg-purple-950/5' : 'border-white/5 hover:border-white/10'}`}>
               <div className="flex flex-col lg:flex-row gap-8">
                 <div className="flex flex-col gap-4 min-w-[160px]">
                   <div className="flex flex-col gap-2">
@@ -136,7 +136,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({ rules, setRules, addAuditLog })
                         <div className="space-y-1.5">
                           <label className="text-[8px] font-black uppercase text-slate-600 ml-2">Description</label>
                           <input
-                            className="w-full bg-[#0d1117] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-slate-200 outline-none focus:border-purple-500 transition-all"
+                            className="w-full bg-black/20 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-slate-200 outline-none focus:border-purple-500 transition-all"
                             value={rule.description}
                             onChange={(e) => setRules(rules.map(r => r.id === rule.id ? { ...r, description: e.target.value } : r))}
                           />
@@ -144,7 +144,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({ rules, setRules, addAuditLog })
                         <div className="space-y-1.5">
                           <label className="text-[8px] font-black uppercase text-slate-600 ml-2">Category</label>
                           <select
-                            className="w-full bg-[#0d1117] border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-slate-400 outline-none"
+                            className="w-full bg-black/20 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-slate-400 outline-none"
                             value={rule.category || 'Safety'}
                             onChange={(e) => setRules(rules.map(r => r.id === rule.id ? { ...r, category: e.target.value as any } : r))}
                           >
@@ -155,7 +155,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({ rules, setRules, addAuditLog })
                       <div className="space-y-1.5">
                         <label className="text-[8px] font-black uppercase text-slate-600 ml-2">Regex Pattern</label>
                         <input
-                          className="w-full bg-[#0d1117] border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-emerald-400 outline-none focus:border-purple-500"
+                          className="w-full bg-black/20 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-emerald-400 outline-none focus:border-purple-500"
                           placeholder="Regex pattern (e.g., kill|harm|password)"
                           value={rule.patternString || ''}
                           onChange={(e) => setRules(rules.map(r => r.id === rule.id ? { ...r, patternString: e.target.value } : r))}

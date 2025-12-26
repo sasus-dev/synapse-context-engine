@@ -35,7 +35,7 @@ const AuditModal: React.FC<AuditModalProps> = ({ isOpen, onClose, logs }) => {
                 className="w-full max-w-4xl bg-[#0a0a0f] border border-white/10 rounded-[2rem] shadow-2xl flex flex-col max-h-full overflow-hidden"
             >
                 {/* Header */}
-                <div className="p-6 border-b border-white/5 flex items-center justify-between bg-[#05070a]">
+                <div className="p-6 border-b border-white/5 flex items-center justify-between bg-[#09090b]">
                     <div className="flex items-center gap-4">
                         <div className="p-2 bg-slate-800/50 rounded-xl">
                             <Terminal className="w-5 h-5 text-slate-400" />
@@ -71,15 +71,15 @@ const AuditModal: React.FC<AuditModalProps> = ({ isOpen, onClose, logs }) => {
                             </div>
                             <div className="flex-1 space-y-1">
                                 <p className={`text-sm font-medium ${log.status === 'error' ? 'text-red-400' :
-                                        log.status === 'success' ? 'text-emerald-400' :
-                                            log.status === 'warning' ? 'text-orange-400' : 'text-slate-300'
+                                    log.status === 'success' ? 'text-emerald-400' :
+                                        log.status === 'warning' ? 'text-orange-400' : 'text-slate-300'
                                     }`}>
                                     {log.message}
                                 </p>
                                 <div className="flex items-center gap-2">
                                     <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${log.type === 'security' ? 'bg-red-500/10 text-red-500' :
-                                            log.type === 'system' ? 'bg-blue-500/10 text-blue-500' :
-                                                'bg-slate-800 text-slate-500'
+                                        log.type === 'system' ? 'bg-blue-500/10 text-blue-500' :
+                                            'bg-slate-800 text-slate-500'
                                         }`}>
                                         {log.type}
                                     </span>

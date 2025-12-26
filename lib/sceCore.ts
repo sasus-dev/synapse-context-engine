@@ -10,6 +10,23 @@ export class SCEEngine {
   }
 
   /**
+   * Wrapper for Spreading Activation that injects "Goal Nodes" (Gravity Wells).
+   * These nodes act as persistent energy sources to prevent context drift.
+   */
+  runSpreadingActivation(startNodeIds: string[]): ActivatedNode[] {
+    // 0. Locate Goal Nodes (Gravity Wells) - Always Active
+    const goalNodes = Object.values(this.graph.nodes)
+      .filter(n => n.type === 'goal' && !n.isArchived)
+      .map(n => n.id);
+
+    // 1. Combine Explicit Focus + Persistent Goals
+    const seeds = Array.from(new Set([...startNodeIds, ...goalNodes]));
+
+    // 2. Run Activation
+    return this.spreadingActivation(seeds);
+  }
+
+  /**
    * Spreading Activation Logic (Equation 1 & 2 from Paper)
    * Enhanced with loop detection and proper energy damping.
    */
@@ -56,6 +73,22 @@ export class SCEEngine {
       const neighbors = adjacency[current.node] || [];
       neighbors.forEach(({ target, weight }) => {
         if (current.path.includes(target)) return;
+
+        // --- MOCK HYPEREDGE LOGIC (AND-Gate) ---
+        // If the target node has an Activation Threshold, it requires sufficient incoming energy to fire.
+        // We use the cumulative activation from the current exploration path as a proxy for "Simultaneous Inputs"
+        const targetNode = this.graph.nodes[target];
+        const threshold = targetNode?.activationThreshold || 0;
+
+        // This is a simplification: Real summation requires a separate "Integration" pass.
+        // Here we just check if the *current* impulse is strong enough on its own, OR if the node is already partially active.
+        const currentTotalEnergy = (activation[target] || 0) + (current.energy * weight);
+
+        if (currentTotalEnergy < threshold) {
+          // Sub-threshold activation: Stored but does not propagate yet (effectively "dampened")
+          // We allow a small "leak" (0.1) so it's not a dead stop, but heavily penalized.
+          if (currentTotalEnergy < threshold * 0.8) return;
+        }
 
         // Eq 1: Energy propagation with Gamma decay
         const inputEnergy = current.energy * weight * this.config.gamma;
@@ -110,7 +143,20 @@ export class SCEEngine {
         energy,
         heat: this.graph.nodes[node]?.heat || 0,
         // Heat Bias (alpha) influence: BiasedEnergy = E * ( (1-a) + a*H )
-        biasedEnergy: energy * ((1 - this.config.heatBias) + this.config.heatBias * (this.graph.nodes[node]?.heat || 0)),
+        // Temporal Decay (beta) influence: Decay = 1 / (1 + decayRate * daysSinceAccess)
+        biasedEnergy: (() => {
+          const baseEnergy = energy;
+          const heatFactor = (1 - this.config.heatBias) + this.config.heatBias * (this.graph.nodes[node]?.heat || 0);
+
+          // Time Decay
+          const now = Date.now();
+          const lastAccessed = this.graph.nodes[node]?.lastAccessed || now;
+          const daysSince = (now - lastAccessed) / (1000 * 60 * 60 * 24);
+          // decayRate of 0.1 means 10 days = 0.5 score impact.
+          const timeDecay = 1 / (1 + 0.1 * daysSince);
+
+          return baseEnergy * heatFactor * timeDecay;
+        })(),
         ...paths[node]
       }))
       .sort((a, b) => b.biasedEnergy - a.biasedEnergy);
@@ -204,7 +250,12 @@ export class SCEEngine {
   updateHebbianWeights(activatedList: ActivatedNode[]): { source: string, target: string, delta: number }[] {
     if (!this.config.enableHebbian) return [];
     const eta = 0.15; // Learning Rate
-    const activeIds = activatedList.map(a => a.node);
+
+    // Map: NodeID -> Energy Level
+    const energyMap: Record<string, number> = {};
+    activatedList.forEach(a => energyMap[a.node] = a.energy);
+
+    const activeIds = Object.keys(energyMap);
     const changes: { source: string, target: string, delta: number }[] = [];
 
     // Increase heat for active nodes (Recency spike)
@@ -220,12 +271,27 @@ export class SCEEngine {
         const n1 = activeIds[i];
         const n2 = activeIds[j];
 
+        // Joint Activation Strength (Product of energies)
+        const jointActivation = energyMap[n1] * energyMap[n2];
+
+        // Theoretical Threshold: 
+        // If jointActivation < currentWeight, the connection weakens (Decay).
+        // If jointActivation > currentWeight, the connection strengthens (LTP).
+
         let found = false;
         this.graph.synapses = this.graph.synapses.map(syn => {
           if ((syn.source === n1 && syn.target === n2) || (syn.source === n2 && syn.target === n1)) {
             found = true;
             const oldWeight = syn.weight;
-            syn.weight = Math.min(1.0, syn.weight + eta * (1 - syn.weight)); // Asymptotic update
+
+            // NEW FORMULA: w(t+1) = w(t) + eta * (Ei * Ej - w(t))
+            // This naturally bounds w between [0,1] assuming inputs are [0,1].
+            // If Ei=1, Ej=1 -> Target 1.0. If Ei=0.1, Ej=0.1 -> Target 0.01 (Decay).
+            const targetWeight = jointActivation;
+            const newWeight = syn.weight + eta * (targetWeight - syn.weight);
+
+            syn.weight = Math.max(0.01, Math.min(1.0, newWeight));
+
             changes.push({ source: n1, target: n2, delta: syn.weight - oldWeight });
             syn.coActivations = (syn.coActivations || 0) + 1;
             return syn;
@@ -234,10 +300,13 @@ export class SCEEngine {
         });
 
         if (!found) {
-          // Neurogenesis: Create new synapse if strong enough co-activation
-          const initialWeight = 0.1 * eta;
-          this.graph.synapses.push({ source: n1, target: n2, weight: initialWeight, coActivations: 1 });
-          changes.push({ source: n1, target: n2, delta: initialWeight });
+          // Neurogenesis: Only create new synapse if joint activation is significant (> 0.25)
+          // Otherwise we create too much noise.
+          if (jointActivation > 0.25) {
+            const initialWeight = 0.5 * eta * jointActivation; // Scale initial weight by strength
+            this.graph.synapses.push({ source: n1, target: n2, weight: initialWeight, coActivations: 1 });
+            changes.push({ source: n1, target: n2, delta: initialWeight });
+          }
         }
       }
     }
@@ -261,7 +330,8 @@ export class SCEEngine {
           ruleId: 999,
           ruleDescription: `Cognitive Dissonance: ${n1.label} contradicts ${n2.label}`,
           passed: false,
-          timestamp: new Date().toLocaleTimeString()
+          timestamp: new Date().toLocaleTimeString(),
+          conflictingNodeIds: [n1.id, n2.id]
         });
       }
     });
@@ -307,7 +377,7 @@ export class SCEEngine {
       if (currentSelected.length === 0) return 0;
 
       const candidateNode = this.graph.nodes[candidateNodeId];
-      let maxSim = 0;
+      let sumSim = 0;
 
       currentSelected.forEach(s => {
         const selectedNode = this.graph.nodes[s.node];
@@ -320,10 +390,11 @@ export class SCEEngine {
         const common = wordsC.filter(w => wordsS.includes(w) && w.length > 3);
         if (common.length > 0) sim += 0.5;
 
-        maxSim = Math.max(maxSim, Math.min(sim, 1.0));
+        sumSim += Math.min(sim, 1.0);
       });
 
-      return maxSim;
+      // Standard MMR uses MEAN redundancy to avoid penalizing a node just because it matches ONE existing node.
+      return sumSim / currentSelected.length;
     };
 
     while (selected.length < maxResults && candidates.length > 0) {
@@ -364,6 +435,47 @@ export class SCEEngine {
     }
 
     return { selected, log: pruningLog };
+  }
+
+  /**
+   * Archival Strategy (Sleep Mode)
+   * Instead of deleting, we mark nodes as 'isArchived'.
+   * Criteria: Heat < 0.01 AND lastAccessed > 30 days ago.
+   */
+  archiveStaleNodes() {
+    if (!this.config.enablePruning) return; // We hijack 'pruning' config for Archival
+
+    const now = Date.now();
+    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+
+    Object.values(this.graph.nodes).forEach(node => {
+      if (node.isArchived) return; // Already asleep
+
+      const isCold = (node.heat || 0) < 0.01;
+      const lastAccess = node.lastAccessed || node.created || now;
+      const isOld = (now - lastAccess) > THIRTY_DAYS;
+
+      // Protection: Never archive 'project', 'goal' or 'context' types automatically
+      const isProtected = ['project', 'context', 'goal', 'research'].includes(node.type);
+
+      if (isCold && isOld && !isProtected) {
+        node.isArchived = true;
+        // Optimization: We could minimize connections here, but keeping them allows full "wake up".
+      }
+    });
+  }
+
+  /**
+   * Resurrects a node from Sleep Mode.
+   * Called when a specific query strictly matches an archived node ID or label.
+   */
+  wakeUpNode(nodeId: string) {
+    const node = this.graph.nodes[nodeId];
+    if (node && node.isArchived) {
+      node.isArchived = false;
+      node.heat = 0.5; // Jolted awake
+      node.lastAccessed = Date.now();
+    }
   }
 
   /**

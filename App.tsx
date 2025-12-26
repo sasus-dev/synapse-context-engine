@@ -7,7 +7,9 @@ import {
 import { INITIAL_GRAPH, INITIAL_SECURITY_RULES, INITIAL_SYSTEM_PROMPTS, INITIAL_EXTRACTION_RULES } from './constants';
 import { SCEEngine } from './lib/sceCore';
 import { extractEntities, queryJointly } from './services/llmService';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, X } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 
 // Unified UI Components
 import LeftSidePanel from './components/LeftSidePanel';
@@ -20,6 +22,7 @@ import MainContentArea from './components/MainContentArea';
 import Dashboard from './components/Dashboard';
 import Explorer from './components/Explorer';
 import ChatView from './components/ChatView';
+import ActiveFocusBar from './components/chat/ActiveFocusBar';
 import Security from './components/Security';
 import Benchmarks from './components/Benchmarks';
 import SessionsManager from './components/SessionsManager';
@@ -32,6 +35,10 @@ import AuditModal from './components/AuditModal';
 import CreateContextModal from './components/CreateContextModal';
 import MathPage from './components/MathPage';
 import ConceptsPage from './components/ConceptsPage';
+import UpdatesPage from './components/UpdatesPage';
+import ContradictionResolver from './components/ContradictionResolver';
+
+// Unified Config Definition
 
 const DEFAULT_CONFIG: EngineConfig = {
   gamma: 0.85,
@@ -52,6 +59,11 @@ const DEFAULT_CONFIG: EngineConfig = {
   inferenceModel: '',
   apiKeys: { gemini: '', groq: '' },
   baseUrls: { ollama: 'http://localhost:11434', groq: 'https://api.groq.com/openai' },
+  models: {
+    gemini: 'gemini-1.5-pro',
+    groq: 'llama3-70b-8192',
+    ollama: 'llama3'
+  }
 };
 
 class ErrorBoundary extends React.Component<any, any> {
@@ -130,18 +142,38 @@ const App: React.FC = () => {
   const [selectedExtractionRule, setSelectedExtractionRule] = useState<ExtractionRule | null>(null);
   const [brokenRule, setBrokenRule] = useState<SecurityRule | null>(null);
   const [benchmarkResults, setBenchmarkResults] = useState<any[]>([]);
-  const [currentContextId, setCurrentContextId] = useState<string | null>('ctx_research');
+  const [selectedUpdate, setSelectedUpdate] = useState<any | null>(null); // Lifted for Z-Index Fix
+  const [activeContradiction, setActiveContradiction] = useState<SecurityRuleResult | null>(null); // User-In-The-Loop
+
+
+  // Working Memory Buffer (Active Foci) - Replaces single 'currentContextId'
+  // Holds up to 3 active contexts [Most Recent, ..., Oldest]
+  const [workingMemory, setWorkingMemory] = useState<string[]>(['ctx_research']);
+
+  // Helper to Push Context to Working Memory (FILO buffer)
+  const pushToWorkingMemory = (contextId: string) => {
+    setWorkingMemory(prev => {
+      // If already active, move to front
+      const filtered = prev.filter(c => c !== contextId);
+      const newStack = [contextId, ...filtered]; // Unlimited focus items
+      return newStack;
+    });
+  };
+
+  const removeFromWorkingMemory = (contextId: string) => {
+    setWorkingMemory(prev => {
+      const remaining = prev.filter(c => c !== contextId);
+      return remaining.length > 0 ? remaining : ['ctx_research']; // Fallback
+    });
+  }
 
   // Dynamically Generate Context Options from Graph
   const contextOptions = React.useMemo(() => {
-    const staticOpts = [
-      // Default System Contexts
-      { id: 'ctx_research', label: 'SCE Architecture', type: 'research' },
-      { id: 'ctx_browser', label: 'Personal', type: 'context' }
-    ];
+    const staticOpts: any[] = [];
 
     const nodeOpts = Object.values(graph.nodes)
       .filter((n: any) => n.id.startsWith('ctx_') || ['project', 'research', 'context'].includes((n.type || '').toLowerCase()))
+      .filter((n: any) => !n.isArchived) // Hide Archived Nodes
       .map((n: any) => ({
         id: n.id,
         label: n.label,
@@ -254,6 +286,26 @@ const App: React.FC = () => {
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
     const newLog = { id: Math.random().toString(36), timestamp, type, message, status };
     setAuditLogs(prev => [newLog, ...prev].slice(0, 50));
+  };
+
+  const handleResolveContradiction = (winnerId: string, loserId: string) => {
+    // 1. Suppress Loser Heat
+    setGraph(prev => ({
+      ...prev,
+      nodes: {
+        ...prev.nodes,
+        [loserId]: {
+          ...prev.nodes[loserId],
+          heat: 0.05 // Suppressed
+        }
+      }
+    }));
+
+    // 2. Log Decision
+    addAuditLog('security', `User Resolution: Trusted ${winnerId}, Suppressed ${loserId}`, 'success');
+
+    // 3. Clear UI
+    setActiveContradiction(null);
   };
 
 
@@ -381,8 +433,8 @@ const App: React.FC = () => {
         // Continue with empty entities or context only
       }
 
-      // MIXING CONTEXT: Combine extracted entity seeds + Explicit Page Context
-      const rawSeeds = Array.from(new Set([...entities, currentContextId].filter(Boolean) as string[]));
+      // MIXING CONTEXT: Combine extracted entity seeds + Explicit Page Context (Working Memory)
+      const rawSeeds = Array.from(new Set([...entities, ...workingMemory].filter(Boolean) as string[]));
       // CRITICAL VALIDATION: Filter out hallucinated IDs that don't exist in the graph
       const seeds = rawSeeds.filter(id => engineRef.current.graph.nodes[id]);
 
@@ -425,6 +477,9 @@ const App: React.FC = () => {
           addAuditLog('security', `System 2 Alert: ${contradictions[0].ruleDescription}`, 'warning');
           securityResults.push(...contradictions);
           upsertLog(); // Update log with security warning immediately
+
+          // TRIGGER USER-IN-THE-LOOP RESOLUTION
+          setActiveContradiction(contradictions[0]);
         }
       } catch (e) { console.warn("Contradiction check failed", e); }
 
@@ -523,20 +578,23 @@ const App: React.FC = () => {
               coActivations: 0
             });
 
-            if (currentContextId && currentContextId !== node.id && engineRef.current.graph.nodes[currentContextId]) {
-              engineRef.current.graph.synapses.push({
-                source: currentContextId,
-                target: node.id,
-                weight: 0.85,
-                coActivations: 1
-              });
-              engineRef.current.graph.synapses.push({
-                source: node.id,
-                target: currentContextId,
-                weight: 0.5,
-                coActivations: 0
-              });
-            }
+            // Link to ALL items in Working Memory
+            workingMemory.forEach(ctxId => {
+              if (ctxId !== node.id && engineRef.current.graph.nodes[ctxId]) {
+                engineRef.current.graph.synapses.push({
+                  source: ctxId,
+                  target: node.id,
+                  weight: 0.85,
+                  coActivations: 1
+                });
+                engineRef.current.graph.synapses.push({
+                  source: node.id,
+                  target: ctxId,
+                  weight: 0.5,
+                  coActivations: 0
+                });
+              }
+            });
           });
 
           // Link New Nodes to EACH OTHER (Strong Explicit Co-occurrence)
@@ -563,8 +621,8 @@ const App: React.FC = () => {
           // "Cells that fire together, wire together" - even if just weakly.
           activated.forEach(actNode => {
             const contextId = actNode.node;
-            // Skip if it's the current context (already handled strongly) or self
-            if (contextId === currentContextId || createdNodeIds.includes(contextId)) return;
+            // Skip if it's in working memory (already handled strongly) or self
+            if (workingMemory.includes(contextId) || createdNodeIds.includes(contextId)) return;
 
             nodesToCreate.forEach(newNode => {
               // Check if connection likely exists (optimization: skip check for now, just push weak)
@@ -668,11 +726,13 @@ const App: React.FC = () => {
       // 1. Link to Root
       newSynapses.push({ source: 'session_start', target: node.id, weight: 0.9, coActivations: 0 });
 
-      // 2. Link to Current Context (if valid)
-      if (currentContextId && prev.nodes[currentContextId] && currentContextId !== node.id) {
-        newSynapses.push({ source: currentContextId, target: node.id, weight: 0.85, coActivations: 1 });
-        newSynapses.push({ source: node.id, target: currentContextId, weight: 0.85, coActivations: 1 });
-      }
+      // 2. Link to Working Memory Contexts (if valid)
+      workingMemory.forEach(ctxId => {
+        if (prev.nodes[ctxId] && ctxId !== node.id) {
+          newSynapses.push({ source: ctxId, target: node.id, weight: 0.85, coActivations: 1 });
+          newSynapses.push({ source: node.id, target: ctxId, weight: 0.85, coActivations: 1 });
+        }
+      });
 
       return {
         ...prev,
@@ -688,7 +748,7 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="flex h-screen w-screen bg-[#02040a] text-slate-200 overflow-hidden font-sans">
+      <div className="flex h-screen w-screen bg-transparent text-zinc-200 overflow-hidden font-sans">
 
         {/* LEFT NAVIGATION PANEL */}
         <LeftSidePanel
@@ -704,7 +764,7 @@ const App: React.FC = () => {
         />
 
         {/* CENTRAL PROCESSING CORE */}
-        <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden transition-all duration-300">
+        <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
 
           {/* HEADER BLOCK (APP HEADER) */}
           <AppHeader
@@ -755,8 +815,9 @@ const App: React.FC = () => {
                   telemetry={telemetry}
                   debugLogs={debugLogs}
                   chatHistory={chatHistory}
-                  currentContextId={currentContextId}
-                  setCurrentContextId={setCurrentContextId}
+                  workingMemory={workingMemory}
+                  pushToWorkingMemory={pushToWorkingMemory}
+                  removeFromWorkingMemory={removeFromWorkingMemory}
                   auditLogs={auditLogs}
                   securityRules={securityRules}
                   selectedSecurityRule={selectedSecurityRule}
@@ -764,30 +825,43 @@ const App: React.FC = () => {
                 />
               )}
               {view === 'chat' && (
-                <div className="h-full w-full">
-                  <ChatView
-                    chatHistory={chatHistory}
-                    query={query}
-                    setQuery={setQuery}
-                    handleQuery={handleRunQuery}
-                    isProcessing={stage !== 'idle' && stage !== 'complete'}
-                    selectedNodeId={selectedNodeId}
-                    setSelectedNodeId={setSelectedNodeId}
-                    isActionsCollapsed={true}
-                    setIsActionsCollapsed={() => { }}
-                    currentContextId={currentContextId}
-                    setCurrentContextId={setCurrentContextId}
-                    graph={graph}
-                    config={config}
-                    setConfig={setConfig}
-                    onAddNode={handleAddNode}
-                    onUpdateNode={handleUpdateNode}
-                    onTriggerCreate={() => {
-                      console.log('DEBUG: Opening Create Context Modal');
-                      setIsCreateContextModalOpen(true);
-                    }}
-                    contextOptions={contextOptions}
-                  />
+                <div className="h-full w-full flex flex-col gap-4 overflow-hidden">
+                  <div className="bg-[#09090b] border border-zinc-800 p-2 rounded-2xl shadow-lg shrink-0 z-50">
+                    <ActiveFocusBar
+                      workingMemory={workingMemory}
+                      contextOptions={contextOptions}
+                      onAdd={pushToWorkingMemory}
+                      onRemove={removeFromWorkingMemory}
+                      onInspect={setSelectedNodeId}
+                      onTriggerCreate={() => setIsCreateContextModalOpen(true)}
+                    />
+                  </div>
+                  <div className="flex-1 min-h-0 relative">
+                    <ChatView
+                      chatHistory={chatHistory}
+                      query={query}
+                      setQuery={setQuery}
+                      handleQuery={handleRunQuery}
+                      isProcessing={stage !== 'idle' && stage !== 'complete'}
+                      selectedNodeId={selectedNodeId}
+                      setSelectedNodeId={setSelectedNodeId}
+                      isActionsCollapsed={true}
+                      setIsActionsCollapsed={() => { }}
+                      workingMemory={workingMemory}
+                      pushToWorkingMemory={pushToWorkingMemory}
+                      removeFromWorkingMemory={removeFromWorkingMemory}
+                      graph={graph}
+                      config={config}
+                      setConfig={setConfig}
+                      onAddNode={handleAddNode}
+                      onUpdateNode={handleUpdateNode}
+                      onTriggerCreate={() => {
+                        console.log('DEBUG: Opening Create Context Modal');
+                        setIsCreateContextModalOpen(true);
+                      }}
+                      contextOptions={contextOptions}
+                    />
+                  </div>
                 </div>
               )}
               {view === 'rules' && <Security rules={securityRules} setRules={setSecurityRules} addAuditLog={addAuditLog} setSelectedRule={setSelectedSecurityRule} />}
@@ -801,34 +875,10 @@ const App: React.FC = () => {
               {view === 'math' && <MathPage />}
               {view === 'concepts' && <ConceptsPage />}
               {view === 'prompts' && <Prompts prompts={systemPrompts} setPrompts={setSystemPrompts} addAuditLog={addAuditLog} />}
+              {view === 'updates' && <UpdatesPage onSelectUpdate={setSelectedUpdate} />}
             </MainContentArea>
 
-            {/* SECURITY BLOCKING OVERLAY */}
-            {stage === 'security_blocked' && brokenRule && (
-              <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="bg-[#0f1117] border border-red-500/30 rounded-2xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(239,68,68,0.2)] text-center space-y-6 relative ring-1 ring-white/10">
-                  <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-2 border border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
-                    <ShieldAlert className="w-10 h-10 text-red-500" />
-                  </div>
-                  <div className="space-y-2">
-                    <h2 className="text-3xl font-black uppercase text-white tracking-tighter loading-none">Security Alert</h2>
-                    <p className="text-xs font-bold uppercase text-red-400 tracking-[0.2em]">{brokenRule.category} Protocol Triggered</p>
-                  </div>
-                  <div className="bg-red-500/5 border border-red-500/10 p-6 rounded-xl relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
-                    <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 text-left">Violation Detected</h3>
-                    <p className="text-sm text-slate-200 font-medium text-left">"{brokenRule.description}"</p>
-                    {brokenRule.explanation && <p className="text-xs text-slate-500 mt-2 text-left leading-relaxed">{brokenRule.explanation}</p>}
-                  </div>
-                  <button
-                    onClick={() => { setBrokenRule(null); setStage('idle'); }}
-                    className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-xl text-white font-black uppercase tracking-widest transition-all shadow-lg shadow-red-900/30 text-xs"
-                  >
-                    Acknowledge & Dismiss
-                  </button>
-                </div>
-              </div>
-            )}
+
 
             {/* RIGHT TELEMETRY PANEL */}
             <RightSidePanel
@@ -869,8 +919,127 @@ const App: React.FC = () => {
           onCreate={(name, type) => {
             const id = `ctx_${Math.random().toString(36).substr(2, 9)}`;
             handleAddNode({ id, label: name, type, content: `User Created Context: ${name}`, heat: 1.0, isNew: true });
-            setCurrentContextId(id);
+            pushToWorkingMemory(id);
           }}
+        />
+
+        {/* SECURITY BLOCKING OVERLAY with RESOLUTION (Root Level) */}
+        {stage === 'security_blocked' && brokenRule && (
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => { }}>
+            <div className="bg-[#0f1117] border border-red-500/30 rounded-2xl p-8 max-w-lg w-full shadow-[0_0_60px_rgba(239,68,68,0.2)] text-center space-y-6 relative ring-1 ring-white/10" onClick={e => e.stopPropagation()}>
+              <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-2 border border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+                <ShieldAlert className="w-10 h-10 text-red-500" />
+              </div>
+
+              <div className="space-y-2">
+                <h2 className="text-3xl font-black uppercase text-white tracking-tighter loading-none">Security Alert</h2>
+                <p className="text-xs font-bold uppercase text-red-400 tracking-[0.2em]">{brokenRule.category} Protocol Triggered</p>
+              </div>
+
+              <div className="bg-red-500/5 border border-red-500/10 p-6 rounded-xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
+                <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 text-left">Violation Detected</h3>
+                <p className="text-sm text-slate-200 font-medium text-left">"{brokenRule.description}"</p>
+
+                {/* CONTRADICTION RESOLUTION UI */}
+                {brokenRule.conflictingNodeIds ? (
+                  <div className="mt-4 pt-4 border-t border-white/5">
+                    <p className="text-xs text-slate-400 mb-3 uppercase tracking-wider font-bold">Review Discrepancy</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Choice A */}
+                      <button
+                        onClick={() => {
+                          // Trust Node 1: Prune Node 2
+                          addAuditLog('security', `User resolved contradiction: Trusting ${brokenRule.conflictingNodeIds?.[0]}`, 'info');
+                          setBrokenRule(null);
+                          setStage('idle');
+                        }}
+                        className="p-3 bg-slate-800 hover:bg-slate-700 rounded-lg border border-white/10 text-xs text-left group"
+                      >
+                        <span className="block text-[10px] text-slate-500 uppercase">Trust A</span>
+                        <span className="text-slate-200 font-bold truncate block">ID: {brokenRule.conflictingNodeIds[0].substring(0, 8)}...</span>
+                      </button>
+
+                      {/* Choice B */}
+                      <button
+                        onClick={() => {
+                          // Trust Node 2: Prune Node 1
+                          addAuditLog('security', `User resolved contradiction: Trusting ${brokenRule.conflictingNodeIds?.[1]}`, 'info');
+                          setBrokenRule(null);
+                          setStage('idle');
+                        }}
+                        className="p-3 bg-slate-800 hover:bg-slate-700 rounded-lg border border-white/10 text-xs text-left group"
+                      >
+                        <span className="block text-[10px] text-slate-500 uppercase">Trust B</span>
+                        <span className="text-slate-200 font-bold truncate block">ID: {brokenRule.conflictingNodeIds[1].substring(0, 8)}...</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  brokenRule.explanation && <p className="text-xs text-slate-500 mt-2 text-left leading-relaxed">{brokenRule.explanation}</p>
+                )}
+              </div>
+
+              <button
+                onClick={() => { setBrokenRule(null); setStage('idle'); }}
+                className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-xl text-white font-black uppercase tracking-widest transition-all shadow-lg shadow-red-900/30 text-xs"
+              >
+                Acknowledge & Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* UPDATES MODAL (Root Level for Z-Index) */}
+        {selectedUpdate && (
+          <div className="fixed inset-0 z-[99999] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 lg:p-10 animate-in fade-in duration-200" onClick={() => setSelectedUpdate(null)}>
+            <div className="bg-[#0a0a0f] border border-white/10 w-full max-w-4xl max-h-full rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+              <div className="p-6 border-b border-white/5 flex items-center justify-between bg-[#0c0e12]">
+                <div>
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">{selectedUpdate.title}</h2>
+                  <p className="text-xs font-mono text-indigo-400 uppercase mt-1">{selectedUpdate.id} • {selectedUpdate.date}</p>
+                </div>
+                <button onClick={() => setSelectedUpdate(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors group">
+                  <X className="w-6 h-6 text-slate-400 group-hover:text-white" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar bg-[#0a0a0f] text-left">
+                <div className="prose prose-sm prose-invert max-w-none 
+                                prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tight prose-headings:text-white prose-headings:mt-8 prose-headings:mb-4
+                                prose-p:text-slate-300 prose-p:leading-relaxed prose-p:mb-4
+                                prose-ul:list-disc prose-ul:pl-4 prose-ul:space-y-2
+                                prose-li:text-slate-300 prose-li:marker:text-indigo-500
+                                prose-strong:text-white prose-strong:font-bold
+                                prose-hr:border-white/10 prose-hr:my-8
+                                prose-code:text-indigo-300 prose-code:bg-indigo-900/20 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
+                                prose-img:rounded-xl prose-img:border prose-img:border-white/10 prose-img:shadow-2xl
+                        ">
+                  <ReactMarkdown
+                    rehypePlugins={[rehypeRaw]}
+                    components={{
+                      h1: ({ node, ...props }) => <h1 className="text-3xl font-black text-white uppercase tracking-tight mt-6 mb-4" {...props} />,
+                      h2: ({ node, ...props }) => <h2 className="text-xl font-bold text-white uppercase tracking-tight mt-6 mb-3 border-b border-white/10 pb-2" {...props} />,
+                      h3: ({ node, ...props }) => <h3 className="text-lg font-bold text-indigo-300 mt-4 mb-2" {...props} />,
+                      p: ({ node, ...props }) => <p className="text-sm text-slate-300 leading-relaxed mb-4" {...props} />,
+                      ul: ({ node, ...props }) => <ul className="list-disc pl-5 space-y-2 mb-4 text-sm text-slate-300" {...props} />,
+                      li: ({ node, ...props }) => <li className="marker:text-indigo-500" {...props} />,
+                      strong: ({ node, ...props }) => <strong className="text-white font-bold" {...props} />,
+                      code: ({ node, ...props }) => <code className="bg-indigo-900/20 text-indigo-300 px-1 py-0.5 rounded font-mono text-xs border border-indigo-500/20" {...props} />,
+                      pre: ({ node, ...props }) => <pre className="bg-black/50 p-4 rounded-lg overflow-x-auto border border-white/5 mb-4" {...props} />,
+                    }}
+                  >
+                    {selectedUpdate.content}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ContradictionResolver
+          contradiction={activeContradiction}
+          onResolve={handleResolveContradiction}
+          getNode={(id) => graph.nodes[id]}
         />
 
         <AuditModal

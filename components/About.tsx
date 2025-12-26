@@ -10,27 +10,17 @@ const About = () => {
                 <div className="text-center space-y-8 relative">
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
 
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-4">
-                        <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                        </span>
-                        <span className="text-xs font-bold uppercase text-indigo-400 tracking-widest">Active Research Preview</span>
-                    </div>
-
-                    <h1 className="text-7xl font-black text-white tracking-tighter mb-4">
+                    <h1 className="text-7xl font-black text-white tracking-tighter mb-4 pt-10">
                         Synapse Context <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-500">Engine</span>
                     </h1>
-                    <p className="text-lg text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">
-                        A biological memory architecture for LLMs. Replaces static RAG with dynamic, graph-based spreading activation.
-                    </p>
 
-                    <div className="flex justify-center gap-6 pt-8">
-                        <Stat label="Version" value="0.1.0" />
-                        <div className="w-px h-12 bg-white/10" />
-                        <Stat label="License" value="Apache 2.0" />
-                        <div className="w-px h-12 bg-white/10" />
-                        <Stat label="Status" value="Research Demo" />
+                    <div className="flex flex-col items-center gap-4">
+                        <p className="text-lg text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">
+                            A brain inspired secure memory architecture for LLMs.
+                        </p>
+                        <a href="https://github.com/sasus-dev/synapse-context-engine/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-4 py-1.5 rounded-full border border-slate-700 bg-slate-800/50 hover:bg-slate-700 hover:border-slate-500 transition-all cursor-pointer text-[10px] font-bold uppercase tracking-widest text-slate-300 hover:text-white shadow-lg">
+                            Apache 2.0 License
+                        </a>
                     </div>
                 </div>
 
@@ -43,15 +33,10 @@ const About = () => {
                         </h3>
                         <p className="text-sm text-slate-400 leading-7">
                             Built by <strong className="text-white">Lasse "Sasu" Sainia</strong> as an experiment in cognitive modeling.
-                            The goal is to move beyond vector similarity search and create systems that can "think" and "remember" associatively,
-                            mimicking the way human neurons reinforce pathways based on context.
+                            The goal is to move beyond vector similarity search and create systems that can "think" and "remember" associatively.
                         </p>
-                        <div className="p-6 bg-white/5 border border-white/5 rounded-3xl">
-                            <p className="text-xl font-medium text-slate-300 italic leading-relaxed">
-                                "I don't use <span className="text-white font-bold">SOCIAL</span> media much..."
-                            </p>
-                        </div>
-                        <div className="flex gap-4">
+
+                        <div className="flex gap-4 pt-2">
                             <SocialLink icon={Twitter} label="X (Twitter)" href="https://x.com/sasus_dev" />
                             <SocialLink icon={Linkedin} label="LinkedIn" href="https://www.linkedin.com/in/sasus-dev/" />
                         </div>
@@ -65,35 +50,29 @@ const About = () => {
                                     <Cpu className="w-6 h-6 text-purple-400" />
                                 </div>
                                 <div>
-                                    <h4 className="text-white font-bold text-lg">Project Goals</h4>
+                                    <h4 className="text-white font-bold text-lg">Project Goal</h4>
                                     <p className="text-xs text-slate-500 uppercase tracking-widest">Roadmap 2025</p>
                                 </div>
                             </div>
-                            <ul className="space-y-4">
-                                <GoalItem text="Recursive memory consolidation" touched />
-                                <GoalItem text="Multi-modal graph nodes (Image/Audio)" />
-                                <GoalItem text="Self-healing knowledge structures" />
-                            </ul>
+                            <p className="text-sm text-slate-300 font-medium">
+                                Create a human brain inspired memory architecture that is secure.
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-white/5 pt-12 flex flex-col items-center space-y-6">
+                <div className="border-t border-white/5 pt-12 flex flex-col items-center space-y-8">
                     <a
                         href="https://github.com/sasus-dev/synapse-context-engine"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group flex items-center gap-3 px-8 py-4 bg-white text-black hover:bg-slate-200 rounded-full font-black uppercase tracking-widest transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+                        className="group flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-white to-slate-200 hover:from-slate-200 hover:to-white text-black rounded-full font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95"
                     >
-                        <Github className="w-5 h-5" />
-                        <span>Star / Support on GitHub</span>
+                        <Github className="w-6 h-6" />
+                        <span className="text-sm">Star on GitHub</span>
                     </a>
-                    <p className="text-xs text-slate-600 font-medium">
-                        Designed & Engineered with <Heart className="w-3 h-3 text-red-500 inline mx-1 fill-red-500/20" /> by Lasse "Sasu" Sainia
-                    </p>
                 </div>
-
             </div>
         </div>
     );
