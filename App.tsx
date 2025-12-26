@@ -464,16 +464,36 @@ const App: React.FC = () => {
           const safeId = nn.id.toLowerCase().trim().replace(/\s+/g, '_');
           const SafeLabel = nn.label || safeId;
           const safeContent = nn.content || `Entity captured from conversation: ${SafeLabel}`;
-          // Make sure it's one of the valid types or fallback to concept
-          const safeType = ['project', 'person', 'contact'].includes(nn.type) ? nn.type : 'concept';
+          // Map friendly LLM types to internal Schema types
+          let type = nn.type.toLowerCase();
+          if (type === 'person') type = 'contact';
+          if (type === 'event') type = 'meeting';
+
+          const validTypes = ['project', 'document', 'contact', 'preference', 'behavior', 'tool', 'config', 'meeting', 'fact', 'benchmark', 'concept'];
+          const safeType = validTypes.includes(type) ? type : 'concept';
 
           // Check duplicates in CURRENT REF (ID check)
-          if (engineRef.current.graph.nodes[safeId]) return;
+          const existingNode = engineRef.current.graph.nodes[safeId];
+          if (existingNode) {
+            // MERGE / UPDATE STRATEGY
+            // If the new content adds information, append it.
+            if (nn.content && !existingNode.content.includes(nn.content)) {
+              console.log(`Updating Existing Node: ${safeId}`);
+              // We can't mutate directly here if we want to batch, but we can treat it as an update
+              handleUpdateNode(safeId, existingNode.content + "\n\n" + nn.content);
+            }
+            return; // Skip creation, we handled update
+          }
 
           // FUZZY CHECK: Check if label already exists (case-insensitive) to prevent duplicates like 'Sasu' vs 'contact_sasu'
           const distinctLabels = Object.values(engineRef.current.graph.nodes).map((n: any) => n.label.toLowerCase());
           if (distinctLabels.includes(SafeLabel.toLowerCase())) {
-            console.log(`Skipping Duplicate Node: "${SafeLabel}" already exists.`);
+            // Try to find the ID of the match to update it?
+            const matchId = Object.values(engineRef.current.graph.nodes).find((n: any) => n.label.toLowerCase() === SafeLabel.toLowerCase())?.id;
+            if (matchId) {
+              console.log(`Fuzzy Match Update: ${matchId}`);
+              handleUpdateNode(matchId, engineRef.current.graph.nodes[matchId].content + "\n\n" + safeContent);
+            }
             return;
           }
 
@@ -519,7 +539,7 @@ const App: React.FC = () => {
             }
           });
 
-          // Link New Nodes to EACH OTHER
+          // Link New Nodes to EACH OTHER (Strong Explicit Co-occurrence)
           for (let i = 0; i < nodesToCreate.length; i++) {
             for (let j = i + 1; j < nodesToCreate.length; j++) {
               const nodeA = nodesToCreate[i];
@@ -538,6 +558,33 @@ const App: React.FC = () => {
               });
             }
           }
+
+          // HEBBIAN ASSOCIATION: Link New Nodes to ALL Activated Context (Weak Co-occurrence)
+          // "Cells that fire together, wire together" - even if just weakly.
+          activated.forEach(actNode => {
+            const contextId = actNode.node;
+            // Skip if it's the current context (already handled strongly) or self
+            if (contextId === currentContextId || createdNodeIds.includes(contextId)) return;
+
+            nodesToCreate.forEach(newNode => {
+              // Check if connection likely exists (optimization: skip check for now, just push weak)
+              // We use a low weight (0.15) for these "ambient" associations
+              engineRef.current.graph.synapses.push({
+                source: newNode.id,
+                target: contextId,
+                weight: 0.15,
+                coActivations: 1,
+                type: 'association'
+              });
+              engineRef.current.graph.synapses.push({
+                source: contextId,
+                target: newNode.id,
+                weight: 0.15,
+                coActivations: 1,
+                type: 'association'
+              });
+            });
+          });
 
           // Update State (via Session)
           setGraph(prev => {

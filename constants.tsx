@@ -108,7 +108,7 @@ export const INITIAL_GRAPH: KnowledgeGraph = {
     // Apps
     'app_email': {
       id: 'app_email', type: 'tool', label: 'Email Client',
-      content: 'Logged in as: sasu@sce.ai\nUnread: 3',
+      content: 'Logged in as: user@sce.ai\nUnread: 3',
       heat: 0.8, isNew: false
     },
     'email_01': { id: 'email_01', type: 'document', label: 'Re: Icarus Failure', content: 'From: Sarah Connor <sarah@cyberdyne.com>\nDate: 2024-11-13\n\n"The thermal failure is unacceptable. Fix it by Monday or the contract is void."', heat: 0.5, isNew: false },
@@ -119,15 +119,20 @@ export const INITIAL_GRAPH: KnowledgeGraph = {
       content: 'Upcoming Events:',
       heat: 0.8, isNew: false
     },
-    'event_meeting': { id: 'event_meeting', type: 'meeting', label: 'Icarus Post-Mortem', content: 'Attendees: Sasu, Sarah, Mike.\nTime: Today 14:00.\nRoom: 101.', heat: 0.6, isNew: false },
+    'event_meeting': { id: 'event_meeting', type: 'meeting', label: 'Icarus Post-Mortem', content: 'Attendees: User, Sarah, Mike.\nTime: Today 14:00.\nRoom: 101.', heat: 0.6, isNew: false },
 
     // ==============================================
     // 4. PEOPLE (The "Smart Connections")
     // ==============================================
-    'contact_sasu': {
-      id: 'contact_sasu', type: 'contact', label: 'Sasu',
-      content: 'Lasse Sainia (Sasu).\n\nRoles:\n- Creator of Synapse Context Engine (SCE).\n- Game Developer.\n- AI Engineer.\n- 3D Generalist.\n\nPortfolio: https://www.sasus.dev',
+    'contact_user': {
+      id: 'contact_user', type: 'contact', label: 'Test User',
+      content: 'The current system operator.\n\nType: Administrator\nPermissions: Root Access.',
       heat: 0.95, isNew: false
+    },
+    'contact_sasu': {
+      id: 'contact_sasu', type: 'contact', label: 'Sasu (Creator)',
+      content: 'Lasse Sainia (Sasu).\n\nRoles:\n- Creator of Synapse Context Engine (SCE).\n- Game Developer.\n- AI Engineer.\n- 3D Generalist.\n\nPortfolio: https://www.sasus.dev',
+      heat: 0.5, isNew: false
     },
     'contact_sarah': {
       id: 'contact_sarah', type: 'contact', label: 'Sarah Connor',
@@ -170,10 +175,12 @@ export const INITIAL_GRAPH: KnowledgeGraph = {
     { source: 'app_email', target: 'email_01', weight: 0.8, coActivations: 0 },
     { source: 'app_email', target: 'email_02', weight: 0.8, coActivations: 0 },
     { source: 'app_calendar', target: 'event_meeting', weight: 0.8, coActivations: 0 },
+    { source: 'app_calendar', target: 'event_meeting', weight: 0.8, coActivations: 0 },
 
     // Cross-Cutting Connections (The "Nodes connected across views")
     { source: 'contact_sasu', target: 'ctx_research', weight: 1.0, coActivations: 100 }, // Sasu created SCE
-    { source: 'contact_sasu', target: 'event_meeting', weight: 0.9, coActivations: 5 }, // Sasu in meeting
+    { source: 'contact_user', target: 'ctx_browser', weight: 1.0, coActivations: 100 }, // User owns browser
+    { source: 'contact_user', target: 'event_meeting', weight: 0.9, coActivations: 5 }, // User in meeting
     { source: 'contact_sarah', target: 'email_01', weight: 0.95, coActivations: 10 }, // Sarah sent email
     { source: 'contact_sarah', target: 'event_meeting', weight: 0.9, coActivations: 10 }, // Sarah in meeting
     { source: 'log_flight', target: 'email_01', weight: 0.8, coActivations: 5 }, // Flight log triggered email
@@ -189,11 +196,11 @@ export const INITIAL_SYSTEM_PROMPTS: SystemPrompt[] = [
     description: 'Defines how the engine identifies existing nodes and relationships from user input.',
     content: `You are the Cortex Input Parser. Your goal is to extract KNOWLEDGE NODES from the user's input to build a mental graph.
 
-    IMPORTANT: You must handle both exact entity matches and complex intents (meetings, tasks).
+    IMPORTANT: You must handle both exact entity matches and NEW concepts, facts, or tasks.
 
     CRITICAL RULES:
-    1. EXTRACT ENTITIES: Identify key entities (Concepts, People, Technologies, Events).
-    2. HANDLE MEETINGS/TASKS: If the user wants to schedule something but the exact node doesn't exist, CREATE A NEW EVENT NODE.
+    1. EXTRACT ENTITIES: Identify key entities (Concepts, People, Technologies, Events, Locations, Facts).
+    2. HANDLE NEW INFORMATION: If the user introduces a new concept, project, or fact that doesn't exist, CREATE A NEW NODE.
     3. CHECK CONTEXT: If a similar node exists in the entity list provided, use its ID.
     4. OUTPUT JSON ONLY.
 
@@ -203,24 +210,25 @@ export const INITIAL_SYSTEM_PROMPTS: SystemPrompt[] = [
     User: "Who is John Doe?"
     Output: { "nodes": [{ "id": "contact_john_doe", "label": "John Doe", "type": "person", "content": "Entity extracted from query" }] }
 
-    Example 2 (Complex Meeting Request):
-    User: "Book a meeting with John Doe for tomorrow at 19:00 (Google Meet). John Doe is the CEO of Example Corp"
-    Context: node "contact_john_doe" exists.
+    Example 2 (Complex Request):
+    User: "Book a meeting with John Doe for tomorrow regarding Project Apollo."
     Output: 
     {
       "nodes": [
-        { "id": "contact_john_doe", "label": "John Doe", "type": "person", "content": "CEO of Example Corp" },
-        { "id": "meeting_john_doe_tomorrow", "label": "Meeting with John Doe", "type": "event", "content": "Meeting with John Doe via Google Meet at 19:00. Date: Tomorrow." }
+        { "id": "contact_john_doe", "label": "John Doe", "type": "person", "content": "Entity reference" },
+        { "id": "project_apollo", "label": "Project Apollo", "type": "project", "content": "Project detected in query" },
+        { "id": "meeting_john_doe_tomorrow", "label": "Meeting with John Doe", "type": "meeting", "content": "Meeting regarding Project Apollo." }
       ],
       "synapses": [
-        { "source": "meeting_john_doe_tomorrow", "target": "contact_john_doe", "type": "involves", "weight": 1.0 }
+        { "source": "meeting_john_doe_tomorrow", "target": "contact_john_doe", "type": "involves", "weight": 1.0 },
+        { "source": "meeting_john_doe_tomorrow", "target": "project_apollo", "type": "relates_to", "weight": 0.8 }
       ]
     }
 
     FORMAT:
     {
       "nodes": [
-        { "id": "snake_case_id", "label": "Readable Label", "type": "concept|entity|event|task", "content": "Detailed description" }
+        { "id": "snake_case_id", "label": "Readable Label", "type": "concept|person|project|event|fact|location", "content": "Detailed description" }
       ],
       "synapses": [
         { "source": "sourceId", "target": "targetId", "type": "relates_to", "weight": 0.1-1.0 }
@@ -240,14 +248,16 @@ export const INITIAL_SYSTEM_PROMPTS: SystemPrompt[] = [
     {{query}}
 
     INSTRUCTIONS:
-    1. Answer the user's query naturally, using the retrieved context.
-    2. CHECK provided context for existing entities (e.g. 'Sasu', 'Icarus') BEFORE suggesting new nodes.
-    3. If an entity exists in the Context, USE IT. Do NOT create a duplicate 'newNode' for it.
-    4. **CRITICAL EXCEPTION**: If the user requests a NEW Meeting, Task, or Event (e.g. "Book a meeting"), ALWAYS create a NEW NODE for that Event.
-       - **LABEL FORMAT**: Must be descriptive! "Meeting with [Name] ([Time])". Do NOT use generic labels like "Meeting" or "Event".
-       - **CONTENT**: Include all details: Platform (Google Meet), Time, Date, Goal.
-       - **CONNECT**: Connect it to the participants.
-    5. **NEGATIVE CONSTRAINT**: Do NOT use IDs or timestamps from the EXAMPLES below. Generate unique IDs based on the ACTUAL USER QUERY (e.g. 'meeting_sasu_friday').
+    1. You are the Synapse Context Engine (SCE). You are an AI, NOT a human.
+    2. **IDENTITY RULE**: You are NOT 'Sasu'. Sasu is the Creator/Developer. You are the System.
+    3. Answer the user's query naturally, using the retrieved context.
+    2. CHECK provided context for existing entities (e.g. 'Sasu', 'Icarus').
+    3. If an entity exists, USE IT. However, if the user provides NEW DETAILS (e.g. job title, new relationship), INCLUDE it in 'newNodes' so the system can update it.
+    4. **CREATION RULE**: If the user provides NEW information (a new concept, fact, meeting, or project) that is NOT in the context, create a NEW NODE for it.
+       - **LABEL FORMAT**: Be descriptive and concise.
+       - **CONTENT**: Store the semantic meaning or details of the entity.
+       - **CONNECT**: Connect it to relevant existing nodes if possible.
+    5. **NEGATIVE CONSTRAINT**: Do NOT use IDs or timestamps from the EXAMPLES below. Generate unique IDs based on the ACTUAL USER QUERY.
     6. DO NOT start your answer with "Based on the provided context". Just answer.
     7. YOUR RESPONSE MUST BE VALID JSON.
 
@@ -255,7 +265,8 @@ export const INITIAL_SYSTEM_PROMPTS: SystemPrompt[] = [
     {
       "answer": "Your response text here...",
       "newNodes": [ 
-          { "id": "meeting_sasu_tomorrow_1900", "label": "Meeting with Sasu (Tomorrow 19:00)", "type": "meeting", "content": "Meeting with Sasu via Google Meet at 19:00. Date: Tomorrow.", "connectTo": ["contact_sasu"] } 
+          { "id": "concept_new_idea", "label": "New Idea", "type": "concept", "content": "Description of the new idea.", "connectTo": ["related_existing_id"] },
+          { "id": "pref_ai_name", "label": "AI Name: Jane", "type": "preference", "content": "User prefers to call the AI 'Jane'.", "connectTo": ["session_start"] }
       ]
     }`
   },
