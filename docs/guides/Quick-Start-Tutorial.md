@@ -30,7 +30,7 @@ Open `http://localhost:5173` in your browser.
 
 ### Main Components
 
-**1. Activation Source** (Top Left)
+**1. Active Focus** (Top Left)
 - Select which project/node serves as your "active focus"
 - All spreading activation starts from here
 - Think of it as "what am I currently working on?"

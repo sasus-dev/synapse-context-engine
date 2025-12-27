@@ -30,22 +30,23 @@ The primary data structure representing the entire memory graph.
 interface Node {
   id: string;
   label: string;
-  type: 'project' | 'contact' | 'artifact' | 'preference' | 'behavior' | 'goal';
+  type: 'project' | 'document' | 'contact' | 'preference' | 'behavior' | 'goal' | 'concept' | 'tool' | 'fact';
   metadata?: Record<string, any>;
   heat?: number;              // Temporal relevance (0-1)
   lastAccessed?: number;      // Unix timestamp
   activationThreshold?: number; // Minimum energy to fire (default: 0.3)
   isArchived?: boolean;       // Excluded from active retrieval
+  embedding?: number[];       // Vector representation
 }
 ```
 
 **Node Types:**
 - `project` - Tasks, initiatives, workstreams
-- `contact` - People, organizations, relationships
-- `artifact` - Documents, files, created content
-- `preference` - User settings, style choices
-- `behavior` - Learned patterns, habits
-- `goal` - Persistent objectives (always seed nodes)
+- `document` - Files, artifacts, content
+- `contact` - People, organizations
+- `concept` - Abstract ideas, topics
+- `goal` - Persistent objectives
+- `tool` - Executable capabilities
 
 ### `Edge`
 ```typescript
@@ -77,41 +78,39 @@ interface ActivatedNode {
 ### `EngineConfig`
 ```typescript
 interface EngineConfig {
-  // Spreading Activation
-  activationTheta: number;    // Threshold (0-1, default: 0.30)
-  decayGamma: number;         // Decay rate (0-1, default: 0.85)
-  maxDepth: number;           // Traversal depth (1-5, default: 3)
+  // Physics Parameters
+  gamma: number;              // Decay rate (0-1, default: 0.85)
+  theta: number;              // Activation threshold (0-1, default: 0.30)
+  heatBias: number;           // Recency weight (0-1, default: 0.40)
+  mmrLambda: number;          // Diversity penalty (0-1, default: 0.70)
+  maxActivationDepth: number; // Traversal hops (1-5, default: 3)
   
-  // Temporal Bias
-  heatAlpha: number;          // Recency weight (0-1, default: 0.40)
+  // Features
+  enableHebbian: boolean;     // Enable synaptic plasticity
+  enablePruning: boolean;     // Enable MMR pruning
+  enableSpreadingActivation: boolean;
+  safeMode: boolean;          // Enforce strict checks
   
-  // Context Selection (MMR)
-  mmrLambda: number;          // Relevance vs diversity (0-1, default: 0.70)
-  maxContextNodes: number;    // Top-K selection (5-30, default: 15)
-  
-  // Hebbian Learning
-  learningRate: number;       // η in Δw = η(E_i × E_j - w), default: 0.05
-  
-  // Safety
-  enableContradictionDetection: boolean; // Default: true
-  enableArchiving: boolean;   // Auto-archive stale nodes, default: true
-  archiveThreshold: number;   // Days of inactivity, default: 30
+  // LLM Integration
+  extractionProvider: 'gemini' | 'ollama' | 'groq' | 'rules-only';
+  inferenceProvider: 'gemini' | 'ollama' | 'groq';
 }
 ```
 
 ### Default Configuration
 ```typescript
 const DEFAULT_CONFIG: EngineConfig = {
-  activationTheta: 0.30,
-  decayGamma: 0.85,
-  maxDepth: 3,
-  heatAlpha: 0.40,
+  gamma: 0.85,
+  theta: 0.30,
+  heatBias: 0.40,
   mmrLambda: 0.70,
-  maxContextNodes: 15,
-  learningRate: 0.05,
-  enableContradictionDetection: true,
-  enableArchiving: true,
-  archiveThreshold: 30
+  maxActivationDepth: 3,
+  enableHebbian: true,
+  enablePruning: true,
+  enableSpreadingActivation: true,
+  safeMode: true,
+  extractionProvider: 'groq',
+  inferenceProvider: 'groq'
 };
 ```
 

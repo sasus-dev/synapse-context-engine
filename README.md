@@ -71,7 +71,7 @@ The Native App relies on **Tauri v2**, which compiles a high-performance binary 
 | **Visualization** | Lucide Icons, Recharts, Custom Graph Renderer |
 | **Math Engine** | Custom Hypergraph (TypeScript) |
 | **Desktop** | Tauri 2.0 + Rust (Native ARM64/x64) |
-| **AI Integration** | Google Gemini, Groq (Llama 3), Ollama (Local) |
+| **AI Integration** | Google Gemini, Groq, Ollama (Local) |
 
 ---
 
@@ -247,7 +247,7 @@ Not about making AI more capable—about making it **safer as it becomes more ca
 **Support This Work**  
 If SCE helps your research or project, consider supporting its development:
 
-[💝 Sponsor via GitHub](https://github.com/sponsors/sasus-dev) • [☕ Buy me a coffee](https://buymeacoffee.com/sasus) • [🌟 Star the repo](https://github.com/sasus-dev/synapse-context-engine)
+[💝 Sponsor via GitHub](https://github.com/sponsors/sasus-dev) • [🌟 Star the repo](https://github.com/sasus-dev/synapse-context-engine)
 
 ---
 
