@@ -5,8 +5,8 @@ Welcome to the SCE documentation hub! This wiki provides comprehensive informati
 ## 📖 Quick Navigation
 
 ### 🚀 Getting Started
-- [Installation Guide](Installation-Guide) - Setup for web and desktop
-- [Quick Start Tutorial](Quick-Start-Tutorial) - Your first graph
+- [Installation Guide](../guides/Quick-Start-Tutorial.md#step-1-installation-2-minutes) - Setup for web and desktop
+- [Quick Start Tutorial](../guides/Quick-Start-Tutorial.md) - Your first graph
 - [Core Concepts Overview](Core-Concepts-Overview) - Understanding SCE
 
 ### 🏗️ Architecture
@@ -25,7 +25,7 @@ Welcome to the SCE documentation hub! This wiki provides comprehensive informati
 ### 🔬 Research
 - [Theoretical Foundation](Theoretical-Foundation) - Academic background
 - [Benchmark Results](Benchmark-Results) - Performance comparisons
-- [Open Research Questions](Open-Research-Questions) - Opportunities
+- [Open Questions](../notes/sasus_notes_01.md) - Opportunities
 - [Related Work](Related-Work) - Context and comparisons
 
 ### 🛡️ AI Safety
@@ -35,8 +35,8 @@ Welcome to the SCE documentation hub! This wiki provides comprehensive informati
 - [Red Teaming Guide](Red-Teaming-Guide) - Security testing
 
 ### 🛠️ Development
-- [Contributing Guide](../CONTRIBUTING.md) - How to contribute
-- [API Reference](API-Reference) - Function documentation
+- [Contributing Guide](../../CONTRIBUTING.md) - How to contribute
+- [API Reference](../guides/API-Reference.md) - Function documentation
 - [Testing Strategy](Testing-Strategy) - Quality assurance
 - [Architecture Decisions](Architecture-Decisions) - Design rationale
 
@@ -67,11 +67,11 @@ See [Update Log](https://github.com/sasus-dev/synapse-context-engine/blob/main/d
 
 - **Discussions**: [GitHub Discussions](https://github.com/sasus-dev/synapse-context-engine/discussions)
 - **Issues**: [Bug Reports & Features](https://github.com/sasus-dev/synapse-context-engine/issues)
-- **Paper**: [SCE Architecture PDF](https://github.com/sasus-dev/synapse-context-engine/blob/main/docs/blueprints/sce_initial_concept.pdf)
+- **Paper**: [SCE Architecture PDF](../blueprints/sce_initial_concept.pdf)
 
 ## 🔗 External Resources
 
-- [Academic Paper](https://github.com/sasus-dev/synapse-context-engine/blob/main/docs/blueprints/sce_initial_concept.pdf)
+- [Academic Paper](../blueprints/sce_initial_concept.pdf)
 - [GitHub Repository](https://github.com/sasus-dev/synapse-context-engine)
 - [Author Website](https://sasus.dev)
 

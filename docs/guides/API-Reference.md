@@ -538,7 +538,7 @@ try {
 
 - [Architecture Paper](../blueprints/sce_initial_concept.pdf) - Theoretical foundation
 - [Contributing Guide](../../CONTRIBUTING.md) - Development workflow
-- [Examples](../examples/) - Complete integration demos
+- [Demonstrations](../../old_demo/) - Legacy integration demos
 
 ---
 

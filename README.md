@@ -112,7 +112,7 @@ The Native App relies on **Tauri v2**, which compiles a high-performance binary 
 - Advanced pruning strategies
 - Community feedback integration
 
-**[View Full Changelog](CHANGELOG.md)**
+**[View Update Logs](docs/updates/)**
 
 ---
 
