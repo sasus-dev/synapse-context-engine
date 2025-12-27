@@ -32,8 +32,8 @@ Unlike vector databases that retrieve isolated chunks based on similarity, SCE m
 
 ## 🚀 Quick Start
 
-### Option 1: Web Demo (No Setup)
-Open [`demo/sce_demo.tsx`](demo/sce_demo.tsx) or [`demo/sce_demo_with_brain_behavior.tsx`](demo/sce_demo_with_brain_behavior.tsx) in **Claude Artifacts** for an instant, interactive visualization.
+### Option 1: Old Web Demo (Claude Artifact - No Setup)
+Open [`old_demo/sce_demo.tsx`](old_demo/sce_demo.tsx) or [`old_demo/sce_demo_with_brain_behavior.tsx`](old_demo/sce_demo_with_brain_behavior.tsx) in **Claude Artifacts** for an instant, interactive visualization.
 
 ### Option 2: Run Locally (Web)
 Runs the interactive visualization in your browser.
@@ -71,7 +71,7 @@ The Native App relies on **Tauri v2**, which compiles a high-performance binary 
 | **Visualization** | Lucide Icons, Recharts, Custom Graph Renderer |
 | **Math Engine** | Custom Hypergraph (TypeScript) |
 | **Desktop** | Tauri 2.0 + Rust (Native ARM64/x64) |
-| **AI Integration** | Google GenAI SDK (Gemini) |
+| **AI Integration** | Google Gemini, Groq (Llama 3), Ollama (Local) |
 
 ---
 
