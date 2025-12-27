@@ -1,6 +1,6 @@
-# Architectural Questions (Dec 26, 2025)
+# Architectural Notes (Dec 26, 2025)
 
-## 🧠 Core Architecture Questions
+## 🧠 Core Architecture Related notes
 
 ### 1. **Hyperedge Activation Semantics**
 

@@ -6,15 +6,15 @@ import { ArrowLeft, History, FileText, X, CircleHelp } from 'lucide-react';
 // Import Markdown Content (requires Vite ?raw plugin)
 // @ts-ignore
 // @ts-ignore
-import Update20251226 from '../docs/updates/Update_2025_12_26.md?raw';
+import UpdateV021 from '../docs/updates/Update_v0.2.1.md?raw';
 // @ts-ignore
-import QuestionsContent from '../docs/questions/Questions_01.md?raw';
+import NotesContent from '../docs/notes/sasus_notes_01.md?raw';
 // Other updates commented out to match user request
 // import Update20251225 from '../docs/updates/Update_2025_12_25.md?raw';
 // import Update20251220 from '../docs/updates/Update_2025_12_20.md?raw';
 
 const UPDATES = [
-    { id: 'v0.2.1', date: 'Dec 26, 2025', title: 'Academic Refinement (Alpha)', content: Update20251226, type: 'major' },
+    { id: 'v0.2.1', date: 'Dec 26, 2025', title: 'Academic Refinement (Alpha)', content: UpdateV021, type: 'major' },
     {
         id: 'v0.2.0', date: 'Dec 25, 2025', title: 'SCE Demo (Tauri v2)', type: 'minor',
         content: `# SCE Demo (Tauri v2)\n\n**Release Note**\n\nSuccessful migration to Tauri v2. Performance improvements and native window handling.`
@@ -41,9 +41,9 @@ const UpdatesPage = ({ onSelectUpdate }: { onSelectUpdate: (update: any) => void
                     <button
                         onClick={() => onSelectUpdate({
                             id: 'FAQ',
-                            date: 'Open Questions',
-                            title: 'Architecture Questions',
-                            content: QuestionsContent || '# No Questions Found'
+                            date: 'Architecture Notes',
+                            title: 'Research Directions',
+                            content: NotesContent || '# No Notes Found'
                         })}
                         className="mr-12 p-3 bg-white/5 rounded-full hover:bg-white/10 transition-colors group" title="View Documentation">
                         <CircleHelp className="w-6 h-6 text-slate-500 group-hover:text-purple-400 transition-colors" />
@@ -88,7 +88,7 @@ const UpdatesPage = ({ onSelectUpdate }: { onSelectUpdate: (update: any) => void
                                 <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-emerald-900/20 text-emerald-400">
                                     v0.0.1
                                 </span>
-                                <span className="text-xs font-mono text-slate-500 uppercase">Nov 2024</span>
+                                <span className="text-xs font-mono text-slate-500 uppercase">Dec 2025</span>
                             </div>
                             <h3 className="text-xl font-bold text-slate-300 mb-2">SCE Project Start</h3>
                             <p className="text-sm text-slate-500">
