@@ -12,7 +12,7 @@ Welcome to the SCE documentation hub.
 ## 🤝 Development & Research
 
 - **[Contributing Guide](https://github.com/sasus-dev/synapse-context-engine/blob/main/CONTRIBUTING.md)**: How to set up for development.
-- **[Research Notes](https://github.com/sasus-dev/synapse-context-engine/blob/main/docs/notes/sasus_notes_01.md)**: Open questions and architectural musings.
+- **[Research Notes](https://github.com/sasus-dev/synapse-context-engine/blob/main/docs/notes/architecture_notes.md)**: Open questions and architectural musings.
 - **[Security Policy](https://github.com/sasus-dev/synapse-context-engine/blob/main/SECURITY.md)**: Reporting vulnerabilities and safety guidelines.
 
 ---

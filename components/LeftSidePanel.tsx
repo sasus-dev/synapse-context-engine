@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   BrainCircuit, LayoutDashboard, Search, Shield, BarChart3,
-  Database, Settings, History, X, ChevronLeft, ChevronRight, FileCode, Box, BookOpen
+  Database, Settings, History, X, ChevronLeft, ChevronRight, FileCode, Box, BookOpen, Users
 } from 'lucide-react';
 import { AppView, AuditLog } from '../types';
 
@@ -56,25 +56,26 @@ const LeftSidePanel: React.FC<LeftSidePanelProps> = ({
         </div>
 
         <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto no-scrollbar">
-          <NavItem isCollapsed={isCollapsed} active={view === 'dashboard'} icon={LayoutDashboard} label="DASHBOARD" onClick={() => setView('dashboard')} />
-          <NavItem isCollapsed={isCollapsed} active={view === 'explorer'} icon={Search} label="EXPLORER" onClick={() => setView('explorer')} />
-          <NavItem isCollapsed={isCollapsed} active={view === 'prompts'} icon={FileCode} label="PROMPTS" onClick={() => setView('prompts')} />
-          <NavItem isCollapsed={isCollapsed} active={view === 'rules'} icon={Shield} label="SECURITY" onClick={() => setView('rules')} />
-          <NavItem isCollapsed={isCollapsed} active={view === 'data_rules'} icon={FileCode} label="DATA EXTRACTION" onClick={() => setView('data_rules')} />
+          <NavItem isCollapsed={isCollapsed} isActive={view === 'dashboard'} icon={LayoutDashboard} label="DASHBOARD" onClick={() => setView('dashboard')} />
+          <NavItem isCollapsed={isCollapsed} isActive={view === 'explorer'} icon={Search} label="EXPLORER" onClick={() => setView('explorer')} />
+          <NavItem isCollapsed={isCollapsed} isActive={view === 'prompts'} icon={FileCode} label="PROMPTS" onClick={() => setView('prompts')} />
+          <NavItem isCollapsed={isCollapsed} isActive={view === 'rules'} icon={Shield} label="SECURITY" onClick={() => setView('rules')} />
+          <NavItem isCollapsed={isCollapsed} isActive={view === 'data_rules'} icon={FileCode} label="DATA EXTRACTION" onClick={() => setView('data_rules')} />
           {/* Eval Removed */}
-          <NavItem isCollapsed={isCollapsed} active={view === 'sessions'} icon={Database} label="SESSIONS" onClick={() => setView('sessions')} />
+          <NavItem isCollapsed={isCollapsed} isActive={view === 'identities'} icon={Users} label="IDENTITIES" onClick={() => setView('identities')} />
+          <NavItem isCollapsed={isCollapsed} isActive={view === 'sessions'} icon={Database} label="DATASETS" onClick={() => setView('sessions')} />
 
           <div className="h-px bg-white/5 my-2 mx-4" />
 
           {/* Architecture Removed */}
-          <NavItem isCollapsed={isCollapsed} active={view === 'math'} icon={BrainCircuit} label="ENGINE LOGIC" onClick={() => setView('math')} />
-          <NavItem isCollapsed={isCollapsed} active={view === 'concepts'} icon={BookOpen} label="CONCEPTS" onClick={() => setView('concepts')} />
-          <NavItem isCollapsed={isCollapsed} active={view === 'updates'} icon={History} label="UPDATES" onClick={() => setView('updates')} />
+          <NavItem isCollapsed={isCollapsed} isActive={view === 'math'} icon={BrainCircuit} label="ENGINE LOGIC" onClick={() => setView('math')} />
+          <NavItem isCollapsed={isCollapsed} isActive={view === 'concepts'} icon={BookOpen} label="CONCEPTS" onClick={() => setView('concepts')} />
+          <NavItem isCollapsed={isCollapsed} isActive={view === 'updates'} icon={History} label="UPDATES" onClick={() => setView('updates')} />
 
           <div className="h-px bg-white/5 my-2 mx-4" />
 
-          <NavItem isCollapsed={isCollapsed} active={view === 'about'} icon={BrainCircuit} label="ABOUT" onClick={() => setView('about')} />
-          <NavItem isCollapsed={isCollapsed} active={view === 'integrations' || view === 'settings'} icon={Settings} label="SETTINGS" onClick={() => setView('settings')} />
+          <NavItem isCollapsed={isCollapsed} isActive={view === 'about'} icon={BrainCircuit} label="ABOUT" onClick={() => setView('about')} />
+          <NavItem isCollapsed={isCollapsed} isActive={view === 'integrations' || view === 'settings'} icon={Settings} label="SETTINGS" onClick={() => setView('settings')} />
         </nav>
 
         {!isCollapsed && (

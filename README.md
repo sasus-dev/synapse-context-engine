@@ -83,7 +83,7 @@ The Native App relies on **Tauri v2**, which compiles a high-performance binary 
 | [🔧 API Reference](docs/guides/API-Reference.md) | Integration guide & function docs |
 | [🚀 Quick Start Tutorial](docs/guides/Quick-Start-Tutorial.md) | 10-minute hands-on guide |
 | [📋 Detailed Updates](docs/updates/) | Update logs |
-| [📝 Architecture Notes](docs/notes/sasus_notes_01.md) | Research directions & considerations |
+| [📝 Architecture Notes](docs/notes/architecture_notes.md) | Research directions & considerations |
 | [🤝 Contributing Guide](CONTRIBUTING.md) | How to contribute |
 | [🛡️ Security Policy](SECURITY.md) | Responsible disclosure |
 
@@ -93,7 +93,7 @@ The Native App relies on **Tauri v2**, which compiles a high-performance binary 
 
 **Status:** Active Research & Development  
 **API Stability:** Expect breaking changes  
-**Development Philosophy:** Deliberately kept minimal to encourage experimentation and exploration. See [architecture notes](docs/notes/sasus_notes_01.md) for research directions and considerations.
+**Development Philosophy:** Deliberately kept minimal to encourage experimentation and exploration. See [architecture notes](docs/notes/architecture_notes.md) for research directions and considerations.
 
 ### ✅ Implemented
 - Hypergraph Engine & Spreading Activation
@@ -180,7 +180,7 @@ These questions can only be answered by the community testing, probing, and push
 
 **Author's Note:** This architecture was developed by a single developer, not a team, nor a research lab. Because of this, I welcome every researcher and developer to explore the depths of this architecture. The potential is there, but it needs more minds to experiment with it.
 
-**Important:** I'm intentionally keeping the core implementation minimal to avoid constraining exploration. The goal is to provide a working foundation that others can build upon, modify, and take in new directions. See [my architecture notes](docs/notes/sasus_notes_01.md) for specific areas needing investigation.
+**Important:** I'm intentionally keeping the core implementation minimal to avoid constraining exploration. The goal is to provide a working foundation that others can build upon, modify, and take in new directions. See [my architecture notes](docs/notes/architecture_notes.md) for specific areas needing investigation.
 
 ### 🛡️ For AI Safety Practitioners
 - Adversarial testing and red-teaming
@@ -196,7 +196,7 @@ These questions can only be answered by the community testing, probing, and push
 - Integration examples and tutorials
 - Custom node type implementations
 
-**See [my architecture notes](docs/notes/sasus_notes_01.md) for specific research directions**
+**See [my architecture notes](docs/notes/architecture_notes.md) for specific research directions**
 
 ---
 

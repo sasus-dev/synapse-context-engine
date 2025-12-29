@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { EngineConfig } from '../types';
 import { Sliders, Activity, Zap, Flame, GitBranch, Settings2, AlertTriangle, Lock, Unlock, RotateCcw } from 'lucide-react';
+import ChatHistory from './ChatHistory';
 
 interface CalculusTuningProps {
   config: EngineConfig;
@@ -17,7 +18,7 @@ const CalculusTuning: React.FC<CalculusTuningProps> = ({ config, setConfig }) =>
         <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Engine Calculus</h3>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setConfig({ theta: 0.25, gamma: 0.85, maxActivationDepth: 3, heatBias: 0.4 })}
+            onClick={() => updateConfig({ theta: 0.25, gamma: 0.85, maxActivationDepth: 3, heatBias: 0.4 })}
             title="Restore Defaults"
             className="text-slate-600 hover:text-indigo-400 transition-colors"
           >
@@ -121,6 +122,13 @@ const CalculusTuning: React.FC<CalculusTuningProps> = ({ config, setConfig }) =>
           <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
             Influence of node historical heat on current activation pathing.
           </p>
+        </div>
+
+        <div className="space-y-3 pt-4 border-t border-white/5">
+          <ChatHistory
+            memoryWindow={config.memoryWindow || 0}
+            setMemoryWindow={(v) => updateConfig({ memoryWindow: v })}
+          />
         </div>
       </div>
     </div>

@@ -67,6 +67,6 @@ If you want to try these legacy demos:
 ## 📚 Learn More
 
 - [Current Architecture](../docs/blueprints/sce_initial_concept.pdf)
-- [Architecture Notes](../docs/notes/sasus_notes_01.md)
+- [Architecture Notes](../docs/notes/architecture_notes.md)
 - [Latest Updates](../docs/updates/)
 - [Main README](../README.md)

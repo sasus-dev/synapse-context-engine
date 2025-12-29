@@ -1,21 +1,37 @@
 import React from 'react';
 import { Command, Menu, Github, PanelRight, PanelRightClose } from 'lucide-react'; // ChevronDown removed as used in Dropdown
-import { AppView, Session } from '../types';
-import SessionDropdown from './SessionDropdown';
+import { AppView, Dataset } from '../types';
+import DatasetDropdown from './DatasetDropdown';
 
 interface TopBar1Props {
   view: AppView;
   onMenuToggle: () => void;
   isRightCollapsed?: boolean;
   setIsRightCollapsed?: (v: boolean) => void;
-  sessions: Session[];
-  activeSessionId: string;
-  setActiveSessionId: (id: string) => void;
+  isLeftCollapsed?: boolean;
+  setIsLeftCollapsed?: (v: boolean) => void;
+  setView: (view: AppView) => void;
+
+  // Dataset Management
+  datasets: Dataset[];
+  activeDatasetId: string;
+  setActiveDatasetId: (id: string) => void;
+
+  // Handlers (Renamed for clarity but kept compatible where possible)
+  onImportSession?: () => void;
+  onExportSession?: () => void;
+  onRenameSession?: (id: string, name: string) => void;
+  onDeleteSession?: (id: string) => Promise<void>;
+
+  // Legacy / Transitional Props
+  sessions?: any;
+  activeSessionId?: any;
+  setActiveSessionId?: any;
 }
 
 const AppHeader: React.FC<TopBar1Props> = ({
   view, onMenuToggle, isRightCollapsed, setIsRightCollapsed,
-  sessions, activeSessionId, setActiveSessionId
+  datasets, activeDatasetId, setActiveDatasetId
 }) => {
   return (
     <header className="h-[72px] border-b border-white/5 bg-black/20 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-[50] transition-all duration-300 pr-6">
@@ -32,15 +48,15 @@ const AppHeader: React.FC<TopBar1Props> = ({
               <Command className="w-4 h-4 text-indigo-400" />
             </div>
             <h2 className="text-[12px] font-black uppercase tracking-[0.2em] text-white flex items-center">
-              <span className="opacity-30">{view.toUpperCase()}</span>
+              <span className="opacity-30">{view === 'sessions' ? `DATASETS (${datasets.length})` : view.toUpperCase()}</span>
               <span className="text-slate-800 mx-3 font-normal">/</span>
-
-              <SessionDropdown
-                sessions={sessions}
-                activeSessionId={activeSessionId}
-                setActiveSessionId={setActiveSessionId}
+              {/* DATASET DROPDOWN */}
+              <DatasetDropdown
+                datasets={datasets}
+                activeDatasetId={activeDatasetId}
+                setActiveDatasetId={setActiveDatasetId}
+                className="hidden md:block transition-opacity opacity-100 hover:opacity-100"
               />
-
             </h2>
           </div>
         </div>
@@ -56,11 +72,6 @@ const AppHeader: React.FC<TopBar1Props> = ({
             <Github className="w-4 h-4 text-black group-hover:scale-110 transition-transform" />
             <span className="text-[11px] font-black uppercase text-black tracking-wider">GitHub</span>
           </a>
-
-          {/* System Status - Mobile/Desktop */}
-          {/* System Status - Mobile/Desktop */}
-          {/* System Status - Mobile/Desktop */}
-          {/* Badge Removed */}
 
           {/* Right Panel Toggle */}
           {setIsRightCollapsed && (

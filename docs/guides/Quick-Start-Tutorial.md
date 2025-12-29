@@ -266,7 +266,7 @@ Future feature: Maintain 3 active contexts simultaneously
 ### Learn More
 - Read [Architecture Paper](../blueprints/sce_initial_concept.pdf)
 - Explore [API Reference](API-Reference.md)
-- Check [Open Questions](../notes/sasus_notes_01.md)
+- Check [Open Questions](../notes/architecture_notes.md)
 
 ### Contribute
 - Try [red teaming](../../SECURITY.md#security-research-welcome) the system

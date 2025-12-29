@@ -293,7 +293,7 @@ Violations should be reported to the project maintainer. All complaints will be 
 
 New to the project? Start here:
 1. [Architecture Paper](docs/blueprints/sce_initial_concept.pdf) - Theoretical foundation
-2. [Open Questions](docs/notes/sasus_notes_01.md) - Research opportunities
+2. [Open Questions](docs/notes/architecture_notes.md) - Research opportunities
 3. [Latest Updates](docs/updates/) - Recent changes
 4. [Code Structure](docs/architecture/code-structure.md) - Codebase overview
 

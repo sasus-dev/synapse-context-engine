@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { ChatMessage, NodeType } from '../types';
-import { MessageSquare, RefreshCw, Zap } from 'lucide-react';
+import { ChatMessage, NodeType, Identity, GlobalConfig } from '../types';
+import { dbService } from '../services/dbService';
+import { MessageSquare, RefreshCw, Zap, User, Bot, ChevronDown, Plus } from 'lucide-react';
 import ExtractionDropdown from './chat/ExtractionDropdown';
 import ChatMessageItem from './chat/ChatMessageItem';
 import QuickActionBtn from './chat/QuickActionBtn';
@@ -26,11 +27,97 @@ interface ChatViewProps {
   selectedNodeId?: string | null;
   onTriggerCreate?: () => void;
   contextOptions?: any[];
+  // Identity Props
+  identities?: Identity[];
+  activeUserIdentityId?: string;
+  activeAiIdentityId?: string;
+  onUpdateSession?: (updates: Partial<any>) => void; // Using 'any' to match App.tsx mapping for now
 }
+
+const IdentitySelector = ({
+  type, value, options, onChange, icon: Icon, placeholder
+}: {
+  type: 'user' | 'ai',
+  value?: string,
+  options: Identity[],
+  onChange: (id: string) => void,
+  icon: any, // Using 'any' for Lucide icon component type simplicity
+  placeholder: string
+}) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-select first if invalid or empty
+  useEffect(() => {
+    if (options.length > 0 && !options.find(o => o.id === value)) {
+      // If current value is invalid, pick the first one
+      onChange(options[0].id);
+    }
+  }, [options, value, onChange]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(o => o.id === value) || options[0];
+
+  return (
+    <div className="relative z-[60]" ref={containerRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1d26] hover:bg-white/5 border border-white/5 hover:border-white/20 rounded-lg transition-all"
+      >
+        <Icon className={`w-3.5 h-3.5 ${type === 'user' ? 'text-blue-400' : 'text-purple-400'}`} />
+        <div className="flex flex-col items-start min-w-[80px]">
+          <span className="text-[9px] uppercase font-bold text-slate-500 tracking-wider leading-none mb-0.5">{placeholder}</span>
+          <span className="text-[11px] font-medium text-white leading-none truncate max-w-[100px]">
+            {selectedOption ? selectedOption.name : 'Select...'}
+          </span>
+        </div>
+        <ChevronDown className={`w-3 h-3 text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-2 w-[220px] bg-[#0a0a0f] border border-white/10 rounded-xl shadow-2xl p-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+          <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+            {options.map(opt => (
+              <button
+                key={opt.id}
+                onClick={() => { onChange(opt.id); setIsOpen(false); }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors mb-0.5
+                      ${value === opt.id ? (type === 'user' ? 'bg-blue-900/20 text-blue-200' : 'bg-purple-900/20 text-purple-200') : 'text-slate-400 hover:bg-white/5 hover:text-white'}
+                    `}
+              >
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-bold">{opt.name}</span>
+                  <span className="text-[9px] opacity-60 uppercase tracking-wider">{opt.style}</span>
+                </div>
+                {value === opt.id && <div className={`w-1.5 h-1.5 rounded-full ${type === 'user' ? 'bg-blue-400' : 'bg-purple-400'}`} />}
+              </button>
+            ))}
+          </div>
+          <div className="p-1 border-t border-white/5 mt-1">
+            <div className="flex-1 opacity-50 text-[10px] uppercase font-bold text-slate-500 tracking-widest flex items-center gap-2">
+              <MessageSquare className="w-3 h-3" />
+              <span>Secure Channel ({options.length})</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ChatView: React.FC<ChatViewProps> = ({
   chatHistory, query, setQuery, handleQuery, isProcessing, setSelectedNodeId, isActionsCollapsed, setIsActionsCollapsed,
-  workingMemory = [], pushToWorkingMemory, removeFromWorkingMemory, graph, config, setConfig, onAddNode, onUpdateNode, onTriggerCreate, contextOptions = [], ...props
+  workingMemory = [], pushToWorkingMemory, removeFromWorkingMemory, graph, config, setConfig, onAddNode, onUpdateNode, onTriggerCreate, contextOptions = [],
+  identities = [], activeUserIdentityId, activeAiIdentityId, onUpdateSession, ...props
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -46,6 +133,51 @@ const ChatView: React.FC<ChatViewProps> = ({
     setTimeout(() => setQuery(''), 0);
   };
 
+  // SELF-CONTAINED LOGIC (Requested by User)
+  const [localIdentities, setLocalIdentities] = React.useState<Identity[]>([]);
+  const [localActiveUserId, setLocalActiveUserId] = React.useState<string>('user_john');
+  const [localActiveAiId, setLocalActiveAiId] = React.useState<string>('ai_jade');
+
+  // Load correct state on MOUNT via DB Service (Local Storage)
+  React.useEffect(() => {
+    const loadIds = async () => {
+      try {
+        const config = await dbService.loadGlobalConfig();
+        // Fallback safety (if LS is absolutely empty for some reason, though App.tsx should start it)
+        const safeIds = (config.identities && config.identities.length > 0)
+          ? config.identities
+          : [
+            { id: 'user_john', type: 'user' as const, name: 'John Doe', role: 'Default', style: 'Direct', content: 'Fallback' },
+            { id: 'ai_jade', type: 'ai' as const, name: 'Jade', role: 'AI', style: 'Helpful', content: 'AI' }
+          ];
+        setLocalIdentities(safeIds);
+        setLocalActiveUserId(config.activeUserIdentityId || 'user_john');
+        setLocalActiveAiId(config.activeAiIdentityId || 'ai_jade');
+      } catch (e) { console.error("ChatView Load Failed", e); }
+    };
+    loadIds();
+
+    // Subscribe to updates? Only if we add an event bus later.
+    // For now, assume this view holds the truth.
+  }, []);
+
+  // Update Handlers
+  const handleUpdateIdentity = async (type: 'user' | 'ai', id: string) => {
+    if (type === 'user') setLocalActiveUserId(id);
+    if (type === 'ai') setLocalActiveAiId(id);
+
+    // Persist immediately
+    const currentConfig = await dbService.loadGlobalConfig();
+    const updates: Partial<GlobalConfig> = type === 'user' ? { activeUserIdentityId: id } : { activeAiIdentityId: id };
+    await dbService.saveGlobalConfig({ ...currentConfig, ...updates });
+  };
+
+  const effectiveIdentities = localIdentities;
+  const userIdentities = effectiveIdentities.filter(i => i.type === 'user');
+  const aiIdentities = effectiveIdentities.filter(i => i.type === 'ai');
+
+
+
   return (
     <div className="flex h-full w-full gap-4 overflow-hidden p-6 md:p-8">
       {/* 1. Main Chat Area */}
@@ -53,13 +185,28 @@ const ChatView: React.FC<ChatViewProps> = ({
         {/* Header */}
         <div className="px-6 py-4 border-b border-white/5 bg-white/5 flex items-center justify-between shrink-0 backdrop-blur-md z-40 transition-all rounded-t-[2rem]">
 
-          <div className="flex-1 opacity-50 text-[10px] uppercase font-bold text-slate-500 tracking-widest flex items-center gap-2">
-            <MessageSquare className="w-3 h-3" />
-            <span>Secure Channel</span>
+          <div className="flex items-center gap-4">
+            {/* Identity Selectors - GLOBAL CONFIG */}
+            <IdentitySelector
+              type="user"
+              placeholder="User Profile"
+              icon={User}
+              value={activeUserIdentityId}
+              options={userIdentities}
+              onChange={(id) => onUpdateSession && onUpdateSession({ activeUserIdentityId: id })}
+            />
+            <div className="h-4 w-[1px] bg-white/10" />
+            <IdentitySelector
+              type="ai"
+              placeholder="AI Persona"
+              icon={Bot}
+              value={activeAiIdentityId}
+              options={aiIdentities}
+              onChange={(id) => onUpdateSession && onUpdateSession({ activeAiIdentityId: id })}
+            />
           </div>
 
-          <div className="h-4 w-[1px] bg-white/10 mx-2 hidden md:block" />
-          <div className="hidden md:flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             <ExtractionDropdown config={config} setConfig={setConfig} />
           </div>
         </div>
@@ -107,10 +254,14 @@ const ChatView: React.FC<ChatViewProps> = ({
       {/* 2. Quick Actions Sidebar */}
       <div className="w-[240px] hidden xl:flex flex-col gap-4 shrink-0 pt-2">
         <div className="flex flex-col gap-6 h-full">
+
           <div className="flex items-center gap-2 pb-4 border-b border-white/5 px-1">
             <Zap className="w-4 h-4 text-slate-500" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Quick Comms</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Quick Actions</span>
           </div>
+
+
+          {/* Identity Selectors moved to Header */}
           <div className="space-y-4 overflow-y-auto custom-scrollbar pr-1">
             <div className="space-y-2">
               <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest pl-1">SCE Standard</span>

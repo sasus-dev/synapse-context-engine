@@ -1,0 +1,23 @@
+name: Publish Wiki
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/wiki/**'
+  workflow_dispatch:
+
+jobs:
+  sync-wiki:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      
+      - name: Sync Wiki
+        uses: Andrew-Chen-Wang/github-wiki-action@v4
+        with:
+          wiki-folder: docs/wiki

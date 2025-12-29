@@ -1,6 +1,6 @@
 [package]
 name = "synapse-context-engine"
-version = "0.1.0"
+version = "0.3.0"
 description = "Synapse Context Engine (Demo)"
 authors = ["Sasu"]
 edition = "2021"
@@ -22,4 +22,6 @@ tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+tauri-plugin-store = "2"
 

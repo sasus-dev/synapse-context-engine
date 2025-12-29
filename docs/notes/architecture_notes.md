@@ -14,7 +14,7 @@
 - **Configuration B (Proportional):** Energy splits based on node count.
 - **Configuration C (Thresholds):** AND-gate logic. Requires multiple inputs to fire.
 
-**✅ Decision (v0.2.1):** I chose **Configuration C**.
+**✅ Decision (v0.2.1):** I implemented **Configuration C**.
 I implemented `activationThreshold` on Nodes. A node requires cumulative incoming energy $\sum E_{in} > \theta$ to fire. This mimics biological "Action Potentials" and reduces noise in dense graphs, effectively creating "soft" hyperedges without an explicit table structure.
 
 ---
@@ -126,3 +126,21 @@ Proposed algorithm:
 1. Replay high-activation paths from daily logs.
 2. Short-circuit frequent paths ($A \to B \to C$ becomes $A \to C$).
 3. Cluster dense subgraphs into abstract "Concept" nodes.
+
+---
+
+## ⚙️ Synaptic Weight Configuration (v0.3.0)
+
+### 12. Structural vs. Content Weighting
+*Hypothesis: How to ensure the Knowledge Graph maintains a stable skeleton while allowing flexible learning?*
+
+**✅ Decision:** I implemented a dual-weighting strategy for the Auto-Connect (Mesh) logic.
+
+1.  **Backbone (Table-Mesh):** `0.85`
+    *   **Rationale**: These form the rigid skeleton. Weights of `0.85` are significantly above the decay threshold (`0.30`), ensuring tables remain interconnected even if rarely traversed. They allow slight plasticity but prevent structural collapse.
+
+2.  **Content (Item-Table):** `0.55`
+    *   **Rationale**: 
+        *   **Visibility**: Starts securely above `theta` (`0.30`) for immediate searchability.
+        *   **Headroom**: Leaves `0.45` capacity for Hebbian Learning ($w \to 1.0$). Frequently accessed concepts can nearly double in strength.
+        *   **Decay Buffer**: Provides a safety margin ($0.55 \to 0.30$) before unused nodes become invisible/pruned.

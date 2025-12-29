@@ -63,6 +63,7 @@ export interface EngineConfig {
   safeMode: boolean;
   repulsionStrength?: number;
   hybridRules: boolean;
+  memoryWindow?: number; // 1-10 Slider
 
   // Pipeline Configuration
   extractionProvider: LLMProvider | 'rules-only' | 'none';
@@ -183,7 +184,7 @@ export interface ExtractedNode {
 
 export type PipelineStage = 'idle' | 'activating' | 'querying' | 'complete' | 'security_blocked';
 
-export type AppView = 'dashboard' | 'explorer' | 'chat' | 'prompts' | 'eval' | 'sessions' | 'rules' | 'data_rules' | 'math' | 'concepts' | 'architecture' | 'about' | 'settings' | 'integrations' | 'updates';
+export type AppView = 'dashboard' | 'explorer' | 'chat' | 'prompts' | 'eval' | 'sessions' | 'rules' | 'data_rules' | 'math' | 'concepts' | 'architecture' | 'about' | 'settings' | 'integrations' | 'updates' | 'identities';
 
 export interface SecurityRule {
   id: number;
@@ -227,24 +228,52 @@ export interface BenchmarkResult {
   configSnapshot?: EngineConfig;
 }
 
-export interface Session {
+// IDENTITY SYSTEM
+export interface Identity {
+  id: string;
+  type: 'user' | 'ai';
+  name: string;
+  role: string;
+  style: string;
+  content: string; // Bio or System Instruction
+  avatar?: string;
+}
+
+// DATASET: Pure Data Container (Graph + Chat History)
+export interface Dataset {
   id: string;
   name: string;
   created: number;
   lastActive: number;
 
-  // Data Isolation
+  // Data Content
   graph: KnowledgeGraph;
   chatHistory: ChatMessage[];
 
-  // Logic Isolation
-  config: EngineConfig;
+  // Local Logs (Tied to this data context)
+  auditLogs: AuditLog[];
+  debugLogs: PromptDebug[];
+  telemetry: TelemetryPoint[];
+  storageType?: 'local' | 'sqlite'; // Hybrid Storage
+  description?: string; // Metadata for UI
+}
+
+// GLOBAL CONFIG: Application-Wide Logic & Rules
+// Persisted separately and applied to ALL datasets
+export interface GlobalConfig {
+  // Logic Layers
   securityRules: SecurityRule[];
   extractionRules: ExtractionRule[];
   systemPrompts: SystemPrompt[];
 
-  // Analytics
-  auditLogs: AuditLog[];
-  debugLogs: PromptDebug[];
-  telemetry: TelemetryPoint[];
+  // Engine Settings
+  engineConfig: EngineConfig; // Global hyperparams (Gamma, Theta, MemoryWindow)
+
+  // Identity System (Global Pool)
+  identities: Identity[];
+  activeUserIdentityId?: string; // Currently selected GLOBAL user
+  activeAiIdentityId?: string;   // Currently selected GLOBAL AI config
 }
+
+// NOTE: We no longer have 'Session'. The App State roughly equals:
+// { activeDataset: Dataset, globalConfig: GlobalConfig }

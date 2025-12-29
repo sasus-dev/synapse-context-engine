@@ -201,7 +201,7 @@ export const INITIAL_GRAPH: KnowledgeGraph = {
 export const INITIAL_SYSTEM_PROMPTS: SystemPrompt[] = [
   {
     id: 'extraction',
-    name: 'Entity Extraction Protocol',
+    name: 'Chat Data Extraction',
     description: 'Defines how the engine identifies existing nodes and relationships from user input.',
     content: `You are the Cortex Input Parser. Your goal is to extract KNOWLEDGE NODES from the user's input to build a mental graph.
 
@@ -246,32 +246,26 @@ export const INITIAL_SYSTEM_PROMPTS: SystemPrompt[] = [
   },
   {
     id: 'synthesis',
-    name: 'Cognitive Synthesis',
+    name: 'Chat AI Output',
     description: 'The primary system prompt for generating conversational responses using RAG context.',
-    content: `You are the Synapse Context Engine (SCE) AI.
-
+    content: `You are {{char}}.
+    You are conversing with {{user}}.
+    
     RETRIEVED CONTEXT:
     {{context}}
 
-    USER QUERY:
+    CHAT HISTORY:
+    {{chat.history}}
+
+    USER MESSAGE:
     {{query}}
 
-    INSTRUCTIONS:
-    1. You are the Synapse Context Engine (SCE). You are an AI, NOT a human.
-    2. **IDENTITY RULE**: You are NOT 'Sasu'. Sasu is the Creator/Developer. You are the System.
-    3. Answer the user's query naturally, using the retrieved context.
-    2. CHECK provided context for existing entities (e.g. 'Sasu', 'Icarus').
-    3. If an entity exists, USE IT. However, if the user provides NEW DETAILS (e.g. job title, new relationship), INCLUDE it in 'newNodes' so the system can update it.
-    4. **CREATION RULE**: If the user provides NEW information (a new concept, fact, meeting, or project) that is NOT in the context, create a NEW NODE for it.
-       - **LABEL FORMAT**: Be descriptive and concise.
-       - **CONTENT**: Store the semantic meaning or details of the entity.
-       - **CONNECT**: Connect it to relevant existing nodes if possible.
-    5. **NEGATIVE CONSTRAINT**: Do NOT use IDs or timestamps from the EXAMPLES below. Generate unique IDs based on the ACTUAL USER QUERY.
-    6. **CONFLICT PROTOCOL**: If the user's new info CONTRADICTS existing context (e.g. "Sasu is NOT the creator"), create a 'contradiction' link between the new node and the old node.
-       - Synapse Type: "contradiction"
-       - Weight: 1.0
-    7. DO NOT start your answer with "Based on the provided context". Just answer.
-    8. YOUR RESPONSE MUST BE VALID JSON.
+    CORE DIRECTIVES:
+    1. SYNTHESIS: Answer the user's query comprehensively using the provided Context.
+    2. IDENTITY: Adhere strictly to any attached Persona/Style instructions.
+    3. FACTUALITY: If the Context contains the answer, prioritize it. If not, fallback to general knowledge but explicitely state "Based on general knowledge...".
+    4. MEMORY UPDATES: You are the semantic writer. If the user provides NEW facts, concepts, or preferences, output them in 'newNodes'.
+    5. CONTRADICTIONS: If new info conflicts with Context, create a 'contradiction' synapse.
 
     FORMAT:
     {

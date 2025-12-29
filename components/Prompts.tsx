@@ -69,6 +69,18 @@ const Prompts: React.FC<PromptsProps> = ({ prompts, setPrompts, addAuditLog }) =
                 <span>{'{{dateTime}}'}</span>
                 <span className="text-purple-500">Current Time</span>
               </li>
+              <li className="flex justify-between text-[10px] font-mono text-slate-500">
+                <span>{'{{user}}'}</span>
+                <span className="text-blue-500">User Persona</span>
+              </li>
+              <li className="flex justify-between text-[10px] font-mono text-slate-500">
+                <span>{'{{char}}'}</span>
+                <span className="text-purple-500">AI Persona</span>
+              </li>
+              <li className="flex justify-between text-[10px] font-mono text-slate-500">
+                <span>{'{{chat.history}}'}</span>
+                <span className="text-orange-500">Dynamic History Buffer</span>
+              </li>
             </ul>
           </div>
         </div>
