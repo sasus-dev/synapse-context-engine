@@ -11,23 +11,80 @@ interface DatasetsViewProps {
     setActiveDatasetId: (id: string) => void;
 
     // Actions delegated to parent (App.tsx)
-    onCreateDataset: () => void;
-    onDeleteDataset: (id: string) => void;
-    onRenameDataset?: (id: string, name: string) => void;
-    onImportDataset?: () => void;
-    onExportDataset?: (dataset: Dataset) => void;
-    onAutoConnect?: () => void;
-    onRestoreDefaults?: () => void;
-
-    onAddTable?: (datasetId: string, tableName: string) => void;
-    addAuditLog?: (type: any, msg: string, status?: any) => void;
+    // NEW PROP
+    onUpdateDataset?: (id: string, updates: Partial<Dataset>) => void;
 }
+
+const EditDatasetModal = ({ isOpen, onClose, dataset, onSave }: any) => {
+    const [name, setName] = useState(dataset?.name || '');
+    const [desc, setDesc] = useState(dataset?.description || '');
+
+    React.useEffect(() => {
+        if (dataset) {
+            setName(dataset.name);
+            setDesc(dataset.description || '');
+        }
+    }, [dataset]);
+
+    if (!isOpen || !dataset) return null;
+
+    return (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#0f1117] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+                <h3 className="text-sm font-black uppercase text-white tracking-widest mb-6 flex items-center gap-2">
+                    <Database className="w-4 h-4 text-purple-400" />
+                    Edit Dataset Metadata
+                </h3>
+
+                <div className="space-y-4">
+                    <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Name</label>
+                        <input
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-purple-500/50 transition-all font-medium"
+                            placeholder="Dataset Name"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Description</label>
+                        <textarea
+                            value={desc}
+                            onChange={e => setDesc(e.target.value)}
+                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-purple-500/50 transition-all font-medium min-h-[100px] resize-none"
+                            placeholder="Brief description of this knowledge base..."
+                        />
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-8">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-wider"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => onSave(dataset.id, { name, description: desc })}
+                        disabled={!name.trim()}
+                        className="px-6 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-purple-900/20"
+                    >
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const DatasetsView: React.FC<DatasetsViewProps> = ({
     datasets, activeDatasetId, setActiveDatasetId,
     onCreateDataset, onDeleteDataset, onRenameDataset, onImportDataset, onExportDataset, onAutoConnect, onAddTable, onRestoreDefaults,
+    onUpdateDataset, // NEW PROP
     addAuditLog
 }) => {
+    const [editTarget, setEditTarget] = useState<Dataset | null>(null);
 
     const activeDataset = datasets?.find(d => d.id === activeDatasetId) || datasets?.[0];
 
@@ -47,6 +104,18 @@ const DatasetsView: React.FC<DatasetsViewProps> = ({
 
     return (
         <div className="h-full flex flex-col justify-center p-4 lg:p-6 overflow-hidden">
+
+            {/* EDIT MODAL */}
+            <EditDatasetModal
+                isOpen={!!editTarget}
+                dataset={editTarget}
+                onClose={() => setEditTarget(null)}
+                onSave={(id: string, updates: any) => {
+                    if (onUpdateDataset) onUpdateDataset(id, updates);
+                    setEditTarget(null);
+                }}
+            />
+
             <div className="flex-1 flex flex-col bg-black/20 backdrop-blur-md border border-white/[0.04] rounded-[2rem] shadow-2xl overflow-hidden relative">
                 {/* Toolbar */}
                 <div className="p-6 border-b border-white/5 flex items-center justify-between shrink-0 bg-white/[0.02]">
@@ -122,6 +191,17 @@ const DatasetsView: React.FC<DatasetsViewProps> = ({
                                         <h3 className={`text-sm font-bold truncate ${dataset.id === activeDatasetId ? 'text-white' : 'text-slate-300'}`}>
                                             {dataset.name}
                                         </h3>
+
+                                        {/* EDIT BUTTON (Only when active or hovered) */}
+                                        {onUpdateDataset && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setEditTarget(dataset); }}
+                                                className="ml-2 p-1 text-slate-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                title="Edit Metadata"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                            </button>
+                                        )}
                                     </div>
 
                                     {/* Description */}

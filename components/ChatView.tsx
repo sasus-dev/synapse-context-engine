@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { ChatMessage, NodeType, Identity, GlobalConfig } from '../types';
 import { dbService } from '../services/dbService';
 import { MessageSquare, RefreshCw, Zap, User, Bot, ChevronDown, Plus } from 'lucide-react';
+import { INITIAL_IDENTITIES } from '../constants';
 import ExtractionDropdown from './chat/ExtractionDropdown';
 import ChatMessageItem from './chat/ChatMessageItem';
 import QuickActionBtn from './chat/QuickActionBtn';
@@ -32,6 +33,10 @@ interface ChatViewProps {
   activeUserIdentityId?: string;
   activeAiIdentityId?: string;
   onUpdateSession?: (updates: Partial<any>) => void; // Using 'any' to match App.tsx mapping for now
+
+  // NEW PROPS
+  onClearChat?: () => void;
+  onResetFocus?: () => void;
 }
 
 const IdentitySelector = ({
@@ -47,13 +52,15 @@ const IdentitySelector = ({
   const [isOpen, setIsOpen] = React.useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-select first if invalid or empty
+  // Auto-select logic REMOVED: It causes overrides of custom identities if data loads async.
+  // Parent (App.tsx) is responsible for ensuring a valid ID.
+  /*
   useEffect(() => {
     if (options.length > 0 && !options.find(o => o.id === value)) {
-      // If current value is invalid, pick the first one
       onChange(options[0].id);
     }
   }, [options, value, onChange]);
+  */
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -65,7 +72,7 @@ const IdentitySelector = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selectedOption = options.find(o => o.id === value) || options[0];
+  const selectedOption = options.find(o => o.id === value) || options[0] || { name: 'Select...', style: '' };
 
   return (
     <div className="relative z-[60]" ref={containerRef}>
@@ -117,7 +124,9 @@ const IdentitySelector = ({
 const ChatView: React.FC<ChatViewProps> = ({
   chatHistory, query, setQuery, handleQuery, isProcessing, setSelectedNodeId, isActionsCollapsed, setIsActionsCollapsed,
   workingMemory = [], pushToWorkingMemory, removeFromWorkingMemory, graph, config, setConfig, onAddNode, onUpdateNode, onTriggerCreate, contextOptions = [],
-  identities = [], activeUserIdentityId, activeAiIdentityId, onUpdateSession, ...props
+  identities = [], activeUserIdentityId, activeAiIdentityId, onUpdateSession,
+  onClearChat, onResetFocus,
+  ...props
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -139,6 +148,7 @@ const ChatView: React.FC<ChatViewProps> = ({
   const [localActiveAiId, setLocalActiveAiId] = React.useState<string>('ai_jade');
 
   // Load correct state on MOUNT via DB Service (Local Storage)
+  // Load correct state on MOUNT via DB Service (Local Storage)
   React.useEffect(() => {
     const loadIds = async () => {
       try {
@@ -146,33 +156,37 @@ const ChatView: React.FC<ChatViewProps> = ({
         // Fallback safety (if LS is absolutely empty for some reason, though App.tsx should start it)
         const safeIds = (config.identities && config.identities.length > 0)
           ? config.identities
-          : [
-            { id: 'user_john', type: 'user' as const, name: 'John Doe', role: 'Default', style: 'Direct', content: 'Fallback' },
-            { id: 'ai_jade', type: 'ai' as const, name: 'Jade', role: 'AI', style: 'Helpful', content: 'AI' }
-          ];
+          : [...INITIAL_IDENTITIES];
+
         setLocalIdentities(safeIds);
-        setLocalActiveUserId(config.activeUserIdentityId || 'user_john');
-        setLocalActiveAiId(config.activeAiIdentityId || 'ai_jade');
+
+        // Sync active IDs if props are missing
+        if (!activeUserIdentityId && config.activeUserIdentityId) {
+          onUpdateSession && onUpdateSession({ activeUserIdentityId: config.activeUserIdentityId });
+        }
+        if (!activeAiIdentityId && config.activeAiIdentityId) {
+          onUpdateSession && onUpdateSession({ activeAiIdentityId: config.activeAiIdentityId });
+        }
+
       } catch (e) { console.error("ChatView Load Failed", e); }
     };
     loadIds();
-
-    // Subscribe to updates? Only if we add an event bus later.
-    // For now, assume this view holds the truth.
   }, []);
 
   // Update Handlers
-  const handleUpdateIdentity = async (type: 'user' | 'ai', id: string) => {
+  const handleUpdateIdentity = (type: 'user' | 'ai', id: string) => {
+    // 1. Local Optimistic Update
     if (type === 'user') setLocalActiveUserId(id);
     if (type === 'ai') setLocalActiveAiId(id);
 
-    // Persist immediately
-    const currentConfig = await dbService.loadGlobalConfig();
-    const updates: Partial<GlobalConfig> = type === 'user' ? { activeUserIdentityId: id } : { activeAiIdentityId: id };
-    await dbService.saveGlobalConfig({ ...currentConfig, ...updates });
+    // 2. Propagate to Parent (App.tsx)
+    if (onUpdateSession) {
+      onUpdateSession(type === 'user' ? { activeUserIdentityId: id } : { activeAiIdentityId: id });
+    }
   };
 
-  const effectiveIdentities = localIdentities;
+  // PRIORITY: Use Props (Live Data) -> Local State (Fallback)
+  const effectiveIdentities = (identities && identities.length > 0) ? identities : localIdentities;
   const userIdentities = effectiveIdentities.filter(i => i.type === 'user');
   const aiIdentities = effectiveIdentities.filter(i => i.type === 'ai');
 
@@ -187,26 +201,38 @@ const ChatView: React.FC<ChatViewProps> = ({
 
           <div className="flex items-center gap-4">
             {/* Identity Selectors - GLOBAL CONFIG */}
+            {/* Identity Selectors - GLOBAL CONFIG */}
             <IdentitySelector
               type="user"
               placeholder="User Profile"
               icon={User}
-              value={activeUserIdentityId}
+              value={activeUserIdentityId || localActiveUserId}
               options={userIdentities}
-              onChange={(id) => onUpdateSession && onUpdateSession({ activeUserIdentityId: id })}
+              onChange={(id) => handleUpdateIdentity('user', id)}
             />
             <div className="h-4 w-[1px] bg-white/10" />
             <IdentitySelector
               type="ai"
               placeholder="AI Persona"
               icon={Bot}
-              value={activeAiIdentityId}
+              value={activeAiIdentityId || localActiveAiId}
               options={aiIdentities}
-              onChange={(id) => onUpdateSession && onUpdateSession({ activeAiIdentityId: id })}
+              onChange={(id) => handleUpdateIdentity('ai', id)}
             />
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
+            {/* CLEAR CHAT BUTTON */}
+            {chatHistory.length > 0 && onClearChat && (
+              <button
+                onClick={() => { if (window.confirm("Clear chat history?")) onClearChat(); }}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 hover:text-red-400 transition-all border border-white/5 hover:border-red-500/30 group"
+                title="Clear Chat History"
+              >
+                <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-red-400 transition-colors" />
+              </button>
+            )}
+
             <ExtractionDropdown config={config} setConfig={setConfig} />
           </div>
         </div>

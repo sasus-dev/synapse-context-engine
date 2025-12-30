@@ -1,7 +1,7 @@
 import Database from '@tauri-apps/plugin-sql';
 import { Store } from '@tauri-apps/plugin-store';
 import { Dataset, GlobalConfig, KnowledgeGraph } from '../types';
-import { INITIAL_GRAPH, INITIAL_SECURITY_RULES, INITIAL_SYSTEM_PROMPTS, INITIAL_EXTRACTION_RULES } from '../constants';
+import { INITIAL_GRAPH, INITIAL_SECURITY_RULES, INITIAL_SYSTEM_PROMPTS, INITIAL_EXTRACTION_RULES, INITIAL_IDENTITIES } from '../constants';
 
 // CONSTANTS
 const DB_NAME = 'sce.db';
@@ -255,7 +255,9 @@ class BrowserService implements PersistenceService {
             try {
                 const parsed = JSON.parse(str);
                 // Schema validation / Safety Repair
-                if (!Array.isArray(parsed.identities)) parsed.identities = [];
+                if (!Array.isArray(parsed.identities) || parsed.identities.length === 0) {
+                    parsed.identities = [...INITIAL_IDENTITIES];
+                }
                 return parsed;
             } catch (e) {
                 console.error("Corrupt Config in LS, resetting", e);
@@ -267,7 +269,7 @@ class BrowserService implements PersistenceService {
             extractionRules: INITIAL_EXTRACTION_RULES,
             systemPrompts: INITIAL_SYSTEM_PROMPTS,
             engineConfig: {} as any, // App logic handles defaults
-            identities: [],
+            identities: [...INITIAL_IDENTITIES],
             activeUserIdentityId: undefined,
             activeAiIdentityId: undefined
         };

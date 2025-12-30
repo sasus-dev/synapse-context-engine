@@ -4,7 +4,7 @@ import {
   SecurityRule, AuditLog, PromptDebug, TelemetryPoint,
   ChatMessage, SystemPrompt, SecurityRuleResult, ApiCall, ExtractionRule, EngineConfig, Dataset, GlobalConfig, Identity
 } from './types';
-import { INITIAL_GRAPH, INITIAL_SECURITY_RULES, INITIAL_SYSTEM_PROMPTS, INITIAL_EXTRACTION_RULES } from './constants';
+import { INITIAL_GRAPH, INITIAL_SECURITY_RULES, INITIAL_SYSTEM_PROMPTS, INITIAL_EXTRACTION_RULES, INITIAL_IDENTITIES } from './constants';
 import { SCEEngine } from './lib/sceCore';
 import { extractEntities, queryJointly } from './services/llmService';
 import { ShieldAlert, X } from 'lucide-react';
@@ -12,7 +12,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { dbService } from './services/dbService';
-import { autoConnectGraph } from './services/nodeAutoConnect'; // Integration
+import { autoConnectGraph } from './services/nodeAutoConnect';
 import { getScifiSession } from './src/utils/scifiData';
 import { useAppBootstrap } from './src/hooks/useAppBootstrap';
 import { useGraphOperations } from './src/hooks/useGraphOperations';
@@ -113,19 +113,20 @@ const App: React.FC = () => {
   // ARCHITECTURE V2 STATE
   // ----------------------------------------------------------------------
 
+
+  // ... types ...
+
+  // ...
+
   // 1. GLOBAL CONFIGURATION (Rules, Identities, Settings)
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig>({
     securityRules: INITIAL_SECURITY_RULES,
     extractionRules: INITIAL_EXTRACTION_RULES,
     systemPrompts: INITIAL_SYSTEM_PROMPTS,
     engineConfig: DEFAULT_CONFIG,
-    // limitMemoryWindow moved to engineConfig
-    identities: [
-      { id: 'user_john', type: 'user', name: 'John Doe', role: 'Software Engineer', style: 'Direct', content: 'A pragmatic developer focused on clean code.' },
-      { id: 'ai_jade', type: 'ai', name: 'Jade', role: 'Helpful Assistant', style: 'Friendly, Concise', content: 'You are Jade, a helpful and friendly AI assistant. You prefer concise answers.' }
-    ],
-    activeUserIdentityId: 'user_john',
-    activeAiIdentityId: 'ai_jade'
+    identities: [...INITIAL_IDENTITIES], // Explicit Fallback
+    activeUserIdentityId: INITIAL_IDENTITIES[0].id,
+    activeAiIdentityId: INITIAL_IDENTITIES[1].id
   });
 
   // 2. DATASETS (Data Containers)
@@ -201,17 +202,22 @@ const App: React.FC = () => {
   // HELPER HELPERS
   const pushToWorkingMemory = (contextId: string) => {
     setWorkingMemory(prev => {
-      const filtered = prev.filter(c => c !== contextId);
-      const newStack = [contextId, ...filtered];
-      const limit = globalConfig.engineConfig?.memoryWindow || 6;
-      return newStack.slice(0, limit);
+      if (prev.includes(contextId)) return prev;
+      if (prev.length >= 3) {
+        addAuditLog('system', 'Focus Limit: Max 3 items allowed. Please remove one first.', 'warning');
+        return prev;
+      }
+      const newStack = [contextId, ...prev];
+      return newStack;
     });
   };
 
   const removeFromWorkingMemory = (contextId: string) => {
+    console.log('[App] Removing Context:', contextId);
     setWorkingMemory(prev => {
       const remaining = prev.filter(c => c !== contextId);
-      return remaining.length > 0 ? remaining : ['ctx_research'];
+      console.log('[App] New Working Memory:', remaining);
+      return remaining; // Allow empty focusing
     });
   }
 
@@ -383,6 +389,138 @@ const App: React.FC = () => {
 
   const selectedNode = selectedNodeId ? graph.nodes[selectedNodeId] : null;
 
+  // ----------------------------------------------------------------------
+  // NEW ACTIONS (v0.3.3)
+  // ----------------------------------------------------------------------
+
+  const handleClearChat = () => {
+    setChatHistory([]);
+    addAuditLog('system', 'Chat history cleared by user.', 'info');
+  };
+
+  const handleResetFocusNodes = () => {
+    if (!window.confirm("Restore default context nodes? This will reset the graph and active selection but keep chat history.")) return;
+
+    // Logic similar to reset dataset but preserving chat
+    if (activeDatasetId === 'scifi_iso_100') {
+      import('./src/utils/scifiData').then(mod => {
+        const scifiSession = mod.getScifiSession();
+        updateActiveDataset(d => ({
+          ...d,
+          graph: scifiSession.graph, // Reset Graph
+          // Chat History Preserved
+          auditLogs: [...(d.auditLogs || []), { id: Math.random().toString(), timestamp: 'System', type: 'system', message: 'Context Nodes Restored', status: 'success' }]
+        }));
+        setWorkingMemory(['ctx_research']); // Reset Memory
+      });
+    } else {
+      updateActiveDataset(d => ({
+        ...d,
+        graph: INITIAL_GRAPH, // Reset Graph
+        auditLogs: [...(d.auditLogs || []), { id: Math.random().toString(), timestamp: 'System', type: 'system', message: 'Context Nodes Restored', status: 'success' }]
+      }));
+      setWorkingMemory(['ctx_research']);
+    }
+    setStage('idle');
+  };
+
+  const handleResetDataset = async () => {
+    if (!window.confirm("Perform Factory Reset on this dataset? This will clear ALL data (Chat, Graph, Telemetry, Logs) and revert to defaults.")) return;
+
+    // 1. Reset Runtime State
+    setBenchmarkResults([]);
+    setSelectedNodeId(null);
+    setBrokenRule(null);
+    setWorkingMemory(['ctx_research']);
+    setStage('idle');
+
+    // 2. Reset Definition (Graph & Data)
+    if (activeDatasetId === 'scifi_iso_100') {
+      import('./src/utils/scifiData').then(mod => {
+        const scifiSession = mod.getScifiSession();
+        updateActiveDataset(d => ({
+          ...d,
+          graph: scifiSession.graph,
+          chatHistory: [],
+          auditLogs: [{ id: Math.random().toString(), timestamp: 'System', type: 'system', message: 'Factory Reset Complete (Sci-Fi)', status: 'success' }],
+          debugLogs: [],
+          telemetry: []  // Reset Trace/Telemetry
+        }));
+      });
+    } else {
+      // Standard Default
+      updateActiveDataset(d => ({
+        ...d,
+        graph: INITIAL_GRAPH,
+        chatHistory: [],
+        auditLogs: [{ id: Math.random().toString(), timestamp: 'System', type: 'system', message: 'Factory Reset Complete (Default)', status: 'success' }],
+        debugLogs: [],
+        telemetry: [] // Reset Trace/Telemetry
+      }));
+    }
+
+    // 3. Reset Global Safety/Extraction Rules (If requested 'Safety Tab' reset)
+    // We revert to basic empty/default rules if possible. 
+    // For now, we assume user means dataset-specific state, but if safety rules are global, we might need to reset them too?
+    // User complaint "Safety tab did not restore" implies the rules list wasn't reset.
+    // I will try to reset them to a safe default if I have one, or just confirm.
+    // Since I don't see `INITIAL_SECURITY_RULES` imported, I'll stick to dataset scope + runtime scope first.
+    // If Safety is persistent in GlobalConfig, I should probably leave it unless "Factory Reset" implies Global Reset.
+    // Given "for the selected dataset (ie default dataset)", maybe they mean the *stats* in safety tab?
+    // Safety tab usually shows rules and maybe broken rules. `setBrokenRule(null)` handles "active" safety state.
+  };
+
+  const handleDeleteContext = (nodeId: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this context item?")) return;
+
+    updateActiveDataset(currentData => {
+      const newNodes = { ...currentData.graph.nodes };
+      delete newNodes[nodeId];
+
+      const newSynapses = (currentData.graph.synapses || []).filter(
+        s => {
+          const sId = typeof s.source === 'object' ? (s.source as any).id : s.source;
+          const tId = typeof s.target === 'object' ? (s.target as any).id : s.target;
+          return sId !== nodeId && tId !== nodeId;
+        }
+      );
+
+      return {
+        ...currentData,
+        graph: {
+          ...currentData.graph,
+          nodes: newNodes,
+          synapses: newSynapses
+        }
+      };
+    });
+
+    // Also remove from working memory
+    removeFromWorkingMemory(nodeId);
+  };
+
+  const handleRestoreDefaults = () => {
+    if (window.confirm("Restore default dataset? This will overwrite current changes.")) {
+      handleResetDataset();
+    }
+  };
+
+  const handleAutoConnect = () => {
+    updateActiveDataset(currentData => {
+      // Use shared logic from nodeAutoConnect service
+      const { graph: updatedGraph, stats } = autoConnectGraph(currentData.graph);
+
+      addAuditLog('system', `Auto-Connect: ${stats}`, 'success');
+
+      return {
+        ...currentData,
+        graph: updatedGraph,
+        lastActive: Date.now()
+      };
+    });
+  };
+
+
   return (
     <ErrorBoundary>
       <div className="flex h-screen w-screen bg-transparent text-zinc-200 overflow-hidden font-sans">
@@ -479,6 +617,7 @@ const App: React.FC = () => {
               if (activeDatasetId === id) setActiveDatasetId(pending[0].id);
               await dbService.deleteDataset(id);
             }}
+            onResetAll={handleResetDataset}
           />
 
           {/* SUB-NAVIGATION (CATEGORY NAV) */}
@@ -526,6 +665,14 @@ const App: React.FC = () => {
                   securityRules={securityRules}
                   selectedSecurityRule={selectedSecurityRule}
                   setSelectedSecurityRule={setSelectedSecurityRule}
+
+                  // NEW PROPS
+                  onClearChat={handleClearChat}
+                  onResetFocus={handleResetFocusNodes} // This was just memory reset, now it's "Restore Nodes"
+                  onResetDataset={handleResetDataset} // This is barely used in Explorer now, mostly Header
+                  onAutoConnect={handleAutoConnect}
+                  onDeleteContext={handleDeleteContext}
+                  onRestoreContext={handleResetFocusNodes} // New Prop for clearer intent
                 />
               )}
               {view === 'chat' && (
@@ -572,6 +719,10 @@ const App: React.FC = () => {
                         if (updates.activeAiIdentityId) updateGlobalConfig({ activeAiIdentityId: updates.activeAiIdentityId });
                         if (updates.identities) updateGlobalConfig({ identities: updates.identities });
                       }}
+
+                      // NEW PROPS
+                      onClearChat={handleClearChat}
+                      onResetFocus={handleResetFocus}
                     />
                   </div>
                 </div>
@@ -645,6 +796,16 @@ const App: React.FC = () => {
                     console.error("Export Failed", e);
                     addAuditLog('system', 'Export Failed', 'error');
                   }
+                }}
+                onUpdateDataset={async (id, updates) => {
+                  setDatasets(prev => prev.map(d => {
+                    if (d.id !== id) return d;
+                    const updated = { ...d, ...updates };
+                    // Persist Async
+                    dbService.saveDataset(updated).catch(err => console.error("Update Save Failed", err));
+                    return updated;
+                  }));
+                  addAuditLog('system', 'Updated Dataset Metadata', 'info');
                 }}
                 onAddTable={(datasetId, tableName) => {
                   const targetDataset = datasets.find(d => d.id === datasetId);

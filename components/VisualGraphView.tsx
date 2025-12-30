@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Layers, Maximize2 } from 'lucide-react';
+import { Layers, Maximize2, RefreshCw } from 'lucide-react';
 import * as d3Force from 'd3-force';
 import * as d3Selection from 'd3-selection';
 import * as d3Zoom from 'd3-zoom';
@@ -18,6 +18,8 @@ interface VisualGraphViewProps {
     activatedNodes: any[];
     selectedNodeId: string | null;
     setSelectedNodeId: (id: string | null) => void;
+    onAutoConnect?: () => void;
+    onResetDataset?: () => void;
 }
 
 interface Node {
@@ -38,7 +40,7 @@ interface Link {
     weight: number;
 }
 
-const VisualGraphView: React.FC<VisualGraphViewProps> = ({ graph, activatedNodes, selectedNodeId, setSelectedNodeId }) => {
+const VisualGraphView: React.FC<VisualGraphViewProps> = ({ graph, activatedNodes, selectedNodeId, setSelectedNodeId, onAutoConnect, onResetDataset }) => {
     // UI State
     const [heatmapMode, setHeatmapMode] = useState(false);
     const [viewType, setViewType] = useState<'STANDARD' | 'HEAT'>('STANDARD');
@@ -530,6 +532,22 @@ const VisualGraphView: React.FC<VisualGraphViewProps> = ({ graph, activatedNodes
 
                 {/* Physics Controls */}
                 <div className="flex items-center gap-4 px-4 border-l border-white/10 hidden lg:flex">
+                    {/* LATTICE ACTIONS (New) - Integrated here to avoid overlap */}
+                    <div className="flex items-center gap-2 mr-2">
+                        {onAutoConnect && (
+                            <button onClick={onAutoConnect} className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg text-[10px] font-bold text-emerald-400 hover:text-emerald-300 transition-all flex items-center gap-2 uppercase tracking-wide">
+                                <Layers className="w-3 h-3" />
+                                <span>Auto-Connect</span>
+                            </button>
+                        )}
+                        {onResetDataset && (
+                            <button onClick={onResetDataset} className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-[10px] font-bold text-red-400 hover:text-red-300 transition-all flex items-center gap-2 uppercase tracking-wide">
+                                <RefreshCw className="w-3 h-3" />
+                                <span>Reset Graph</span>
+                            </button>
+                        )}
+                    </div>
+
                     <div className="flex flex-col gap-1 w-20">
                         <label className="text-[9px] font-bold text-slate-500 uppercase">Gravity</label>
                         <input type="range" min="0.01" max="0.3" step="0.01" value={gravity} onChange={(e) => setGravity(parseFloat(e.target.value))} className="h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500" />

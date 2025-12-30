@@ -1,6 +1,6 @@
 [package]
 name = "synapse-context-engine"
-version = "0.3.0"
+version = "0.3.1"
 description = "Synapse Context Engine (Demo)"
 authors = ["Sasu"]
 edition = "2021"

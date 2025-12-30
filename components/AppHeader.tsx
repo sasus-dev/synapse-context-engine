@@ -26,12 +26,15 @@ interface TopBar1Props {
   // Legacy / Transitional Props
   sessions?: any;
   activeSessionId?: any;
+  activeSessionId?: any;
   setActiveSessionId?: any;
+
+  onResetAll?: () => void;
 }
 
 const AppHeader: React.FC<TopBar1Props> = ({
   view, onMenuToggle, isRightCollapsed, setIsRightCollapsed,
-  datasets, activeDatasetId, setActiveDatasetId
+  datasets, activeDatasetId, setActiveDatasetId, onResetAll
 }) => {
   return (
     <header className="h-[72px] border-b border-white/5 bg-black/20 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-[50] transition-all duration-300 pr-6">
@@ -57,6 +60,16 @@ const AppHeader: React.FC<TopBar1Props> = ({
                 setActiveDatasetId={setActiveDatasetId}
                 className="hidden md:block transition-opacity opacity-100 hover:opacity-100"
               />
+
+              {/* RESET ALL BUTTON */}
+              {onResetAll && (
+                <button
+                  onClick={onResetAll}
+                  className="ml-2 text-[10px] font-bold text-red-500 hover:text-red-400 transition-colors tracking-widest uppercase border border-red-900/30 bg-red-950/20 px-2 py-1 rounded hover:bg-red-900/30"
+                >
+                  Reset All
+                </button>
+              )}
             </h2>
           </div>
         </div>

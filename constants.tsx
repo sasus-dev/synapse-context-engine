@@ -407,3 +407,10 @@ export const PRESET_QUERIES = [
   "Check my calendar for upcoming meetings with Sasu.",
   "How does the Cognitive Firewall prevent prompt injection?"
 ];
+
+// --- IDENTITIES ---
+export const INITIAL_IDENTITIES = [
+  { id: 'user_john', type: 'user', name: 'John Doe', role: 'Software Engineer', style: 'Direct', content: 'A pragmatic developer focused on clean code.' },
+  { id: 'ai_jade', type: 'ai', name: 'Jade', role: 'Helpful Assistant', style: 'Friendly, Concise', content: 'You are Jade, a helpful and friendly AI assistant. You prefer concise answers.' }
+] as const;
+

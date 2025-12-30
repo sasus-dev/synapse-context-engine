@@ -1,14 +1,16 @@
 import React from 'react';
-import { X, Plus, Target, Layers } from 'lucide-react';
-import { Node } from '../../types';
+import { X, Plus, Layers, RefreshCw, Trash2, RotateCcw } from 'lucide-react';
 
 interface ActiveFocusBarProps {
     workingMemory: string[];
     contextOptions: { id: string; label: string; type: string }[];
-    onRemove: (id: string) => void;
-    onAdd: (id: string) => void;
+    onRemove: (id: string) => void; // Removes from working memory (toggle off)
+    onAdd: (id: string) => void;    // Adds to working memory (toggle on)
+    onDelete?: (id: string) => void; // DELETE NODE ENTIRELY
     onInspect: (id: string) => void;
     onTriggerCreate: () => void;
+    onRestore?: () => void; // Restore Defaults
+    onResetFocus?: () => void; // Legacy prop, can ignore or keep
 }
 
 const ActiveFocusBar: React.FC<ActiveFocusBarProps> = ({
@@ -16,47 +18,110 @@ const ActiveFocusBar: React.FC<ActiveFocusBarProps> = ({
     contextOptions,
     onRemove,
     onAdd,
+    onDelete,
     onInspect,
-    onTriggerCreate
+    onTriggerCreate,
+    onRestore
 }) => {
     return (
-        <div className="flex flex-wrap items-center gap-2 py-1 w-full">
-            <div className="flex items-center gap-2 mr-2 shrink-0">
-                <Layers className="w-4 h-4 text-purple-400" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Active Focus:</span>
+        <div className="flex flex-col w-full gap-4 py-2">
+
+            {/* 1. INFO BANNER */}
+            <div className="relative overflow-hidden rounded-xl border border-purple-500/20 bg-purple-900/10 p-4">
+                <div className="absolute top-0 right-0 p-2 opacity-10">
+                    <Layers className="w-16 h-16 text-purple-500" />
+                </div>
+                <div className="relative z-10 flex flex-col gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-purple-300 flex items-center gap-2">
+                        <Layers className="w-3 h-3" />
+                        Active Context Focus
+                    </span>
+                    <p className="text-[14px] text-purple-200/90 max-w-2xl leading-relaxed font-medium">
+                        In books these can be chapters, in games quests or objects, in assistants different views, or in projects different modules.
+                        <br /><span className="text-[12px] opacity-70 font-normal">Items pinned here are injected into the AI's short-term memory. Toggle items below to add or remove them from focus.</span>
+                    </p>
+                </div>
             </div>
 
-            {/* Render ALL options to allow toggling */}
-            {contextOptions.map((option) => {
-                const isActive = workingMemory.includes(option.id);
-
-                return (
-                    <button
-                        key={option.id}
-                        onClick={() => isActive ? onRemove(option.id) : onAdd(option.id)}
-                        className={`
-                          flex items-center gap-2 px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all shrink-0
-                          ${isActive
-                                ? 'bg-purple-500/20 border-purple-500/50 text-white shadow-[0_0_10px_rgba(168,85,247,0.2)] hover:bg-purple-500/30'
-                                : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white hover:border-white/20'}
-                        `}
-                    >
-                        {isActive ? <Target className="w-3 h-3 text-purple-400" /> : <div className="w-3 h-3 rounded-full border border-slate-600" />}
-                        <span className="truncate max-w-[120px]">
-                            {option.label}
+            {/* 2. UNIFIED CONTEXT POOL */}
+            <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                    <div className="flex items-center gap-4">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Context Pool</span>
+                        <span className="text-[10px] font-mono text-slate-600">
+                            {workingMemory.length} Active / {contextOptions.length} Total
                         </span>
-                    </button>
-                );
-            })}
+                    </div>
 
-            {/* Quick Add New */}
-            <button
-                onClick={onTriggerCreate}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-slate-400 hover:bg-white/10 hover:text-white transition-all dashed-border shrink-0 ml-2"
-            >
-                <Plus className="w-3 h-3" />
-                <span>NEW</span>
-            </button>
+                    <div className="flex items-center gap-3">
+                        {/* RESTORE BUTTON */}
+                        {onRestore && (
+                            <button
+                                onClick={onRestore}
+                                className="flex items-center gap-1.5 text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-wider"
+                            >
+                                <RotateCcw className="w-3 h-3" />
+                                Restore
+                            </button>
+                        )}
+                        <div className="h-3 w-px bg-white/10" />
+                        <button
+                            onClick={onTriggerCreate}
+                            className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider"
+                        >
+                            <Plus className="w-3 h-3" />
+                            Create New
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    {contextOptions.map((option) => {
+                        const isActive = workingMemory.includes(option.id);
+
+                        return (
+                            <div
+                                key={option.id}
+                                className={`
+                                    flex items-center gap-2 pl-3 pr-1 py-1 rounded-lg border transition-all duration-200 group
+                                    ${isActive
+                                        ? 'bg-purple-500/20 border-purple-500/40 text-white shadow-[0_0_10px_rgba(168,85,247,0.1)]'
+                                        : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white hover:border-white/20'
+                                    }
+                                `}
+                            >
+                                {/* CLICKABLE BODY: TOGGLES FOCUS */}
+                                <button
+                                    onClick={() => isActive ? onRemove(option.id) : onAdd(option.id)}
+                                    className="flex items-center gap-2 outline-none focus:outline-none"
+                                >
+                                    <div className={`w-2 h-2 rounded-full border ${isActive ? 'bg-purple-400 border-purple-300' : 'border-slate-600 group-hover:border-slate-400'}`} />
+                                    <span className="text-[11px] font-bold">{option.label}</span>
+                                </button>
+
+                                {/* DELETE BUTTON: ALWAYS VISIBLE (ON HOVER OR ALWAYS) */}
+                                {/* User requested "always visible" but logically checking user intent, often hover is clearer. 
+                                    However, sticking to request: explicit separate button. */}
+                                <div className="h-4 w-px bg-white/10 mx-1" />
+
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onDelete) onDelete(option.id);
+                                    }}
+                                    className={`
+                                        p-1 rounded hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-colors
+                                        ${isActive ? 'text-purple-300' : ''}
+                                    `}
+                                    title="Delete Node Entirely"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
         </div>
     );
 };

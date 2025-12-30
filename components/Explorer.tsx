@@ -49,10 +49,20 @@ interface ExplorerProps {
   onTriggerCreate: () => void;
   onUpdateNode: (nodeId: string, newContent: string, label?: string, type?: NodeType) => void;
   contextOptions?: any[]; // Passed from App.tsx for Dropdown
+
+  // NEW PROPS
+  onClearChat?: () => void;
+  onResetFocus?: () => void;
+  onResetDataset?: () => void;
+  onAutoConnect?: () => void;
+  onDeleteContext?: (id: string) => void;
+  onRestoreContext?: () => void;
 }
 
 const Explorer: React.FC<ExplorerProps> = (props) => {
-  const { category, stage, brokenRule, onClearBrokenRule, workingMemory = [], pushToWorkingMemory, removeFromWorkingMemory, contextOptions = [] } = props;
+  const { category, stage, brokenRule, onClearBrokenRule, workingMemory = [], pushToWorkingMemory, removeFromWorkingMemory, contextOptions = [],
+    onClearChat, onResetFocus, onResetDataset, onAutoConnect, onDeleteContext, onRestoreContext
+  } = props;
   const isProcessing = stage !== 'idle' && stage !== 'complete' && stage !== 'security_blocked';
   const [isActionsCollapsed, setIsActionsCollapsed] = useState(false);
 
@@ -69,6 +79,8 @@ const Explorer: React.FC<ExplorerProps> = (props) => {
               onRemove={removeFromWorkingMemory}
               onInspect={props.setSelectedNodeId}
               onTriggerCreate={props.onTriggerCreate || (() => { })}
+              onDelete={onDeleteContext}
+              onRestore={onRestoreContext}
             />
           </div>
         )}
@@ -80,11 +92,19 @@ const Explorer: React.FC<ExplorerProps> = (props) => {
               isProcessing={isProcessing}
               isActionsCollapsed={isActionsCollapsed}
               setIsActionsCollapsed={setIsActionsCollapsed}
+              onClearChat={onClearChat}
+              onResetFocus={onResetFocus}
             />
           </div>
         )}
         {category === 'SYNAPSE' && <SynapseView {...props} workingMemory={workingMemory} />}
-        {category === 'VISUAL_GRAPH' && <VisualGraphView {...props} />}
+        {category === 'VISUAL_GRAPH' && (
+          <VisualGraphView
+            {...props}
+            onAutoConnect={onAutoConnect}
+            onResetDataset={onResetDataset}
+          />
+        )}
         {category === 'STRUCTURE' && <StructureView />}
         {category === 'SECURITY' && <SecurityStatsView {...props} selectedRule={props.selectedSecurityRule} setSelectedRule={props.setSelectedSecurityRule} securityRules={props.securityRules} />}
         {category === 'API_CALLS' && <ApiCallsView {...props} />}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { dbService } from '../../services/dbService';
 import { GlobalConfig, Dataset, Identity } from '../../types';
-import { INITIAL_GRAPH, INITIAL_SYSTEM_PROMPTS } from '../../constants';
+import { INITIAL_GRAPH, INITIAL_SYSTEM_PROMPTS, INITIAL_IDENTITIES } from '../../constants';
 import { getScifiSession } from '../utils/scifiData';
 
 export const useAppBootstrap = (
@@ -20,10 +20,7 @@ export const useAppBootstrap = (
                 let loadedConfig = await dbService.loadGlobalConfig();
 
                 // MERGE HARDCODED IDENTITIES (Robustness Fix)
-                const requiredIdentities: Identity[] = [
-                    { id: 'user_john', type: 'user', name: 'John Doe', role: 'Software Engineer', style: 'Direct', content: 'A pragmatic developer focused on clean code.' },
-                    { id: 'ai_jade', type: 'ai', name: 'Jade', role: 'Helpful Assistant', style: 'Friendly, Concise', content: 'You are Jade, a helpful and friendly AI assistant. You prefer concise answers.' }
-                ];
+                const requiredIdentities: Identity[] = [...INITIAL_IDENTITIES];
 
                 // UPSERT STRATEGY
                 const incomingIds = loadedConfig.identities || [];
@@ -33,8 +30,8 @@ export const useAppBootstrap = (
                 loadedConfig.identities = finalIdentities;
 
                 // Ensure valid selection
-                if (!loadedConfig.activeUserIdentityId) loadedConfig.activeUserIdentityId = 'user_john';
-                if (!loadedConfig.activeAiIdentityId) loadedConfig.activeAiIdentityId = 'ai_jade';
+                if (!loadedConfig.activeUserIdentityId) loadedConfig.activeUserIdentityId = INITIAL_IDENTITIES[0].id;
+                if (!loadedConfig.activeAiIdentityId) loadedConfig.activeAiIdentityId = INITIAL_IDENTITIES[1].id;
 
                 // ---------------------------------------------------------
                 // PATCH: Force Update System Prompt Metadata (v0.3.0 Rename)
