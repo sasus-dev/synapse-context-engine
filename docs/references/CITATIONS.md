@@ -17,8 +17,9 @@ These concepts are directly implemented in SCE's current architecture.
 **Citation:**  
 Hebb, D. O. (1949). *The Organization of Behavior: A Neuropsychological Theory*. Wiley.
 
-**URL:**  
-https://www.psych.utoronto.ca/users/reingold/courses/organization-of-behavior.pdf
+**ISBN:** 978-0805843002 (reprint edition)
+
+**Note:** This is a classic text widely available in university libraries and used bookstores. Digital copies may be found through academic library systems.
 
 **What SCE Implements:**  
 Hebbian weight learning: "neurons that fire together wire together." When nodes co-activate during context construction, their synaptic weights strengthen through the learning mechanism described in the concept paper (Section 4.1, Equation 3).
@@ -43,8 +44,8 @@ The core activation propagation mechanism (Equation 1 in concept paper). Query n
 **Citation:**  
 Anderson, J. R., Bothell, D., Byrne, M. D., Douglass, S., Lebiere, C., & Qin, Y. (2004). An integrated theory of the mind. *Psychological Review*, 111(4), 1036-1060.
 
-**URL:**  
-https://act-r.psy.cmu.edu/
+**DOI:**  
+https://doi.org/10.1037/0033-295X.111.4.1036
 
 **What SCE Implements:**  
 Activation thresholds for memory retrieval. Only nodes exceeding activation threshold θ (e.g., 0.3) participate in context synthesis, preventing noise and ensuring relevance—directly adapted from ACT-R's activation-based memory access.
@@ -60,7 +61,7 @@ Carbonell, J., & Goldstein, J. (1998). The use of MMR, diversity-based reranking
 https://www.cs.cmu.edu/~jgc/publication/The_Use_MMR_Diversity_Based_LTMIR_1998.pdf
 
 **What SCE Implements:**  
-Context pruning strategy (Section 5.2 in concept paper). Nodes are selected based on relevance to query AND non-redundancy with already-selected context, implementing the MMR principle of balancing relevance and diversity.
+Maximal Marginal Relevance pruning (implemented in `pruneWithMMR` function). Calculates node selection score as `λ * Relevance - (1-λ) * Redundancy`, balancing relevance to query with diversity from already-selected context—the standard information-theoretic approximation for context selection.
 
 ---
 
@@ -76,6 +77,19 @@ https://doi.org/10.1002/047174882X
 Information-theoretic context compression principles (Section 5.2, Equation 6-8). While practical implementation uses embedding-based approximations, the theoretical foundation is KL divergence and information gain for selecting maximally informative, minimally redundant nodes.
 
 ---
+ 
+ ### Chung (1997) — Spectral Graph Theory
+ 
+ **Citation:**  
+ Chung, F. R. K. (1997). *Spectral Graph Theory*. American Mathematical Society.
+ 
+ **URL:**  
+ https://bookstore.ams.org/cbms-92/
+ 
+ **What SCE Implements:**  
+ Heat diffusion on graphs (Equation 4 & 5 in concept paper). Implemented via Graph Laplacian Diffusion (`applyHeatDiffusion`), where "heat" (activation energy) flows from active nodes to connected neighbors over time, simulating temporal decay and recency bias handling.
+ 
+ ---
 
 ## 💭 Conceptual Inspiration
 
@@ -126,8 +140,8 @@ Berge, C. (1973). *Graphs and Hypergraphs*. North-Holland Mathematical Library, 
 
 **ISBN:** 978-0720424492
 
-**Inspirational Contribution:**  
-Foundational hypergraph theory. SCE uses the term "hypergraph" to describe multi-way edges connecting multiple nodes, but does not implement formal hypergraph mathematics. This is conceptual framing borrowed from graph theory.
+**What SCE Implements:**  
+True hypergraph support with multi-way edges. SCE maintains both pairwise synapses (source→target) and hyperedges (connecting multiple nodes simultaneously). When any member of a hyperedge activates, energy distributes to all connected nodes (clique activation)—implementing the core hypergraph concept of atomic multi-way relationships.
 
 ---
 
@@ -144,19 +158,6 @@ Informed thinking about how information flows through graph structures. SCE does
 
 ---
 
-### Chung (1997) — Spectral Graph Theory
-
-**Citation:**  
-Chung, F. R. K. (1997). *Spectral Graph Theory*. American Mathematical Society.
-
-**URL:**  
-https://bookstore.ams.org/cbms-92/
-
-**Inspirational Contribution:**  
-Heat diffusion on graphs (Section 5.1 in concept paper) was proposed as an optional temporal bias mechanism. This is currently **not implemented** in SCE—it remains a theoretical possibility referenced in the paper.
-
----
-
 ## Note on Adaptation
 
 **Core Implementation** citations represent actual working code in SCE. **Conceptual Inspiration** citations acknowledge intellectual debt without claiming direct implementation.
@@ -168,6 +169,49 @@ SCE is a practical systems architecture built by an AI engineer, not an academic
 The goal is working software informed by these ideas, adapted for the realities of LLMs, hypergraphs, and real-time interaction—not faithful reproduction of academic models.
 
 **This is a living document.** Additional papers and theoretical connections will be added as the research progresses and new relevant work is identified.
+
+---
+
+## 📚 Related Work & Comparisons
+
+These papers represent alternative approaches to AI memory and context management that SCE builds upon or contrasts with.
+
+### Lewis et al. (2020) — Retrieval-Augmented Generation (RAG)
+
+**Citation:**  
+Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., ... & Kiela, D. (2020). Retrieval-augmented generation for knowledge-intensive NLP tasks. *Advances in Neural Information Processing Systems*, 33, 9459-9474.
+
+**arXiv:**  
+https://arxiv.org/abs/2005.11401
+
+**Relevance to SCE:**  
+RAG is the dominant paradigm for incorporating external knowledge into LLMs via vector similarity retrieval. SCE was designed to address RAG's limitations in persistent systems: contextual fragmentation, flat relevance scoring, and lack of relational structure.
+
+---
+
+### Park et al. (2023) — Generative Agents
+
+**Citation:**  
+Park, J. S., O'Brien, J. C., Cai, C. J., Morris, M. R., Liang, P., & Bernstein, M. S. (2023). Generative agents: Interactive simulacra of human behavior. *arXiv preprint arXiv:2304.03442*.
+
+**arXiv:**  
+https://arxiv.org/abs/2304.03442
+
+**Relevance to SCE:**  
+Introduced episodic memory and reflection mechanisms for long-lived AI agents. While innovative, Generative Agents still rely on flat memory representations. SCE explores whether graph-based memory can provide richer contextual coherence for similar use cases.
+
+---
+
+### Packer et al. (2023) — MemGPT
+
+**Citation:**  
+Packer, C., Fang, V., Patil, S. G., Wooders, K., & Stoica, I. (2023). MemGPT: Towards LLMs as operating systems. *arXiv preprint arXiv:2310.08560*.
+
+**arXiv:**  
+https://arxiv.org/abs/2310.08560
+
+**Relevance to SCE:**  
+MemGPT treats memory as hierarchical storage with explicit paging and context management. Both MemGPT and SCE address the problem of bounded context windows, but take different architectural approaches: MemGPT uses OS-style memory management, SCE uses graph-based associative retrieval.
 
 ---
 

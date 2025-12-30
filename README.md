@@ -83,22 +83,23 @@ Telemetry & Audit Signals
 
 ### 1. Hypergraph‑Based Memory
 
-Memory is represented as a **directed hypergraph**:
+Memory is represented as a **hypergraph**:
 
 - **Nodes** represent heterogeneous entities (projects, artifacts, preferences, behaviors, constraints)
-- **Hyperedges** encode multi‑way, atomic relationships that should activate together
+- **Synapses** encode weighted pairwise relationships (source→target)
+- **Hyperedges** connect multiple nodes simultaneously for atomic multi-way relationships
 
-This preserves higher‑order context that is lost when relationships are decomposed into pairwise edges or embeddings.
+When any node in a hyperedge activates, energy distributes to all connected members (clique activation). This preserves higher-order context that is lost when relationships are decomposed into isolated pairs or flat embeddings.
 
 **Example:** Instead of separate edges:
 - `Alice -[ATTENDED]-> Meeting`
 - `Meeting -[DISCUSSED]-> Budget`
 - `Budget -[AFFECTS]-> Project_X`
 
-SCE uses a single hyperedge:
+SCE can group these as a hyperedge:
 - `{Alice, Meeting, Budget, Project_X}` labeled `DECISION_CONTEXT`
 
-When any node activates, the entire context activates together.
+When Alice is queried, the entire decision context activates together—not through sequential traversal but through atomic multi-way activation.
 
 ---
 
@@ -117,9 +118,9 @@ This anchoring prevents free‑floating activation and helps contain:
 
 When a stimulus occurs, activation energy is injected into seed nodes and propagates outward with:
 
-- Decay factors
-- Thresholds
-- Depth limits
+- Decay factors (configurable, e.g., 0.8)
+- Activation thresholds (e.g., 0.3)
+- Depth limits (bounded traversal)
 
 Only meaningfully activated nodes participate in context synthesis. Global flooding is structurally prevented.
 
@@ -263,7 +264,7 @@ npm run dev
 ```
 
 <div align="center">
-  <img src="docs/images/sce-chat.png" alt="SCE Chat Interface" width="90%">
+  <img src="docs/images/sce-chat-interface.png" alt="SCE Chat Interface" width="90%">
   <p><em><strong>The Chat Interface:</strong> Interact with SCE through natural language while observing live memory dynamics. The "Active Context Focus" panel (top) shows which nodes are currently anchored (SCE Architecture, SCE Demo, Project: Icarus, Personal). "Quick Actions" (right) provide pre-configured prompts like "Explain Architecture," "Check Memory," and "Injection Test" to explore the system. The System Audit (left) logs every cognitive operation—lattice resolution, cognitive expansion, grounding success—in real-time. The "System Core" panel displays the actual synthesized context with expandable knowledge graph tags.</em></p>
 </div>
 
@@ -312,7 +313,12 @@ npm run tauri dev
 **API Stability:** Expect breaking changes  
 **Focus:** Correctness, inspectability, experimentation
 
-This prototype prioritizes clarity over performance. Large graphs (>10k nodes) will incur latency and memory overhead.
+**Implementation Notes:**
+- Current architecture loads the entire graph into memory (TypeScript) for real-time visualization and cross-platform compatibility
+- SQL recursive CTEs (described in the concept paper) represent the scalability path for graphs >100k nodes but are not yet implemented
+- In-memory implementation enables seamless Desktop (Tauri) and Web deployment with identical logic
+
+This prototype prioritizes clarity and observability over raw performance.
 
 ---
 
