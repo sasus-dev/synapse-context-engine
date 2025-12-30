@@ -264,7 +264,7 @@ npm run dev
 ```
 
 <div align="center">
-  <img src="docs/images/sce-chat-interface.png" alt="SCE Chat Interface" width="90%">
+  <img src="docs/images/sce-chat.png" alt="SCE Chat Interface" width="90%">
   <p><em><strong>The Chat Interface:</strong> Interact with SCE through natural language while observing live memory dynamics. The "Active Context Focus" panel (top) shows which nodes are currently anchored (SCE Architecture, SCE Demo, Project: Icarus, Personal). "Quick Actions" (right) provide pre-configured prompts like "Explain Architecture," "Check Memory," and "Injection Test" to explore the system. The System Audit (left) logs every cognitive operation—lattice resolution, cognitive expansion, grounding success—in real-time. The "System Core" panel displays the actual synthesized context with expandable knowledge graph tags.</em></p>
 </div>
 
