@@ -6,6 +6,19 @@
 
 ---
 
+## 🔥 Hotfix: Identity & State Integrity (v0.3.1.1)
+
+**Issue:** An issue was detected where the AI would persist with default identity traits (e.g., "Jade") even after the user selected a different persona (e.g., "Emma"), due to a combination of React State caching and Ghost Nodes in the retrieval graph.
+
+**Fixes Applied:**
+1.  **Direct State Overrides:** The `ChatView` now explicitly enforces the *locally selected* identity for every query, bypassing potential global state lag.
+2.  **Context Sanitizer**: The RAG Pipeline now aggressively scans retrieved context for conflicting Identity Preferences (e.g., "AI Name: Jade") and purges them before they reach the LLM. 
+3.  **System Prompt Fallback**: Added a safety mechanism to ensure `{{char}}` placeholders are always injected, even if the user's template is malformed.
+
+4.  **Dataset Clean State**: Resolved a bug where creating a **New Dataset** would erroneously pre-fill it with the default "Demo" data. New datasets now initialize as completely empty canvases, as intended.
+
+---
+
 ## 🚀 Key Improvements
 
 ### 1. Active Focus & Context Logic
@@ -34,5 +47,3 @@ Major improvements to how the "Working Memory" (Active Focus) behaves, giving us
 *   **Refactored `App.tsx`**: Extracted critical handlers (`handleDeleteContext`, `handleRestoreDefaults`) to top-level scope for better stability.
 *   **Prop Drilling**: Cleaned up `Explorer` and `ActiveFocusBar` prop passing to support the new Delete vs. Restore vs. Reset distinction.
 *   **State Management**: Enhanced `handleResetDataset` to explicitly clear secondary state arrays (`telemetry`, `debugLogs`) which were previously lingering.
-
-

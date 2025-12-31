@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     KnowledgeGraph, EngineConfig, GlobalConfig, ChatMessage,
     AuditLog, PipelineStage, ActivatedNode, SecurityRule,
@@ -28,6 +28,10 @@ export const useChatPipeline = (
     const [brokenRule, setBrokenRule] = useState<SecurityRule | null>(null);
     const [activeContradiction, setActiveContradiction] = useState<SecurityRuleResult | null>(null);
 
+    // Ref Pattern to avoid Stale Closures in async pipeline
+    const globalConfigRef = useRef(globalConfig);
+    useEffect(() => { globalConfigRef.current = globalConfig; }, [globalConfig]);
+
     // Clear transient state on dataset switch
     useEffect(() => {
         setActivatedNodes([]);
@@ -36,7 +40,8 @@ export const useChatPipeline = (
         setActiveContradiction(null);
     }, [activeDatasetId]);
 
-    const handleRunQuery = async (query: string) => {
+    const handleRunQuery = async (query: string, overrides?: { activeAiId?: string, activeUserId?: string }) => {
+        const currentConfig = globalConfigRef.current;
         if (!query.trim()) return;
 
         // NUCLEAR SECURITY CHECK (Bypasses State)
@@ -65,7 +70,7 @@ export const useChatPipeline = (
         setStage('activating');
 
         // Filter only active rules (Global)
-        const activeSecurityRules = (globalConfig.securityRules || []).filter(r => r.isActive);
+        const activeSecurityRules = (currentConfig.securityRules || []).filter(r => r.isActive);
         console.log("Checking Security Rules:", activeSecurityRules.length, "active rules");
 
         const securityResults: SecurityRuleResult[] = activeSecurityRules.map(r => {
@@ -221,23 +226,50 @@ export const useChatPipeline = (
 
             const { selected: pruned } = engineRef.current.pruneWithMMR(activated, query, 8);
 
+            // SANITIZATION: Filter out Pollution (Conflicting Identity Nodes)
+            // If we are looking for "Emma", we should NOT see "AI Name: Jade" in context.
+            const sanitizedContext = pruned.filter(n => {
+                const node = engineRef.current.graph.nodes[n.id];
+                const label = node?.label || '';
+
+                // Aggressive Regex Match for Identity Preferences
+                const identityPattern = /AI Name|Your Name|Identity|Persona/i;
+                const isIdentityNode = identityPattern.test(label);
+
+                if (isIdentityNode) {
+                    console.warn(`[Pipeline] 🛡️ SANITIZER: PURGED Pollution Node: "${label}" (${n.id})`);
+                    return false;
+                }
+                return true;
+            });
+
             setStage('querying');
 
             // 3. Synthesis
-            const synthesisPromptTemplate = (globalConfig.systemPrompts || []).find(p => p.id === 'synthesis')?.content || '';
+            let synthesisPromptTemplate = (currentConfig.systemPrompts || []).find(p => p.id === 'synthesis')?.content || '';
 
-            const activeUserParams = globalConfig.identities?.find(i => i.id === globalConfig.activeUserIdentityId);
-            const activeAiParams = globalConfig.identities?.find(i => i.id === globalConfig.activeAiIdentityId);
+            // FALLBACK SAFETY: Ensure dynamic identity injection
+            if (!synthesisPromptTemplate.includes('{{char}}')) {
+                synthesisPromptTemplate = `You are {{char}}.\n\nCONTEXT:\n{{context}}\n\nCHAT HISTORY:\n{{chat.history}}\n\nUSER QUERY:\n{{query}}\n\nINSTRUCTIONS:\nAnswer using the Context. Follow your persona.`;
+            }
+
+            const targetUserId = overrides?.activeUserId || currentConfig.activeUserIdentityId;
+            const targetAiId = overrides?.activeAiId || currentConfig.activeAiIdentityId;
+
+            const activeUserParams = currentConfig.identities?.find(i => i.id === targetUserId);
+            const activeAiParams = currentConfig.identities?.find(i => i.id === targetAiId);
+
+
 
             const userReplacement = activeUserParams
                 ? `[USER PROFILE]\nName: ${activeUserParams.name}\nRole: ${activeUserParams.role}\nStyle: ${activeUserParams.style}\nContext: ${activeUserParams.content}`
                 : `[USER PROFILE]\nUnknown User`;
 
             const charReplacement = activeAiParams
-                ? `[AI SYSTEM PERSONA]\nName: ${activeAiParams.name}\nRole: ${activeAiParams.role}\nStyle: ${activeAiParams.style}\nDirectives: ${activeAiParams.content}`
-                : `[AI SYSTEM PERSONA]\nStandard Assistant`;
+                ? `${activeAiParams.name}.\n\nYOUR ROLE: ${activeAiParams.role}\nYOUR STYLE: ${activeAiParams.style}\n\nCORE INSTRUCTIONS:\n${activeAiParams.content}`
+                : `Standard Assistant`;
 
-            const historyLimit = globalConfig.engineConfig?.memoryWindow || 6;
+            const historyLimit = currentConfig.engineConfig?.memoryWindow || 6;
             const historySlice = chatHistory.slice(-historyLimit).map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
 
             let synthesisPrompt = synthesisPromptTemplate
@@ -245,6 +277,9 @@ export const useChatPipeline = (
                 .replace('{{user}}', userReplacement)
                 .replace('{{char}}', charReplacement)
                 .replace('{{chat.history}}', historySlice);
+
+
+
 
             let answer = '';
             let newNodes: any[] = [];

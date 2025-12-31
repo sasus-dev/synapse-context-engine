@@ -12,7 +12,7 @@ interface ChatViewProps {
   chatHistory: ChatMessage[];
   query: string;
   setQuery: (q: string) => void;
-  handleQuery: (q?: string) => void;
+  handleQuery: (q?: string, overrides?: { activeAiId?: string, activeUserId?: string }) => void;
   isProcessing: boolean;
   setSelectedNodeId: (id: string | null) => void;
   isActionsCollapsed: boolean;
@@ -138,7 +138,13 @@ const ChatView: React.FC<ChatViewProps> = ({
 
   const onSend = () => {
     if (!query.trim() || workingMemory.length === 0) return;
-    handleQuery(query);
+
+    // STATE FIX: Use LOCAL state which is guaranteed to be fresh immediately after selection.
+    // Props might be stale due to App.tsx re-render latency.
+    handleQuery(query, {
+      activeUserId: localActiveUserId,
+      activeAiId: localActiveAiId
+    });
     setTimeout(() => setQuery(''), 0);
   };
 
@@ -146,6 +152,10 @@ const ChatView: React.FC<ChatViewProps> = ({
   const [localIdentities, setLocalIdentities] = React.useState<Identity[]>([]);
   const [localActiveUserId, setLocalActiveUserId] = React.useState<string>('user_john');
   const [localActiveAiId, setLocalActiveAiId] = React.useState<string>('ai_jade');
+
+  // SYNC: Keep Local State in sync with Helper Props (but Local wins for user actions)
+  useEffect(() => { if (activeUserIdentityId) setLocalActiveUserId(activeUserIdentityId); }, [activeUserIdentityId]);
+  useEffect(() => { if (activeAiIdentityId) setLocalActiveAiId(activeAiIdentityId); }, [activeAiIdentityId]);
 
   // Load correct state on MOUNT via DB Service (Local Storage)
   // Load correct state on MOUNT via DB Service (Local Storage)
@@ -198,6 +208,8 @@ const ChatView: React.FC<ChatViewProps> = ({
       <div className="flex-[3] flex flex-col bg-black/20 backdrop-blur-md border border-white/[0.04] rounded-[2rem] shadow-2xl relative min-h-0">
         {/* Header */}
         <div className="px-6 py-4 border-b border-white/5 bg-white/5 flex items-center justify-between shrink-0 backdrop-blur-md z-40 transition-all rounded-t-[2rem]">
+
+
 
           <div className="flex items-center gap-4">
             {/* Identity Selectors - GLOBAL CONFIG */}

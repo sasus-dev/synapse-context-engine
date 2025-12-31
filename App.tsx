@@ -382,9 +382,9 @@ const App: React.FC = () => {
 
 
   // Wrapper to match existing signature
-  const handleRunQuery = async (queryOverride?: string) => {
+  const handleRunQuery = async (queryOverride?: string, overrides?: { activeAiId?: string, activeUserId?: string }) => {
     const effectiveQuery = typeof queryOverride === 'string' ? queryOverride : query;
-    await executePipeline(effectiveQuery);
+    await executePipeline(effectiveQuery, overrides);
   };
 
   const selectedNode = selectedNodeId ? graph.nodes[selectedNodeId] : null;
@@ -744,9 +744,22 @@ const App: React.FC = () => {
                     name: 'New Dataset',
                     created: Date.now(),
                     lastActive: Date.now(),
-                    graph: INITIAL_GRAPH,
+                    graph: {
+                      nodes: {
+                        'session_start': {
+                          id: 'session_start',
+                          type: 'project',
+                          label: 'Project Root',
+                          content: 'Root node for this dataset.',
+                          heat: 1.0,
+                          isNew: false
+                        }
+                      },
+                      synapses: [],
+                      hyperedges: []
+                    },
                     chatHistory: [],
-                    auditLogs: [],
+                    auditLogs: [{ id: Math.random().toString(), timestamp: 'System', type: 'system', message: 'Dataset Created (Blank)', status: 'success' }],
                     debugLogs: [],
                     telemetry: [],
                     storageType: 'local'
