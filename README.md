@@ -1,6 +1,6 @@
-# 🧠 Synapse Context Engine (SCE)
-
 <div align="center">
+
+# 🧠 Synapse Context Engine (SCE)
 
 > **A safety-first, inspectable memory and context-construction architecture for AI systems**  
 > Think of it as a synthetic hippocampus with a kill switch—designed to make context construction visible, bounded, and auditable *before* inference happens.
