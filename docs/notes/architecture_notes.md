@@ -144,3 +144,17 @@ Proposed algorithm:
         *   **Visibility**: Starts securely above `theta` (`0.30`) for immediate searchability.
         *   **Headroom**: Leaves `0.45` capacity for Hebbian Learning ($w \to 1.0$). Frequently accessed concepts can nearly double in strength.
         *   **Decay Buffer**: Provides a safety margin ($0.55 \to 0.30$) before unused nodes become invisible/pruned.
+
+---
+
+### 13. Graph Integrity & Lazy Deletion
+
+*Hypothesis: Real-time synapse cleanup during node deletion is expensive ($O(E)$) for large graphs.*
+
+- **Model A:** Strict Referential Integrity (Cascading Deletes).
+- **Model B:** Garbage Collection (Periodic Sweep).
+- **Model C:** Lazy Deletion + Runtime Safety.
+
+**✅ Decision (v0.3.1):** I implemented **Model C**.
+To ensure the UI remains snappy when deleting nodes (e.g., via the new "X" chips), I do not scan the entire synapse list to purge connections immediately. This creates "Dangling Synapses".
+**Implication:** The Core Engine (`enforceOrthogonality`) was patched to gracefully skip invalid links where `nodeS` or `nodeT` is undefined. This favors responsiveness over strict DB-style integrity, treating the graph as a "fuzzy" biological system where dead connections simply fail to transmit potential.

@@ -16,6 +16,7 @@
 3.  **System Prompt Fallback**: Added a safety mechanism to ensure `{{char}}` placeholders are always injected, even if the user's template is malformed.
 
 4.  **Dataset Clean State**: Resolved a bug where creating a **New Dataset** would erroneously pre-fill it with the default "Demo" data. New datasets now initialize as completely empty canvases, as intended.
+5.  **Dangling Synapse Crash**: Fixed a critical pipeline failure where the engine crashed when processing synapses connected to deleted nodes. Added safety checks in the Orthogonality enforcement logic.
 
 ---
 

@@ -194,7 +194,12 @@ export class SCEEngine {
     this.graph.synapses.forEach(syn => {
       const s = syn.source;
       const t = syn.target;
-      if (this.graph.nodes[s].type !== this.graph.nodes[t].type) {
+      const nodeS = this.graph.nodes[s];
+      const nodeT = this.graph.nodes[t];
+
+      if (!nodeS || !nodeT) return; // SKIP DANGLING SYNAPSES
+
+      if (nodeS.type !== nodeT.type) {
         // If they are different types, we want to maintain separation (Orthogonality) in latent space
         // For this simulation, we decay the weight slightly more if they are just "associated"
         // This ensures "Apple" (Concept) and "Apple" (Project) don't merge.
