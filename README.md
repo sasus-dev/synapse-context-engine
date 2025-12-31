@@ -15,6 +15,23 @@
 
 </div>
 
+
+## 🎯 What is SCE?
+
+The **Synapse Context Engine (SCE)** is a **brain-inspired memory and context layer** for AI systems, designed to function as a *System‑2‑like* substrate for context assembly.
+
+Instead of treating context as a static retrieval problem (as in traditional RAG pipelines), SCE models memory as an **explicit, typed hypergraph**. Context is assembled dynamically through **spreading activation**, allowing systems to recall, relate, and reason over information via network dynamics rather than keyword or embedding similarity alone.
+
+<div align="center">
+  <img src="docs/images/sce-default-dataset-graph.png" alt="SCE Neural Map - Lattice Visualization" width="95%">
+  <p><sub><em>Live activation spreading through memory graph</em></sub></p>
+</div>
+
+The result is memory that is:
+- **Coherent** instead of fragmented
+- **Inspectable** instead of opaque
+- **Bounded** instead of unbounded
+
 ---
 
 ## 📊 At a Glance
@@ -33,24 +50,6 @@
 | Benchmarks | ❌ Community-needed |
 
 **License:** Apache 2.0 • **Maintainer:** [Sasu](https://www.sasus.dev) • **Updates:** [docs/updates/](docs/updates/)
-
----
-
-## 🎯 What is SCE?
-
-The **Synapse Context Engine (SCE)** is a **brain-inspired memory and context layer** for AI systems, designed to function as a *System‑2‑like* substrate for context assembly.
-
-Instead of treating context as a static retrieval problem (as in traditional RAG pipelines), SCE models memory as an **explicit, typed hypergraph**. Context is assembled dynamically through **spreading activation**, allowing systems to recall, relate, and reason over information via network dynamics rather than keyword or embedding similarity alone.
-
-<div align="center">
-  <img src="docs/images/sce-default-dataset-graph.png" alt="SCE Neural Map - Lattice Visualization" width="95%">
-  <p><sub><em>Live activation spreading through memory graph</em></sub></p>
-</div>
-
-The result is memory that is:
-- **Coherent** instead of fragmented
-- **Inspectable** instead of opaque
-- **Bounded** instead of unbounded
 
 ---
 
@@ -353,7 +352,7 @@ npm run tauri dev
 
 ## 📖 Theoretical Roots
 
-SCE draws from neuroscience, graph theory, and cognitive architecture research:
+SCE draws from neuroscience, graph theory, and cognitive architecture research—adapting concepts for practical AI systems:
 
 **Neuroscience & Memory:** Hebbian learning (Hebb, 1949), hippocampal cognitive maps (O'Keefe & Nadel, 1978), complementary learning systems (McClelland et al., 1995)
 
@@ -438,6 +437,6 @@ Licensed under Apache 2.0
 
 <div align="center">
 
-**A brain-inspired memory architecture for AI systems—built by single dev, open-sourced for safety.**
+**A brain-inspired memory architecture for AI systems—built by a single dev, open-sourced for safety.**
 
 </div>
