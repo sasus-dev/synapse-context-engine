@@ -43,7 +43,7 @@ The **Synapse Context Engine (SCE)** is a **brain-inspired memory and context la
 Instead of treating context as a static retrieval problem (as in traditional RAG pipelines), SCE models memory as an **explicit, typed hypergraph**. Context is assembled dynamically through **spreading activation**, allowing systems to recall, relate, and reason over information via network dynamics rather than keyword or embedding similarity alone.
 
 <div align="center">
-  <img src="docs/images/sce-lattice-graph.png" alt="SCE Neural Map - Lattice Visualization" width="95%">
+  <img src="docs/images/sce-default-dataset-graph.png" alt="SCE Neural Map - Lattice Visualization" width="95%">
   <p><sub><em>Live activation spreading through memory graph</em></sub></p>
 </div>
 
@@ -207,7 +207,11 @@ Think of it as **mission control for context assembly**—designed for debugging
 
 <div align="center">
   <img src="docs/images/sce-security-protocols.png" alt="SCE Security Protocols" width="90%">
+<<<<<<< HEAD
+  <p><sub><em>Live activation spreading through memory graph</em></sub></p>
+=======
   <p><sub><em>Security rules block harmful queries before LLM inference</em></sub></p>
+>>>>>>> ea1fd04 (Fix: Corrected image paths in README to point to existing files)
 </div>
 
 SCE is **not** a silver bullet—but it reshapes the threat landscape:
@@ -294,7 +298,7 @@ npm run dev
 ```
 
 <div align="center">
-  <img src="docs/images/sce-chat-interface.png" alt="SCE Chat Interface" width="90%">
+  <img src="docs/images/sce-chat.png" alt="SCE Chat Interface" width="90%">
   <p><em>The chat interface exposes the complete pipeline. Active Context Focus (top) shows anchored nodes. Quick Actions (right) provide exploration prompts. System Audit (left) logs every operation in real-time.</em></p>
 </div>
 
