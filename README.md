@@ -360,13 +360,10 @@ Benchmarks will be introduced once the architecture is considered stable and nat
 
 SCE draws from neuroscience, graph theory, and cognitive architecture research—adapting concepts for practical AI systems:
 
-**Neuroscience & Memory:** Hebbian learning (Hebb, 1949), hippocampal cognitive maps (O'Keefe & Nadel, 1978), complementary learning systems (McClelland et al., 1995)
-
-**Cognitive Architecture:** Spreading activation theory (Collins & Loftus, 1975), ACT-R (Anderson et al., 2004), SOAR (Laird et al., 1987)
-
-**Graph Theory:** Hypergraphs (Berge, 1973), network communicability (Estrada & Hatano, 2008), spectral graph theory (Chung, 1997)
-
-**Information Theory:** Maximal marginal relevance (Carbonell & Goldstein, 1998), information-theoretic pruning (Cover & Thomas, 2006)
+- **Neuroscience & Memory:** Hebbian learning (Hebb, 1949), hippocampal cognitive maps (O'Keefe & Nadel, 1978), complementary learning systems (McClelland et al., 1995)
+- **Cognitive Architecture:** Spreading activation theory (Collins & Loftus, 1975), ACT-R (Anderson et al., 2004), SOAR (Laird et al., 1987)
+- **Graph Theory:** Hypergraphs (Berge, 1973), network communicability (Estrada & Hatano, 2008), spectral graph theory (Chung, 1997)
+- **Information Theory:** Maximal marginal relevance (Carbonell & Goldstein, 1998), information-theoretic pruning (Cover & Thomas, 2006)
 
 For full citations and detailed connections to research traditions, see [CITATIONS.md](docs/references/CITATIONS.md).
 
