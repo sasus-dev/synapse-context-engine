@@ -11,7 +11,7 @@
 [![Platform](https://img.shields.io/badge/platform-Web%20%7C%20Desktop-lightgrey.svg)](#-quick-start)
 [![Built with Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 
-[📄 Original Blueprint / Concept Paper](docs/blueprints/sce_initial_concept.pdf) • [🚀 Quick Start](docs/guides/Quick-Start-Tutorial.md) • [🎯 Use Cases](USE-CASES.md) • [💬 Discussions](https://github.com/sasus-dev/synapse-context-engine/discussions) • [🤝 Contribute](CONTRIBUTING.md)
+[📄 Original Blueprint / Concept Paper](docs/blueprints/sce_initial_concept.pdf) • [🚀 Quick Start](https://github.com/sasus-dev/synapse-context-engine/blob/main/docs/guides/Quick-Start-Tutorial.md) • [🎯 Use Cases](USE-CASES.md) • [💬 Discussions](https://github.com/sasus-dev/synapse-context-engine/discussions) • [🤝 Contribute](CONTRIBUTING.md)
 
 </div>
 
