@@ -292,34 +292,23 @@ npm install
 npm run dev
 ```
 
-<div align="center">
-  <img src="docs/images/sce-chat.png" alt="SCE Chat Interface" width="90%">
-  <p><sub><em>The chat interface exposes the complete pipeline. Active Context Focus (top) shows anchored nodes. Quick Actions (right) provide exploration prompts. System Audit (left) logs every operation in real-time.</em></sub></p>
-</div>
-
-**What You'll Experience:**
-
-After launching, you'll see the complete SCE ecosystem:
-
-- **Chat Interface** — Natural language interaction with full context transparency
-- **Neural Map (Lattice)** — Live hypergraph visualization showing activation spreading
-- **Synapse Matrix** — Inspect individual node connections and weights
-- **Security Protocols** — Configure cognitive guards and safety rules
-- **Engine Calculus** — Tune activation parameters in real-time
-
-Click **"Can you tell me about SCE?"** or use Quick Actions to trigger the full pipeline. Watch as:
-1. Active Focus anchors to relevant nodes
-2. Activation energy propagates through the graph
-3. Context is synthesized and pruned
-4. The System Audit logs every decision
-
-This is what **inspectable AI memory** looks like in practice.
-
 ### Run Native (Desktop – Experimental)
 
 ```bash
 npm run tauri dev
 ```
+
+### Check the Quick Start Tutorial
+[Quick-Start-Tutorial.md](Quick-Start-Tutorial.md)
+
+
+### Start Experimenting
+
+<div align="center">
+  <img src="docs/images/sce-chat.png" alt="SCE Chat Interface" width="90%">
+  <p><sub><em>The chat interface exposes the complete pipeline. Active Context Focus (top) shows anchored nodes. Quick Actions (right) provide exploration prompts. System Audit (left) logs every operation in real-time.</em></sub></p>
+</div>
+
 
 ---
 
