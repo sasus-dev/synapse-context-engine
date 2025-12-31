@@ -207,11 +207,7 @@ Think of it as **mission control for context assembly**—designed for debugging
 
 <div align="center">
   <img src="docs/images/sce-security-protocols.png" alt="SCE Security Protocols" width="90%">
-<<<<<<< HEAD
-  <p><sub><em>Live activation spreading through memory graph</em></sub></p>
-=======
   <p><sub><em>Security rules block harmful queries before LLM inference</em></sub></p>
->>>>>>> ea1fd04 (Fix: Corrected image paths in README to point to existing files)
 </div>
 
 SCE is **not** a silver bullet—but it reshapes the threat landscape:
