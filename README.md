@@ -299,7 +299,7 @@ npm run tauri dev
 ```
 
 ### Check the Quick Start Tutorial
-[Quick-Start-Tutorial.md](Quick-Start-Tutorial.md)
+[Quick-Start-Tutorial.md](docs/guides/Quick-Start-Tutorial.md)
 
 
 ### Start Experimenting
