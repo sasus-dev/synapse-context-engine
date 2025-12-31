@@ -2,31 +2,66 @@
 
 Get up and running with the Synapse Context Engine in 10 minutes.
 
-## Prerequisites
-
-- Node.js 18+ and npm
-- Basic understanding of graphs and neural networks (helpful but not required)
-
-## Step 1: Installation (2 minutes)
-
-### Clone and Install
-```bash
-# Clone the repository
-git clone https://github.com/sasus-dev/synapse-context-engine.git
-cd synapse-context-engine
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-Open `http://localhost:5173` in your browser.
+Choose your installation path below.
 
 ---
 
-## Step 2: Understanding the Interface (3 minutes)
+## Option 1: Install Locally (Web) 🌐
+
+Best for active development, debugging, and visualization. Runs in your browser.
+
+### Prerequisites (Web)
+- **Node.js 18+** and npm
+- **Git**
+
+### Install Process
+```bash
+# 1. Clone the repository
+git clone https://github.com/sasus-dev/synapse-context-engine.git
+cd synapse-context-engine
+
+# 2. Install dependencies
+npm install
+
+# 3. Start development server
+npm run dev
+```
+> Open `http://localhost:5173` in your browser.
+
+---
+
+## Option 2: Install Standalone App (Desktop) 🖥️
+
+Best for persistent usage with a local database (SQLite). Runs as a native application.
+
+### Prerequisites (Native)
+- **Node.js 18+** and npm
+- **Git**
+- **Rust** (latest stable) - [Install Rust](https://rustup.rs)
+- **C++ Build Tools** (Platform Specific):
+  - **Windows:** [Visual Studio C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (Select "Desktop development with C++")
+  - **macOS:** Xcode Command Line Tools (`xcode-select --install`)
+  - **Linux:** `webkit2gtk` development packages (e.g., `libwebkit2gtk-4.0-dev`)
+
+### Install Process
+```bash
+# 1. Clone the repository
+git clone https://github.com/sasus-dev/synapse-context-engine.git
+cd synapse-context-engine
+
+# 2. Install dependencies
+npm install
+
+# 3. Start native app
+npm run tauri dev
+```
+> This will launch a separate application window.
+
+---
+
+## 🔍 Understanding the Interface
+
+Once you're up and running, here's how to use the system.
 
 ### Main Components
 
@@ -58,7 +93,7 @@ Open `http://localhost:5173` in your browser.
 
 ---
 
-## Step 3: Your First Query (5 minutes)
+## ⚡ Your First Query
 
 ### Try a Preset Example
 
@@ -85,14 +120,9 @@ Open `http://localhost:5173` in your browser.
 
 3. Spreading Activation
    E(t+1) = σ(∑ E(t) · weight · decay)
-   
-   Iteration 0: Seeds get E = 1.0
-   Iteration 1: Neighbors get E = 0.85 × weight
-   Iteration 2: Second-order neighbors activated
-   Iteration 3: Stops (max depth reached)
 
 4. Temporal Scoring
-   Score = Energy × Heat × (1 / (1 + 0.1 × days_since_access))
+   Score = Energy × Heat × Recency_Bias
 
 5. MMR Pruning
    Select top 15 nodes that maximize:
@@ -104,58 +134,7 @@ Open `http://localhost:5173` in your browser.
 
 ---
 
-## Step 4: Creating Custom Scenarios
-
-### Modify the Graph
-
-Open `constants.tsx` and find the `INITIAL_GRAPH` object:
-
-```typescript
-export const INITIAL_GRAPH: KnowledgeGraph = {
-  nodes: {
-    'my_project': {
-      id: 'my_project',
-      label: 'My Custom Project',
-      type: 'project',
-      heat: 1.0,
-      lastAccessed: Date.now()
-    },
-    'my_contact': {
-      id: 'my_contact',
-      label: 'Alice Johnson',
-      type: 'contact',
-      heat: 0.8,
-      lastAccessed: Date.now() - 86400000 // 1 day ago
-    }
-  },
-  edges: [
-    {
-      source: 'my_project',
-      target: 'my_contact',
-      weight: 0.75,
-      type: 'collaborator'
-    }
-  ]
-};
-```
-
-### Add Your Own Query
-
-In `constants.tsx`, add to `PRESET_QUERIES`:
-
-```typescript
-export const PRESET_QUERIES = [
-  // ... existing queries
-  "What are Alice's contributions to the project?",
-  "Find all documents related to Q4 planning"
-];
-```
-
-Restart the dev server to see changes.
-
----
-
-## Step 5: Experiment with Parameters
+## 🧪 Experiment with Parameters
 
 ### Understanding Each Control
 
@@ -173,12 +152,6 @@ Restart the dev server to see changes.
 - **1-2 hops**: Very local (direct connections only)
 - **3-4 hops**: Balanced (friends-of-friends)
 - **5+ hops**: Global (entire graph, slow)
-- **Use case**: Start at 3, increase if missing context
-
-**Heat Bias (α = 0.40)**
-- **Lower (0.1-0.3)**: Recent activity matters less
-- **Higher (0.5-0.7)**: Strong recency preference
-- **Use case**: Higher for "what's new", lower for comprehensive searches
 
 ### Try These Experiments
 
@@ -195,130 +168,76 @@ Setting B (Narrow):
 Result: 5-8 nodes, directly related only
 ```
 
-**Experiment 2: Recent vs. Historical**
-```
-Query: "Show me dashboard updates"
-
-Setting A (Recency):
-- α = 0.70
-Result: Only last week's changes
-
-Setting B (Comprehensive):
-- α = 0.20
-Result: All dashboard history
-```
-
 ---
 
-## Step 6: Monitor Telemetry
+## 📊 Monitor Telemetry
 
 ### Real-Time Charts
 
 **Active Energy (Purple Chart)**
 - Shows total activation energy over time
 - Spikes = High activity moments
-- Plateaus = Stable context retrieved
 
 **Graph Density (Green Chart)**
 - Percentage of total nodes activated
 - High density = Broad search
-- Low density = Focused retrieval
 
-### Understanding Pipeline Stages
-
-Watch the status indicator change:
-1. `IDLE` → Ready for input
-2. `EXTRACTING` → Parsing query entities
-3. `SPREADING` → Activating graph
-4. `SECURITY_CHECK` → Detecting contradictions
-5. `SELECTING` → MMR pruning
-6. `SYNTHESIZING` → LLM generation
-7. `LEARNING` → Hebbian weight updates
-8. `COMPLETE` → Ready for next query
+### Warning Stages
+Watch the status indicator:
+1. `IDLE` → Ready
+2. `SPREADING` → Activating graph
+3. `SECURITY_CHECK` → If blocked, graph turns red
+4. `SYNTHESIZING` → Generating answer
 
 ---
 
-## Step 7: Advanced Features
+## 🔬 Advanced: Creating Custom Scenarios
 
-### Play Conversation Mode
-Click "Play Conversation" to see automated query-response cycles:
-- System runs preset queries sequentially
-- Graph learns from each interaction
-- Weights adapt via Hebbian learning
-- Watch synaptic strengths evolve
+### Modify the Graph
+Open `constants.tsx` and find the `INITIAL_GRAPH` object to add your own nodes.
 
-### Contradiction Detection
-If the system finds conflicting information:
-1. Pipeline pauses at `SECURITY_BLOCKED`
-2. Conflicting nodes highlighted in red
-3. User chooses which information to trust
-4. Loser's heat reduced (soft suppression)
+### Custom Characters & Identities 🎭
+You can customize both the User and AI personas in `constants.tsx` (or via the UI settings):
+- **User Identity:** Define who you are (e.g., "Senior Researcher", "Junior Dev") to change how the system addresses you.
+- **AI Identity:** Change the AI's persona (e.g., "Skeptical Critic", "Friendly Assistant").
+- **Why?** Different identities trigger different activation patterns and response styles.
 
-### Working Memory (Multi-Focus)
-Future feature: Maintain 3 active contexts simultaneously
-- Code + Research + Documentation
-- Intersection of topics triggers cross-domain insights
+> **⚠️ Note on Prompts:** The clear-text prompts in `Prompts.tsx` are experimental and currently quite basic. They "suck" a bit by design (to show raw architecture). **We highly recommend tinkering with them** to get better results for your specific use case.
 
----
+### Data Import / Export 📦
+You can export your current graph state or import external datasets (JSON/CSV) via the "Datasets" tab in the left sidebar.
+> **⚠️ Experimental:** This feature is currently in early alpha. Large datasets may cause performance issues or freezing in the web version. Use with caution and backup your data.
 
-## Step 8: Next Steps
-
-### Learn More
-- Read [Architecture Paper](../blueprints/sce_initial_concept.pdf)
-- Explore [API Reference](API-Reference.md)
-- Check [Open Questions](../notes/architecture_notes.md)
-
-### Contribute
-- Try [red teaming](../../SECURITY.md#security-research-welcome) the system
-- Submit [benchmark results](../../CONTRIBUTING.md#research-contributions)
-- Propose [new features](https://github.com/sasus-dev/synapse-context-engine/issues/new?template=feature_request.md)
-
-### Build Something
-- Integrate SCE into your AI agent
-- Create custom node types for your domain
-- Implement new pruning strategies
-- Design alternative activation functions
-
----
-
-## Troubleshooting
-
-### Graph not loading
-```bash
-# Clear cache and reinstall
-rm -rf node_modules package-lock.json
-npm install
-npm run dev
+```typescript
+export const INITIAL_GRAPH: KnowledgeGraph = {
+  nodes: {
+    'my_project': {
+      id: 'my_project',
+      label: 'My Custom Project',
+      type: 'project',
+      heat: 1.0,
+      lastAccessed: Date.now()
+    }
+  },
+  edges: [
+    // ... connections
+  ]
+};
 ```
 
-### Activation too slow (>2s)
-- Reduce `maxDepth` to 2
-- Increase `activationTheta` to 0.4
-- Consider implementing graph indexing
-
-### No nodes activating
-- Lower `activationTheta` to 0.2
-- Increase `decayGamma` to 0.90
-- Check that seed nodes have outgoing edges
-
-### Synthesis empty
-- Verify Gemini API key (if using LLM integration)
-- Check browser console for errors
-- Ensure activated nodes > 0
-
 ---
 
-## 🎉 Success Criteria
+## 🎉 Troubleshooting & Next Steps
 
-You've mastered the basics when you can:
-- [ ] Run a query and understand which nodes activated
-- [ ] Explain why certain nodes have higher energy than others
-- [ ] Adjust parameters to get more/less context
-- [ ] Create a custom node and query it
-- [ ] Interpret the telemetry charts
+**"Graph not loading?"**
+- Clear cache: `rm -rf node_modules` and re-install.
 
-**Ready to dive deeper?** Check out the [full documentation](https://github.com/sasus-dev/synapse-context-engine/wiki)!
+**"Native app fails?"**
+- Verify C++ Build Tools (Windows) or Xcode (macOS).
 
----
+**"Success Criteria"**
+- [ ] Run a query and see activation
+- [ ] Adjust Theta to change context size
+- [ ] Interpret the Telemetry charts
 
-**Questions?** Ask in [Discussions](https://github.com/sasus-dev/synapse-context-engine/discussions) 💬
+**Questions?** Ask in [Discussions](https://github.com/sasus-dev/synapse-context-engine/discussions).

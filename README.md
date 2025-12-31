@@ -293,6 +293,7 @@ npm run dev
 ```
 
 ### Run Native (Desktop – Experimental)
+> *Requires Rust & Platform Dependencies (see [Quick Start Guide](docs/guides/Quick-Start-Tutorial.md#prerequisites))*
 
 ```bash
 npm run tauri dev
