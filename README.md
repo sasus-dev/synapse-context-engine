@@ -295,7 +295,7 @@ npm run dev
 
 <div align="center">
   <img src="docs/images/sce-chat.png" alt="SCE Chat Interface" width="90%">
-  <p><em>The chat interface exposes the complete pipeline. Active Context Focus (top) shows anchored nodes. Quick Actions (right) provide exploration prompts. System Audit (left) logs every operation in real-time.</em></p>
+  <p><sub><em>The chat interface exposes the complete pipeline. Active Context Focus (top) shows anchored nodes. Quick Actions (right) provide exploration prompts. System Audit (left) logs every operation in real-time.</em></sub></p>
 </div>
 
 **What You'll Experience:**
