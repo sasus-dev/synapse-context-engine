@@ -339,6 +339,22 @@ npm run tauri dev
 
 ---
 
+## 📊 About Benchmarks
+
+SCE intentionally does not ship with traditional retrieval benchmarks yet.
+
+The architecture is still stabilizing, and there is currently no accepted baseline for evaluating:
+- Relational memory coherence
+- Context inspectability
+- Activation trace quality
+- Long-term memory evolution
+
+Premature benchmarks would bias development toward legacy retrieval metrics and misrepresent SCE’s goals.
+
+Benchmarks will be introduced once the architecture is considered stable and native evaluation criteria are defined.
+
+---
+
 ## 📖 Theoretical Roots
 
 SCE draws from neuroscience, graph theory, and cognitive architecture research—adapting concepts for practical AI systems:
@@ -366,7 +382,7 @@ This project was developed by a single independent developer (AI Engineer / Game
 **What's Needed from the Community:**
 
 **Research & Validation:**
-- Benchmark studies comparing SCE to RAG baselines
+- Benchmark studies comparing SCE to RAG baselines (once core stabilizes)
 - Adversarial testing of security mechanisms
 - Formal analysis of activation dynamics
 - Comparison studies across different domains
