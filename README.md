@@ -158,15 +158,14 @@ The LLM never sees the raw graph—only the synthesized context.
 
 ---
 
-### 5. Telemetry as a First‑Class Signal
+### 5. Auditable Cognitive Telemetry
+SCE exposes internal dynamics through rigorous, information-theoretic metrics—not opaque "vibes":
 
-SCE exposes internal dynamics in real time:
+- **Focus (Normalized Entropy):** Measures attention drift. `0.02` means diffuse noise; `0.95` means sharp logical coherence.
+- **Stability (Inverse Variance):** Detects when the system is confident vs. chaotic.
+- **Plasticity (Burst vs Mean):** Distinguishes between background learning and sudden "paradigm shift" rewiring.
 
-- **Global activation energy**
-- **Graph density / expansion**
-- **Pipeline stages** (idle → propagating → complete → blocked)
-
-These signals enable runtime safety gating, anomaly detection, and post‑hoc inspection.
+These signals enable runtime safety gating (e.g., "Stop generation if Focus < 0.1") and precise post-hoc auditing. The math is pure, visible, and unchangeable by the model.
 
 ---
 

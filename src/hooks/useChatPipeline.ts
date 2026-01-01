@@ -379,12 +379,18 @@ export const useChatPipeline = (
             setStage('complete');
             addAuditLog('synthesis', `Lattice resolution complete in ${latency}ms`, 'success');
 
+            let weightChanges: { source: string, target: string, delta: number }[] = [];
             if (config.enableHebbian && activated.length > 1) {
-                engineRef.current.updateHebbianWeights(activated);
+                weightChanges = engineRef.current.updateHebbianWeights(activated);
             }
             engineRef.current.applyHeatDiffusion(0.05);
 
-            const metrics = engineRef.current.calculateMetrics(latency);
+            const metrics = engineRef.current.calculateMetrics(
+                latency,
+                weightChanges,
+                activated.map(a => a.depth)
+            );
+
             setTelemetry(prev => [...prev, {
                 timestamp: new Date().toLocaleTimeString(),
                 ...metrics,

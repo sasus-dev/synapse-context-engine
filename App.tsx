@@ -363,9 +363,9 @@ const App: React.FC = () => {
   // CHAT PIPELINE (Refactored Hook) - Depends on Engine, Graph, Config, Setters
   const {
     stage, setStage,
-    activatedNodes, setActivatedNodes,
+    activatedNodes,
     brokenRule, setBrokenRule,
-    activeContradiction, setActiveContradiction,
+    activeContradiction,
     handleRunQuery: executePipeline
   } = useChatPipeline(
     engineRef, graph, config, globalConfig, activeDatasetId,
@@ -722,7 +722,7 @@ const App: React.FC = () => {
 
                       // NEW PROPS
                       onClearChat={handleClearChat}
-                      onResetFocus={handleResetFocus}
+                      onResetFocus={handleResetFocusNodes}
                     />
                   </div>
                 </div>

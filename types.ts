@@ -136,14 +136,29 @@ export interface SystemPrompt {
 
 export interface TelemetryPoint {
   timestamp: string;
+  // State Metrics (Snapshot)
   globalEnergy: number;
+  meanHeat: number;         // Arousal
+  heatVariance: number;     // Stability
+  heatEntropy: number;      // Focus
+
+  // Structural Metrics
   graphDensity: number;
   nodeCount: number;
   synapseCount: number;
+
+  // Process Metrics (Dynamics)
   latency: number;
   pruningRate: number;
   activationPct: number;
-  adaptationDelta: number;
+  meanWeightDelta: number;  // Plasticity Mean
+  maxWeightDelta: number;   // Plasticity Burst
+  activationDepthMean: number;
+  maxActivationDepth: number;
+  focusScore: number;       // 1 - Normalized Entropy
+  stabilityScore: number;   // 1 / (1 + Variance)
+  cognitiveHealth: number;  // Composite Index
+  hyperedgeActivationPct: number; // Higher-order utilization
 }
 
 export interface AuditLog {

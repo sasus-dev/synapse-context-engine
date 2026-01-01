@@ -484,42 +484,121 @@ export class SCEEngine {
   }
 
   /**
-   * Calculate Real-time Telemetry Metrics
-   * correctly weighting Hyperedges in density calculations.
+   * Calculate Real-time Telemetry Metrics (v2 Refined)
+   * Includes Normalized Entropy, Burst Plasticity, and Max Depth.
    */
-  calculateMetrics(lastLatency: number): any {
+  calculateMetrics(
+    lastLatency: number,
+    weightChanges: { delta: number }[] = [],
+    activationDepths: number[] = []
+  ): any {
     const nodes = Object.values(this.graph.nodes);
     const nodeCount = nodes.length;
     const synapseCount = this.graph.synapses.length;
     const hyperedgeCount = this.graph.hyperedges ? this.graph.hyperedges.length : 0;
 
-    // Global Energy (Thermodynamics)
-    const globalEnergy = nodes.reduce((sum, n) => sum + (n.heat || 0), 0);
+    // 1. Heat Statistics (State)
+    let totalHeat = 0;
+    let activeNodesCount = 0;
+    const heats: number[] = [];
 
-    // Graph Density Calculation
-    // Standard Graph Density = 2E / N(N-1)
-    // We treat Hyperedges as cliques (fully connected subgraphs) for density estimation
-    // A hyperedge of size k adds k(k-1)/2 virtual edges.
+    nodes.forEach(n => {
+      const h = n.heat || 0;
+      totalHeat += h;
+      heats.push(h);
+      if (h > 0.05) activeNodesCount++;
+    });
+
+    const meanHeat = nodeCount > 0 ? totalHeat / nodeCount : 0;
+
+    // Variance: Deviation from mean
+    const varianceSum = heats.reduce((acc, h) => acc + Math.pow(h - meanHeat, 2), 0);
+    const heatVariance = nodeCount > 0 ? varianceSum / nodeCount : 0;
+    const stabilityScore = 1.0 / (1.0 + heatVariance * 10); // Scaled Variance for better sensitivity
+
+    // Entropy: Distribution spread (Shannon Entropy)
+    // p_i = heat_i / totalHeat
+    let heatEntropy = 0;
+    if (totalHeat > 0) {
+      heats.forEach(h => {
+        if (h > 0) {
+          const p = h / totalHeat;
+          heatEntropy -= p * Math.log(p); // Natural log entropy
+        }
+      });
+    }
+
+    // Normalized Entropy (Focus Score)
+    const maxEntropy = Math.log(nodeCount > 1 ? nodeCount : 2);
+    // Focus Score: 1.0 = Perfect Focus (Low Entropy), 0.0 = Total Chaos
+    const focusScore = Math.max(0, 1.0 - (heatEntropy / maxEntropy));
+
+    // 2. Process Metrics (Plasticity & Depth)
+    const totalDelta = weightChanges.reduce((sum, w) => sum + Math.abs(w.delta), 0);
+    const meanWeightDelta = weightChanges.length > 0 ? totalDelta / weightChanges.length : 0;
+    const maxWeightDelta = weightChanges.reduce((max, w) => Math.max(max, Math.abs(w.delta)), 0);
+
+    const totalDepth = activationDepths.reduce((sum, d) => sum + d, 0);
+    const activationDepthMean = activationDepths.length > 0 ? totalDepth / activationDepths.length : 0;
+    const maxActivationDepth = activationDepths.reduce((max, d) => Math.max(max, d), 0);
+
+    // Activation Percentage (Internal)
+    const activationPct = nodeCount > 0 ? activeNodesCount / nodeCount : 0;
+
+    // 3. Graph Density (Hyperedge Weighted)
     let virtualEdges = synapseCount;
+    let activeHyperedges = 0;
+
     if (this.graph.hyperedges) {
       this.graph.hyperedges.forEach(h => {
         const k = h.nodes.length;
         if (k > 1) virtualEdges += (k * (k - 1)) / 2;
+
+        // Active Hyperedge Detection
+        // Considered active if > 50% of members have heat > 0.05
+        const activeMembers = h.nodes.filter(mid => (this.graph.nodes[mid]?.heat || 0) > 0.05).length;
+        if (activeMembers >= k * 0.5) activeHyperedges++;
       });
     }
 
     const maxEdges = nodeCount * (nodeCount - 1) / 2;
     const graphDensity = nodeCount > 1 ? virtualEdges / maxEdges : 0;
+    const hyperedgeActivationPct = hyperedgeCount > 0 ? activeHyperedges / hyperedgeCount : 0;
+
+    // 4. Composite Cognitive Health Index
+    // Weights: Focus (30%), Stability (30%), Utilization (20%), Plasticity (20%)
+    // Normalized Plasticity: Assume max typical delta is ~0.15 (eta)
+    const normPlasticity = Math.min(1.0, meanWeightDelta / 0.15);
+    const cognitiveHealth = (focusScore * 0.3) + (stabilityScore * 0.3) + (activationPct * 0.2) + (normPlasticity * 0.2);
 
     return {
-      globalEnergy,
+      // Identity
+      timestamp: new Date().toLocaleTimeString(),
+
+      // State
+      globalEnergy: totalHeat,
+      meanHeat,
+      heatVariance,
+      heatEntropy,
+      focusScore,
+      stabilityScore, // NEW
+      cognitiveHealth, // NEW
+
+      // Structure
       graphDensity,
       nodeCount,
       synapseCount: synapseCount + hyperedgeCount,
+      hyperedgeActivationPct, // NEW
+
+      // Process
       latency: lastLatency,
-      pruningRate: 0.0, // Calculated in App usually
-      activationPct: 0.0, // Calculated in App usually
-      adaptationDelta: 0.05 // Baseline plasticity constant
+      activationPct,
+      pruningRate: 0,
+
+      meanWeightDelta,
+      maxWeightDelta,
+      activationDepthMean,
+      maxActivationDepth // NEW: Graph traversal monitoring
     };
   }
 }

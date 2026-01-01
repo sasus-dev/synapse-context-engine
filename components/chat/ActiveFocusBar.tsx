@@ -23,23 +23,38 @@ const ActiveFocusBar: React.FC<ActiveFocusBarProps> = ({
     onTriggerCreate,
     onRestore
 }) => {
+    const [isBannerOpen, setIsBannerOpen] = React.useState(false);
+
     return (
         <div className="flex flex-col w-full gap-4 py-2">
 
             {/* 1. INFO BANNER */}
-            <div className="relative overflow-hidden rounded-xl border border-purple-500/20 bg-purple-900/10 p-4">
-                <div className="absolute top-0 right-0 p-2 opacity-10">
+            <div className={`relative overflow-hidden rounded-xl border transition-all duration-300 ${isBannerOpen ? 'border-purple-500/20 bg-purple-900/10 p-4' : 'border-purple-500/10 bg-purple-900/5 p-2'}`}>
+                <div className={`absolute top-0 right-0 p-2 opacity-10 transition-opacity ${isBannerOpen ? 'opacity-10' : 'opacity-0'}`}>
                     <Layers className="w-16 h-16 text-purple-500" />
                 </div>
                 <div className="relative z-10 flex flex-col gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-purple-300 flex items-center gap-2">
-                        <Layers className="w-3 h-3" />
-                        Active Context Focus
-                    </span>
-                    <p className="text-[14px] text-purple-200/90 max-w-2xl leading-relaxed font-medium">
-                        In books these can be chapters, in games quests or objects, in assistants different views, or in projects different modules.
-                        <br /><span className="text-[12px] opacity-70 font-normal">Items pinned here are injected into the AI's short-term memory. Toggle items below to add or remove them from focus.</span>
-                    </p>
+                    <button
+                        onClick={() => setIsBannerOpen(!isBannerOpen)}
+                        className="flex items-center justify-between w-full group"
+                    >
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-purple-300 flex items-center gap-2">
+                            <Layers className="w-3 h-3" />
+                            Active Context Focus
+                        </span>
+                        <div className={`text-purple-400 transition-transform duration-200 ${isBannerOpen ? 'rotate-180' : ''}`}>
+                            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </div>
+                    </button>
+
+                    {isBannerOpen && (
+                        <p className="text-[14px] text-purple-200/90 max-w-2xl leading-relaxed font-medium animate-in slide-in-from-top-2 fade-in duration-200">
+                            In books these can be chapters, in games quests or objects, in assistants different views, or in projects different modules.
+                            <br /><span className="text-[12px] opacity-70 font-normal">Items pinned here are injected into the AI's short-term memory. Toggle items below to add or remove them from focus.</span>
+                        </p>
+                    )}
                 </div>
             </div>
 

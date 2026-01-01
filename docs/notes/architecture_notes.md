@@ -158,3 +158,27 @@ Proposed algorithm:
 **✅ Decision (v0.3.1):** I implemented **Model C**.
 To ensure the UI remains snappy when deleting nodes (e.g., via the new "X" chips), I do not scan the entire synapse list to purge connections immediately. This creates "Dangling Synapses".
 **Implication:** The Core Engine (`enforceOrthogonality`) was patched to gracefully skip invalid links where `nodeS` or `nodeT` is undefined. This favors responsiveness over strict DB-style integrity, treating the graph as a "fuzzy" biological system where dead connections simply fail to transmit potential.
+
+---
+
+## 📊 Cognitive Telemetry (v0.4.0)
+
+### 14. Operationally Truthful Observability
+*Hypothesis: "Vibe-based" metrics (e.g. raw counters) are insufficient for tuning a complex dynamical system. I need directional signals derived from Information Theory.*
+
+**✅ Decision:** I implemented a rigorous Telemetry V2 engine in `sceCore.ts`.
+
+#### A. Focus as Normalized Entropy
+$$Focus = 1.0 - \frac{H(x)}{\ln(N)}$$
+Where $H(x)$ is the Shannon Entropy of the heat distribution. Normalizing by $\ln(N)$ makes the metric scale-invariant.
+*   **Significance:** This creates a universal "0 to 1" truth. A Focus of `0.02` (2%) honestly reveals that the system's attention is diffused across thousands of nodes, rather than pretending to be "active".
+
+#### B. Stability as Inverse Variance
+$$Stability = \frac{1}{1 + \sigma^2 \cdot k}$$
+*   **Significance:** High variances in heat distribution usually indicate a stable "bimodal" state (Hot inputs vs Cold background). Low variance implies "Grey Goo" (everything is lukewarm). This metric allows me to detect when the graph is melting into noise.
+
+#### C. Burst Plasticity
+I separated learning into two streams:
+1.  **Mean Weight Delta:** The background hum of adaptation.
+2.  **Max Weight Delta:** The "Shock" value of the single largest update.
+This separation allows the dashboard to distinguish between *gradual learning* and *paradigm shifts* (rapid rewiring of a specific connection).

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, GitBranch, Box, Layers, Zap, Divide, Network } from 'lucide-react';
+import { BookOpen, GitBranch, Box, Layers, Zap, Divide, Network, Activity } from 'lucide-react';
 
 const BlueprintBlock = ({ title, subtitle, formula, desc, color, borderColor, fullWidth, icon: Icon }: any) => (
     <div className={`bg-black/20 backdrop-blur-md p-8 rounded-[2.5rem] border ${borderColor} flex flex-col gap-6 shadow-xl group hover:bg-black/30 transition-all hover:-translate-y-1 relative overflow-hidden ${fullWidth ? 'w-full' : ''}`}>
@@ -87,6 +87,17 @@ const MathPage = () => {
                         color="text-cyan-400"
                         borderColor="border-cyan-500/20"
                         icon={Network}
+                        fullWidth
+                    />
+
+                    <BlueprintBlock
+                        title="5. Cognitive Telemetry (v2)"
+                        subtitle="Information Theoretic State"
+                        formula="Focus = 1.0 - (Entropy / ln(N))  |  Stability = 1 / (1 + Variance)"
+                        desc="We monitor the system's cognitive health using Shannon Entropy to measure attention drift and Inverse Variance to track signal stability. This ensures the system remains 'conscious' and focused."
+                        color="text-indigo-400"
+                        borderColor="border-indigo-500/20"
+                        icon={Activity}
                         fullWidth
                     />
                 </div>
