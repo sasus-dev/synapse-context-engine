@@ -732,7 +732,6 @@ const App: React.FC = () => {
               {view === 'eval' && <Benchmarks graph={graph} config={config} addAuditLog={addAuditLog} handleRunQuery={handleRunQuery} results={benchmarkResults} setResults={setBenchmarkResults} />}
 
               {/* DATASET MANAGER */}
-              {/* DATASET MANAGER */}
               {view === 'sessions' && <DatasetsView
                 datasets={datasets}
                 activeDatasetId={activeDatasetId}
@@ -952,6 +951,7 @@ const App: React.FC = () => {
                 }));
                 addAuditLog('system', `User Updated Node: ${id}`, 'success');
               }}
+              graph={graph}
             />
           </div>
         </div>

@@ -77,11 +77,11 @@ const VisualGraphView: React.FC<VisualGraphViewProps> = ({ graph, activatedNodes
         if (!canvasRef.current || !containerRef.current) return;
 
         // Force Simulation
-        state.current.simulation = d3.forceSimulation<Node, Link>()
+        state.current.simulation = d3.forceSimulation()
             .force("center", d3.forceCenter(0, 0).strength(0.05))
             .force("charge", d3.forceManyBody().strength(-repulsion).distanceMax(3000))
             .force("collide", d3.forceCollide().radius((d: any) => 30 + (d.heat || 0) * 10).strength(1))
-            .force("link", d3.forceLink<Node, Link>().id(d => d.id).distance(linkDist).strength(0.5))
+            .force("link", d3.forceLink().id((d: any) => d.id).distance(linkDist).strength(0.5))
             .force("x", d3.forceX(0).strength(gravity * 0.1))
             .force("y", d3.forceY(0).strength(gravity * 0.1))
             .velocityDecay(0.4)
@@ -99,7 +99,7 @@ const VisualGraphView: React.FC<VisualGraphViewProps> = ({ graph, activatedNodes
             .on("dblclick.zoom", null);
 
         // Drag Behavior
-        const drag = d3.drag<HTMLCanvasElement, unknown>()
+        const drag = d3.drag()
             .subject((event) => {
                 const transform = state.current.transform;
                 const x = transform.invertX(event.x);

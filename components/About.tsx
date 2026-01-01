@@ -1,5 +1,5 @@
 import React from 'react';
-import { Github, Heart, Shield, Code, ChevronRight, Code2, Twitter, Linkedin, Cpu } from 'lucide-react';
+import { Github, Heart, Shield, Code, ChevronRight, Code2, Twitter, Linkedin, Cpu, Facebook, MessageSquare } from 'lucide-react';
 
 const About = () => {
     return (
@@ -37,8 +37,12 @@ const About = () => {
                         </p>
 
                         <div className="flex gap-4 pt-2">
-                            <SocialLink icon={Twitter} label="X (Twitter)" href="https://x.com/sasus_dev" />
-                            <SocialLink icon={Linkedin} label="LinkedIn" href="https://www.linkedin.com/in/sasus-dev/" />
+                            <a href="https://www.sasus.dev" target="_blank" rel="noopener noreferrer" className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-all">
+                                Website
+                            </a>
+                            <a href="https://sasusai.substack.com/" target="_blank" rel="noopener noreferrer" className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-all">
+                                Substack
+                            </a>
                         </div>
                     </div>
 
@@ -47,16 +51,22 @@ const About = () => {
                         <div className="relative bg-[#0a0a0f] border border-white/10 p-8 rounded-3xl space-y-6">
                             <div className="flex items-center gap-4 mb-4">
                                 <div className="p-3 bg-white/5 rounded-xl">
-                                    <Cpu className="w-6 h-6 text-purple-400" />
+                                    <Heart className="w-6 h-6 text-rose-400" />
                                 </div>
                                 <div>
-                                    <h4 className="text-white font-bold text-lg">Project Goal</h4>
-                                    <p className="text-xs text-slate-500 uppercase tracking-widest">Roadmap 2025</p>
+                                    <h4 className="text-white font-bold text-lg">Spread the Word</h4>
+                                    <p className="text-xs text-slate-500 uppercase tracking-widest">Support the Project</p>
                                 </div>
                             </div>
-                            <p className="text-sm text-slate-300 font-medium">
-                                Create a human brain inspired memory architecture that is secure.
+                            <p className="text-sm text-slate-300 font-medium pb-2">
+                                If you find this architecture interesting, please consider sharing it with your network.
                             </p>
+                            <div className="flex flex-wrap gap-2">
+                                <ShareButton platform="twitter" url="https://github.com/sasus-dev/synapse-context-engine" />
+                                <ShareButton platform="linkedin" url="https://github.com/sasus-dev/synapse-context-engine" />
+                                <ShareButton platform="facebook" url="https://github.com/sasus-dev/synapse-context-engine" />
+                                <ShareButton platform="reddit" url="https://github.com/sasus-dev/synapse-context-engine" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -90,6 +100,50 @@ const SocialLink = ({ icon: Icon, href }: any) => (
         <Icon className="w-6 h-6" />
     </a>
 );
+
+const ShareButton = ({ platform, url }: { platform: 'twitter' | 'linkedin' | 'facebook' | 'reddit', url: string }) => {
+    let href = '';
+    let Icon = Twitter;
+    let colorClass = '';
+
+    const shareText = "Check out the new safety-first, inspectable memory and context-construction architecture for AI systems.\n\nIt works like a synthetic hippocampus with a kill switch—designed to make context construction visible, bounded, and auditable before inference happens.";
+
+    switch (platform) {
+        case 'twitter':
+            href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`;
+            Icon = Twitter;
+            colorClass = 'hover:text-[#1DA1F2] hover:bg-[#1DA1F2]/10';
+            break;
+        case 'linkedin':
+            // LinkedIn summary parameter is often deprecated but we try anyway, sticking to safe share-offsite
+            href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+            Icon = Linkedin;
+            colorClass = 'hover:text-[#0A66C2] hover:bg-[#0A66C2]/10';
+            break;
+        case 'facebook':
+            // Facebook ignores text params usually, acts on OG tags
+            href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(shareText)}`;
+            Icon = Facebook;
+            colorClass = 'hover:text-[#1877F2] hover:bg-[#1877F2]/10';
+            break;
+        case 'reddit':
+            href = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent("Synapse Context Engine: A Synthetic Hippocampus for AI")}`;
+            Icon = MessageSquare;
+            colorClass = 'hover:text-[#FF4500] hover:bg-[#FF4500]/10';
+            break;
+    }
+
+    return (
+        <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`p-3 bg-white/5 rounded-xl border border-white/5 transition-all text-slate-400 ${colorClass}`}
+        >
+            <Icon className="w-5 h-5" />
+        </a>
+    );
+};
 
 const GoalItem = ({ text, touched }: any) => (
     <li className="flex items-center gap-3 text-sm text-slate-300 font-medium">

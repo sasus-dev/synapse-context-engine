@@ -32,7 +32,13 @@ const EvalRunner: React.FC<EvalRunnerProps> = ({ dataset, config, onComplete, on
         const start = Date.now();
 
         try {
-            onLog({ type: 'benchmark', message: `[${currentIndex + 1}/${dataset.queries.length}] Executing: "${query.slice(0, 40)}..."`, timestamp: new Date().toLocaleTimeString() });
+            onLog({
+                id: Math.random().toString(36),
+                type: 'benchmark',
+                status: 'info',
+                message: `[${currentIndex + 1}/${dataset.queries.length}] Executing: "${query.slice(0, 40)}..."`,
+                timestamp: new Date().toLocaleTimeString()
+            });
 
             // Override config depth locally for this run context if supported by engine
             // (In a real app, meaningful engine config overrides would be passed here)
@@ -46,7 +52,13 @@ const EvalRunner: React.FC<EvalRunnerProps> = ({ dataset, config, onComplete, on
             }));
 
         } catch (err: any) {
-            onLog({ type: 'error', message: `Test Failed: ${err.message}`, timestamp: new Date().toLocaleTimeString() });
+            onLog({
+                id: Math.random().toString(36),
+                type: 'benchmark',
+                status: 'error',
+                message: `Test Failed: ${err.message}`,
+                timestamp: new Date().toLocaleTimeString()
+            });
             setStats(prev => ({ ...prev, failed: prev.failed + 1 }));
         }
 
@@ -76,7 +88,13 @@ const EvalRunner: React.FC<EvalRunnerProps> = ({ dataset, config, onComplete, on
         };
 
         onComplete(result);
-        onLog({ type: 'success', message: `Benchmark run completed for ${dataset.name}`, timestamp: new Date().toLocaleTimeString() });
+        onLog({
+            id: Math.random().toString(36),
+            type: 'benchmark',
+            status: 'success',
+            message: `Benchmark run completed for ${dataset.name}`,
+            timestamp: new Date().toLocaleTimeString()
+        });
     };
 
     const togglePlay = () => {
@@ -89,7 +107,13 @@ const EvalRunner: React.FC<EvalRunnerProps> = ({ dataset, config, onComplete, on
         setIsPlaying(false);
         setCurrentIndex(0);
         setStats({ passed: 0, failed: 0, latencies: [] });
-        onLog({ type: 'benchmark', message: 'Benchmark aborted by user.', timestamp: new Date().toLocaleTimeString() });
+        onLog({
+            id: Math.random().toString(36),
+            type: 'benchmark',
+            status: 'warning',
+            message: 'Benchmark aborted by user.',
+            timestamp: new Date().toLocaleTimeString()
+        });
     };
 
     const progress = (currentIndex / dataset.queries.length) * 100;

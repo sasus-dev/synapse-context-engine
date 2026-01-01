@@ -26,7 +26,7 @@ interface TopBar1Props {
   // Legacy / Transitional Props
   sessions?: any;
   activeSessionId?: any;
-  activeSessionId?: any;
+
   setActiveSessionId?: any;
 
   onResetAll?: () => void;

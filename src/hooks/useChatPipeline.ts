@@ -71,7 +71,7 @@ export const useChatPipeline = (
 
         // Filter only active rules (Global)
         const activeSecurityRules = (currentConfig.securityRules || []).filter(r => r.isActive);
-        console.log("Checking Security Rules:", activeSecurityRules.length, "active rules");
+
 
         const securityResults: SecurityRuleResult[] = activeSecurityRules.map(r => {
             let regex: RegExp;
@@ -199,7 +199,7 @@ export const useChatPipeline = (
                 });
             });
 
-            console.log("Evaluation Seeds:", seeds);
+
 
             if (seeds.length > 0) {
                 const seedLabels = seeds.map(s => engineRef.current.graph.nodes[s]?.label).filter(Boolean).join(', ');
@@ -229,7 +229,7 @@ export const useChatPipeline = (
             // SANITIZATION: Filter out Pollution (Conflicting Identity Nodes)
             // If we are looking for "Emma", we should NOT see "AI Name: Jade" in context.
             const sanitizedContext = pruned.filter(n => {
-                const node = engineRef.current.graph.nodes[n.id];
+                const node = engineRef.current.graph.nodes[n.node]; // Fixed: ActivatedNode uses 'node' property, not 'id'
                 const label = node?.label || '';
 
                 // Aggressive Regex Match for Identity Preferences
@@ -237,7 +237,7 @@ export const useChatPipeline = (
                 const isIdentityNode = identityPattern.test(label);
 
                 if (isIdentityNode) {
-                    console.warn(`[Pipeline] 🛡️ SANITIZER: PURGED Pollution Node: "${label}" (${n.id})`);
+                    console.warn(`[Pipeline] 🛡️ SANITIZER: PURGED Pollution Node: "${label}" (${n.node})`);
                     return false;
                 }
                 return true;
@@ -308,7 +308,7 @@ export const useChatPipeline = (
                     const safeId = nn.id.toLowerCase().trim().replace(/\s+/g, '_');
                     const SafeLabel = nn.label || safeId;
                     const safeContent = nn.content || `Entity captured from conversation: ${SafeLabel}`;
-                    let type = nn.type.toLowerCase();
+                    let type = (nn.type || 'concept').toLowerCase();
                     const validTypes = ['project', 'document', 'contact', 'preference', 'behavior', 'tool', 'config', 'meeting', 'fact', 'benchmark', 'concept'];
                     const safeType = validTypes.includes(type) ? type : 'concept';
 

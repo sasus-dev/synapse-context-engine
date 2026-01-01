@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Save, RefreshCw, LayoutGrid, ArrowRight, Share2, Trash2 } from 'lucide-react';
 import { Node } from '../types';
 
@@ -50,8 +51,8 @@ const NodeEditModal: React.FC<NodeEditModalProps> = ({ node, graph, isOpen, onCl
     const uniqueNeighbors = Array.from(new Set(neighbors.map((n: any) => n.id)))
         .map(id => neighbors.find((n: any) => n.id === id));
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+    return createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
@@ -164,7 +165,8 @@ const NodeEditModal: React.FC<NodeEditModalProps> = ({ node, graph, isOpen, onCl
 
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

@@ -11,8 +11,16 @@ interface DatasetsViewProps {
     setActiveDatasetId: (id: string) => void;
 
     // Actions delegated to parent (App.tsx)
-    // NEW PROP
+    onCreateDataset?: () => void;
+    onDeleteDataset?: (id: string) => void;
+    onRenameDataset?: (id: string, newName: string) => void;
+    onImportDataset?: () => void;
+    onExportDataset?: (dataset: Dataset) => void;
+    onAutoConnect?: (id: string) => void;
+    onAddTable?: (id: string, name: string) => void;
+    onRestoreDefaults?: () => void;
     onUpdateDataset?: (id: string, updates: Partial<Dataset>) => void;
+    addAuditLog?: (type: any, message: string, status?: any) => void;
 }
 
 const EditDatasetModal = ({ isOpen, onClose, dataset, onSave }: any) => {

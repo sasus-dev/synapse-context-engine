@@ -48,3 +48,15 @@ Major improvements to how the "Working Memory" (Active Focus) behaves, giving us
 *   **Refactored `App.tsx`**: Extracted critical handlers (`handleDeleteContext`, `handleRestoreDefaults`) to top-level scope for better stability.
 *   **Prop Drilling**: Cleaned up `Explorer` and `ActiveFocusBar` prop passing to support the new Delete vs. Restore vs. Reset distinction.
 *   **State Management**: Enhanced `handleResetDataset` to explicitly clear secondary state arrays (`telemetry`, `debugLogs`) which were previously lingering.
+
+---
+
+## 🔧 Hotfix 2: Type Hardening & Component Wiring (v0.3.1.2)
+
+**Issue:** A series of TypeScript compilation errors and a component linkage failure were checking critical paths in the app.
+**Fixes Applied:**
+1.  **Duplicate Identifiers**: Resolved a `Duplicate identifier` error in `AppHeader` caused by conflicting prop definitions.
+2.  **Missing Component Wiring**: The `GraphExplorer` was attempting to import a non-existent `GraphVisualizer`. It has been correctly repointed to `VisualGraphView`.
+3.  **Strict Type Compliance**: Fixed `AuditLog` type mismatches in `EvalRunner` and removed unsupported generic type arguments from D3 calls in `VisualGraphView`.
+4.  **Pipeline Stability**: Hardened `useChatPipeline.ts` against a "Property 'id' does not exist" crash during context sanitization.
+5.  **About Page**: Updated personal links and added functional social share buttons for Twitter, LinkedIn, Facebook, and Reddit.

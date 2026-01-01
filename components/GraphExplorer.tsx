@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { PipelineStage, KnowledgeGraph, ActivatedNode, EngineConfig, SecurityRule } from '../types';
 // Fixed: Added missing 'Cpu' import from lucide-react
 import { Zap, Activity, Play, RefreshCw, ShieldCheck, Grid, MessageSquare, LayoutGrid, Cpu } from 'lucide-react';
-import GraphVisualizer from './GraphVisualizer';
+import VisualGraphView from './VisualGraphView';
 
 interface GraphExplorerProps {
   query: string;
@@ -145,11 +145,11 @@ const LatticePanel = ({ graph, activatedNodes, selectedNodeId, setSelectedNodeId
       </div>
     </div>
     <div className="flex-1 bg-black/40 rounded-[2.5rem] overflow-hidden border border-white/[0.03] relative min-h-[400px]">
-      <GraphVisualizer
+      <VisualGraphView
         graph={graph}
         activatedNodes={activatedNodes}
         selectedNodeId={selectedNodeId}
-        onNodeClick={setSelectedNodeId}
+        setSelectedNodeId={setSelectedNodeId}
       />
     </div>
   </div>
