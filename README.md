@@ -335,34 +335,6 @@ Add an API key in settings to use the app (Default / Recommended is Qrok AI)
 
 ---
 
-## 📊 Project Status
-
-**Current State:** Feature-complete research system. Core architecture proven, now community-driven for optimization and validation.
-
-**Implementation:** In-memory graph (TypeScript) for real-time visualization and cross-platform compatibility. SQL recursive CTEs represent future scalability path for 100k+ node graphs.
-
-**Performance:** Scales with graph size. Smaller graphs (100-1K nodes) run in real-time. Larger graphs (10K+) may experience latency. Community benchmarks welcome.
-
-**Next Steps:** Benchmarking, formal analysis, production hardening—now in the hands of researchers and contributors. See [CONTRIBUTING.md](CONTRIBUTING.md) and [USE-CASES.md](USE-CASES.md).
-
----
-
-## 📊 About Benchmarks
-
-SCE intentionally does not ship with traditional retrieval benchmarks yet.
-
-The architecture is still stabilizing, and there is currently no accepted baseline for evaluating:
-- Relational memory coherence
-- Context inspectability
-- Activation trace quality
-- Long-term memory evolution
-
-Premature benchmarks would bias development toward legacy retrieval metrics and misrepresent SCE’s goals.
-
-Benchmarks will be introduced once the architecture is considered stable and native evaluation criteria are defined.
-
----
-
 ## 📖 Theoretical Roots
 
 SCE draws from neuroscience, graph theory, and cognitive architecture research—adapting concepts for practical AI systems:
@@ -416,6 +388,22 @@ Check the [Issues](https://github.com/sasus-dev/synapse-context-engine/issues) t
 
 ---
 
+## 📊 About Benchmarks
+
+SCE intentionally does not ship with traditional retrieval benchmarks yet.
+
+The architecture is still stabilizing, and there is currently no accepted baseline for evaluating:
+- Relational memory coherence
+- Context inspectability
+- Activation trace quality
+- Long-term memory evolution
+
+Premature benchmarks would bias development toward legacy retrieval metrics and misrepresent SCE’s goals.
+
+Benchmarks will be introduced once the architecture is considered stable and native evaluation criteria are defined.
+
+---
+
 ## 📜 License & Citation
 
 ### Code & Data
@@ -442,6 +430,7 @@ technical reports, or publications, please cite:
   year   = {2025},
   url    = {https://github.com/sasus-dev/synapse-context-engine}
 }
+```
 
 ---
 
