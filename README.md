@@ -315,7 +315,7 @@ npm run tauri build
   <p><sub><em>The chat interface exposes the complete pipeline. Active Context Focus (top) shows anchored nodes. Quick Actions (right) provide exploration prompts. System Audit (left) logs every operation in real-time.</em></sub></p>
 </div>
 
-Add an API key in settings to use the app (Default / Recommended is Qrok AI)
+Add an API key in settings to use the app (Default / Recommended is Groq)
 
 
 ---
@@ -352,7 +352,7 @@ For full citations and detailed connections to research traditions, see [CITATIO
 
 This project is developed by a single independent dev, not a software company, nor a research lab. This project is the result of my personal research to in order to create more realistic NPC behavior in games and the ability to create true digital twin. This project is a proof of concept for a larger AI game project and digital twin platform I'm currently working on.
 
-**Project Status:** The core architecture is functional, but it needs more experimention, twweaking and optimization. The current challenge is how the system creates new node connections / evolves / flows naturally (how the graph grows naturally and learns along the way). This will require a deep dive into hypergraphs, graph theory and cognitive architecture research.
+**Project Status:** The core architecture is functional, but it needs more testing, tweaking and optimization. The current challenge is how the system creates connections / evolves / flows naturally (how the graph expands naturally and learns along the way). This require a deep dive / experimentations on hypergraphs, graph theory and cognitive architecture research.
 
 **Why Open-Sourced:** While SCE was built to solve memory architecture challenges in games and digital twin systems, it was open-sourced specifically because of its potential to address many security concerns in current AI systems and perhaps even enable safer alignment. If this were purely about better memory optimization, it would have remained proprietary.
 
