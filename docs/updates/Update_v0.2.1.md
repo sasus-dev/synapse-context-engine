@@ -53,3 +53,6 @@
 - **Compilation Fix**: Resolved a critical syntax error in `App.tsx` where configuration objects were malformed in the global scope.
 - **Header Alignment**: Fixed issue where GitHub and Panel toggle buttons were shifting left; they now properly anchor to the right edge.
 - **Versioning Alignment**: Corrected semantic versioning from v0.3.0 (Beta) to v0.2.1 (Incremental Alpha) to better reflect the iterative nature of these changes.
+
+---
+<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.

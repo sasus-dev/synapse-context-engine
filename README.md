@@ -7,7 +7,8 @@
 
 **TL;DR** — SCE replaces flat retrieval and opaque prompt assembly with an explicit, graph-based context engine. Context is *constructed*, not fetched. Memory emerges through controlled activation, not hidden weights. **This is a working system with full LLM integration, not a conceptual demo.**
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Code License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Docs License](https://img.shields.io/badge/License-CC_BY_4.0-blue.svg)](docs/LICENSE_CC-BY-4.0.md)
 [![Platform](https://img.shields.io/badge/platform-Web%20%7C%20Desktop-lightgrey.svg)](#-quick-start)
 [![Built with Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 
@@ -45,6 +46,9 @@ The result is memory that is:
 | Real-time Visualization | ✅ Implemented |
 | Multi-Persona System | ✅ Implemented |
 | Custom User/AI Identities | ✅ Implemented |
+| Algorithmic Extraction | ✅ Implemented |
+| Accurate Telemetry (Performance metrics) | ✅ Implemented |
+| Node Connections (Natural Expansion) | ⚠️ In progress |
 | Prompt Optimization | ⚠️ In progress |
 | Production Ready | ⚠️ Research system |
 | Benchmarks | ❌ Community-needed |
@@ -195,7 +199,7 @@ It provides:
 - Focus anchoring
 - Live graph visualization
 - Context synthesis output
-- Telemetry dashboards
+- Telemetry dashboard
 
 Think of it as **mission control for context assembly**—designed for debugging, research, and safety analysis.
 
@@ -297,9 +301,11 @@ npm run dev
 ```bash
 npm run tauri dev
 ```
+or you can build the app (it wil create an installer for your computer)
 
-### Check the Quick Start Tutorial
-[Quick-Start-Tutorial.md](docs/guides/Quick-Start-Tutorial.md)
+```bash
+npm run tauri build
+```
 
 
 ### Start Experimenting
@@ -308,6 +314,8 @@ npm run tauri dev
   <img src="docs/images/sce-chat.png" alt="SCE Chat Interface" width="90%">
   <p><sub><em>The chat interface exposes the complete pipeline. Active Context Focus (top) shows anchored nodes. Quick Actions (right) provide exploration prompts. System Audit (left) logs every operation in real-time.</em></sub></p>
 </div>
+
+Add an API key in settings to use the app (Default / Recommended is Qrok AI)
 
 
 ---
@@ -370,16 +378,16 @@ For full citations and detailed connections to research traditions, see [CITATIO
 
 ## 🤝 Call for Collaboration
 
-This project was developed by a single independent developer (AI Engineer / Game Dev / 3D Generalist, not an academic researcher) as a component of a larger digital twin platform.
+This project is developed by a single independent dev, not a software company, nor a research lab. This project is the result of my personal research to in order to create more realistic NPC behavior in games and the ability to create true digital twin. This project is a proof of concept for a larger AI game project and digital twin platform I'm currently working on.
 
-**Project Status:** Feature-complete for initial vision. The core architecture is functional and demonstrated. Future development is now community-driven.
+**Project Status:** The core architecture is functional, but it needs more experimention, twweaking and optimization. The current challenge is how the system creates new node connections / evolves / flows naturally (how the graph grows naturally and learns along the way). This will require a deep dive into hypergraphs, graph theory and cognitive architecture research.
 
-**Why Open-Sourced:** While SCE was built to solve memory architecture challenges in digital twin systems, it was open-sourced specifically because of its potential to address alignment and security concerns in AI systems. If this were purely a memory optimization, it would have remained proprietary.
+**Why Open-Sourced:** While SCE was built to solve memory architecture challenges in games and digital twin systems, it was open-sourced specifically because of its potential to address many security concerns in current AI systems and perhaps even enable safer alignment. If this were purely about better memory optimization, it would have remained proprietary.
 
 **What's Needed from the Community:**
 
 **Research & Validation:**
-- Benchmark studies comparing SCE to RAG baselines (once core stabilizes)
+- Benchmark studies comparing SCE to RAG baselines (once core architecture is established)
 - Adversarial testing of security mechanisms
 - Formal analysis of activation dynamics
 - Comparison studies across different domains
@@ -410,11 +418,22 @@ Check the [Issues](https://github.com/sasus-dev/synapse-context-engine/issues) t
 
 ## 📜 License & Citation
 
-**License:** Apache 2.0
+### Code & Data
+All source code and datasets in this repository are licensed under
+the **Apache License, Version 2.0**, unless otherwise noted.
+See the `LICENSE` file for details.
 
-This software is licensed under the Apache License, Version 2.0. You may use, modify, and distribute this software in compliance with the license terms. **Attribution is required:** any derivative works or applications must credit the original author.
+### Documentation & Theory
+All content within the `docs/` directory (including notes,
+architectural diagrams, conceptual papers, and images)
+is licensed under **Creative Commons Attribution 4.0 (CC BY 4.0)**.
 
-**If you use SCE in research, please cite:**
+---
+
+### 📖 Academic Citation (Strongly Encouraged)
+
+If you use SCE or its underlying concepts in academic research,
+technical reports, or publications, please cite:
 
 ```bibtex
 @misc{sce_2025,
@@ -423,17 +442,6 @@ This software is licensed under the Apache License, Version 2.0. You may use, mo
   year   = {2025},
   url    = {https://github.com/sasus-dev/synapse-context-engine}
 }
-```
-
-**If you use SCE in applications or derivative works:**
-
-Include the following attribution in your documentation, UI, or credits:
-
-```
-Based on the Synapse Context Engine (SCE) by Lasse Sainia
-https://github.com/sasus-dev/synapse-context-engine
-Licensed under Apache 2.0
-```
 
 ---
 

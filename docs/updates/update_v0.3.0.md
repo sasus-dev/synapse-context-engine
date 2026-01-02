@@ -42,3 +42,7 @@
 - **Crash-Proof Logging**: Hardened the Trace & Safety logging pipeline. Logs are now reliably captured and displayed even if the internal processing pipeline encounters errors, providing transparent debugging.
 - **Architectural Sanctity**: Enforced strict separation between **Data** (Datasets) and **Configuration** (Global). Patched `scifiData.ts` to remove conflicting Empty API Keys, ensuring that all datasets correctly inherit your global credentials.
 
+
+
+---
+<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.

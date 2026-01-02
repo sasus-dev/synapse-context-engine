@@ -52,8 +52,12 @@ cd synapse-context-engine
 # 2. Install dependencies
 npm install
 
-# 3. Start native app
+# 3. Start native app (Development Mode)
 npm run tauri dev
+
+# 4. Build installer (Optional)
+npm run tauri build
+# Output will be in src-tauri/target/release/bundle/
 ```
 > This will launch a separate application window.
 
@@ -227,6 +231,17 @@ export const INITIAL_GRAPH: KnowledgeGraph = {
 
 ---
 
+## 📦 How to Build (Native)
+To create a standalone installer (EXE/DMG) for your operating system:
+
+```bash
+npm run tauri build
+```
+
+The installer will be generated in `src-tauri/target/release/bundle/`.
+
+---
+
 ## 🎉 Troubleshooting & Next Steps
 
 **"Graph not loading?"**
@@ -241,3 +256,6 @@ export const INITIAL_GRAPH: KnowledgeGraph = {
 - [ ] Interpret the Telemetry charts
 
 **Questions?** Ask in [Discussions](https://github.com/sasus-dev/synapse-context-engine/discussions).
+
+---
+<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.

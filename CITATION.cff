@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: >
+  If you use the Synapse Context Engine (SCE) or its underlying concepts
+  in academic research, publications, or technical reports, please cite it
+  using the information below.
+
+title: "The Synapse Context Engine (SCE): An Inspectable Memory Architecture for Safe AI"
+
+author:
+  - family-names: Sainia
+    given-names: Lasse
+    website: https://www.sasus.dev
+
+year: 2026
+
+license: Apache-2.0 AND CC-BY-4.0
+
+repository-code: https://github.com/sasus-dev/synapse-context-engine
+url: https://github.com/sasus-dev/synapse-context-engine
+
+keywords:
+  - artificial intelligence
+  - memory architecture
+  - context construction
+  - graph-based AI
+  - hypergraphs
+  - AI safety
+  - alignment
+  - inspectable AI
+  - cognitive architecture
+
+preferred-citation:
+  type: misc
+  author:
+    - family-names: Sainia
+      given-names: Lasse
+  title: "The Synapse Context Engine (SCE): An Inspectable Memory Architecture for Safe AI"
+  year: 2026
+  url: https://github.com/sasus-dev/synapse-context-engine

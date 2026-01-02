@@ -60,3 +60,7 @@ Major improvements to how the "Working Memory" (Active Focus) behaves, giving us
 3.  **Strict Type Compliance**: Fixed `AuditLog` type mismatches in `EvalRunner` and removed unsupported generic type arguments from D3 calls in `VisualGraphView`.
 4.  **Pipeline Stability**: Hardened `useChatPipeline.ts` against a "Property 'id' does not exist" crash during context sanitization.
 5.  **About Page**: Updated personal links and added functional social share buttons for Twitter, LinkedIn, Facebook, and Reddit.
+
+
+---
+<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
