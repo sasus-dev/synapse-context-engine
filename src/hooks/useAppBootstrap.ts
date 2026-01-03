@@ -38,8 +38,12 @@ export const useAppBootstrap = (
                 // ---------------------------------------------------------
                 const validPromptIds = new Set(INITIAL_SYSTEM_PROMPTS.map(p => p.id));
 
-                // 1. Preserve purely custom prompts
-                const customPrompts = (loadedConfig.systemPrompts || []).filter(p => !validPromptIds.has(p.id));
+                // 1. Preserve purely custom prompts (Filter out known legacy artifacts)
+                const customPrompts = (loadedConfig.systemPrompts || []).filter(p =>
+                    !validPromptIds.has(p.id) &&
+                    p.name !== 'Chat Data Extraction' && // Legacy v0.3 artifact
+                    p.id !== 'extraction' // Likely legacy ID
+                );
 
                 // 2. Update core prompts (Enforce new Names/Descriptions, preserve User Content)
                 const updatedStandardPrompts = INITIAL_SYSTEM_PROMPTS.map(initP => {
@@ -73,7 +77,7 @@ export const useAppBootstrap = (
                         name: 'Default Dataset',
                         created: Date.now(),
                         lastActive: Date.now(),
-                        graph: INITIAL_GRAPH,
+                        graph: JSON.parse(JSON.stringify(INITIAL_GRAPH)),
                         chatHistory: [],
                         auditLogs: [{ id: '1', timestamp: 'System', type: 'system', message: 'Default Dataset Created', status: 'success' }],
                         debugLogs: [],
@@ -96,7 +100,7 @@ export const useAppBootstrap = (
                             name: 'Sci-Fi Knowledge Base',
                             created: Date.now(),
                             lastActive: Date.now(),
-                            graph: scifiSession.graph,
+                            graph: JSON.parse(JSON.stringify(scifiSession.graph)),
                             chatHistory: [],
                             auditLogs: [{ id: '1', timestamp: 'System', type: 'system', message: 'Sci-Fi Knowledge Base Imported with Schema', status: 'success' }],
                             debugLogs: [],

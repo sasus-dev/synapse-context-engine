@@ -36,6 +36,8 @@ const NodeInspector: React.FC<NodeInspectorProps> = ({ selectedNode, energy = 0,
         node={selectedNode}
         energy={energy}
         onEdit={() => setIsEditing(true)}
+        graph={graph}
+        onSelectNode={onSelectNode}
       />
 
       <NodeEditModal
@@ -52,9 +54,20 @@ const NodeInspector: React.FC<NodeInspectorProps> = ({ selectedNode, energy = 0,
   );
 };
 
-const NodeViewer = ({ node, energy, onEdit }: { node: Node; energy: number; onEdit: () => void; }) => {
+const NodeViewer = ({ node, energy, onEdit, graph, onSelectNode }: { node: Node; energy: number; onEdit: () => void; graph?: any; onSelectNode?: (id: string) => void; }) => {
+
+  // Computed Metrics
+  const synapses = graph?.synapses.filter((s: any) => s.source === node.id || s.target === node.id) || [];
+  const degree = synapses.length;
+  const strongConnections = synapses
+    .filter((s: any) => s.weight > 0.3)
+    .sort((a: any, b: any) => b.weight - a.weight)
+    .slice(0, 5);
+
+  const hyperedges = graph?.hyperedges?.filter((h: any) => h.nodes.includes(node.id)) || [];
+
   return (
-    <div className="flex flex-col animate-in fade-in duration-300 gap-8">
+    <div className="flex flex-col animate-in fade-in duration-300 gap-6">
 
       {/* Background Decor */}
       <div className="absolute top-0 right-0 p-12 opacity-20 pointer-events-none">
@@ -68,29 +81,77 @@ const NodeViewer = ({ node, energy, onEdit }: { node: Node; energy: number; onEd
             <div className={`w-2 h-2 rounded-full ${energy > 0.5 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`} />
             <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{node.type}</span>
           </div>
-          <h2 className="text-2xl font-black text-white leading-none tracking-tight">{node.label}</h2>
-          <p className="text-[9px] font-mono text-slate-600 uppercase tracking-widest pt-1">ID: {node.id}</p>
+          <h2 className="text-2xl font-black text-white leading-none tracking-tight break-all">{node.label}</h2>
+          <p className="text-[9px] font-mono text-slate-600 uppercase tracking-widest pt-1 truncate max-w-[200px]" title={node.id}>ID: {node.id}</p>
         </div>
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-2 gap-3 relative z-10">
-        <MetricBox label="Activation" value={energy.toFixed(2)} icon={Zap} color="text-purple-400" />
+      <div className="grid grid-cols-3 gap-2 relative z-10">
+        <MetricBox label="Energy" value={energy.toFixed(2)} icon={Zap} color="text-purple-400" />
         <MetricBox label="Heat" value={(node.heat || 0).toFixed(2)} icon={Flame} color="text-orange-400" />
+        <MetricBox label="Degree" value={degree} icon={Activity} color="text-blue-400" />
       </div>
 
-      {/* Content Viewer (Seamless) */}
-      <div className="flex flex-col gap-3 relative z-10">
+      {/* Structural Context (Hyperedges) */}
+      {hyperedges.length > 0 && (
+        <div className="flex flex-col gap-2 relative z-10">
+          <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest pl-1">Hyperedge Context</span>
+          <div className="flex flex-wrap gap-2">
+            {hyperedges.map((h: any) => (
+              <div key={h.id} className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-medium text-indigo-300 flex items-center gap-2 group cursor-default">
+                <span>{h.label || 'Unnamed Cluster'}</span>
+                <span className="px-1.5 py-0.5 rounded-md bg-black/20 text-indigo-400/60 text-[9px]">{h.nodes.length} nodes</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Memory Content */}
+      <div className="flex flex-col gap-2 relative z-10">
         <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest pl-1">Memory Content</span>
-        <div className="p-1 group">
-          <p className="text-[13px] text-slate-300 leading-relaxed font-medium whitespace-pre-wrap font-sans opacity-90 group-hover:opacity-100 transition-opacity">
+        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.04]">
+          <p className="text-[13px] text-slate-300 leading-relaxed font-medium whitespace-pre-wrap font-sans opacity-90">
             {node.content}
           </p>
         </div>
       </div>
 
+      {/* Strong Connections */}
+      {strongConnections.length > 0 && (
+        <div className="flex flex-col gap-2 relative z-10">
+          <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest pl-1">Strongest Synapses</span>
+          <div className="flex flex-col gap-1">
+            {strongConnections.map((syn: any) => {
+              const isSource = syn.source === node.id;
+              const otherId = isSource ? syn.target : syn.source;
+              const otherNode = graph?.nodes[otherId];
+              return (
+                <button
+                  key={`${syn.source}-${syn.target}`}
+                  onClick={() => onSelectNode?.(otherId)}
+                  className="flex items-center justify-between p-2 rounded-lg bg-black/20 hover:bg-white/5 border border-white/[0.04] transition-colors text-left group"
+                >
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <span className="text-[10px] text-slate-500 font-mono shrink-0">{isSource ? '→' : '←'}</span>
+                    <span className="text-[11px] text-slate-300 font-medium truncate">{otherNode?.label || otherId}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] text-slate-600 uppercase">{syn.type || 'assoc'}</span>
+                    <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500/50" style={{ width: `${Math.min(100, syn.weight * 100)}%` }} />
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Footer Actions */}
-      <div className="relative z-10 pt-2">
+      <div className="relative z-10 pt-4">
         <button
           onClick={onEdit}
           className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-purple-900/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 group"

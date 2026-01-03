@@ -29,6 +29,7 @@ export interface Synapse {
   weightHistory?: number[];
   firedByRule?: string;
   type?: 'association' | 'contradiction' | 'inference';
+  metadata?: any;
 }
 
 export interface Hyperedge {
@@ -65,12 +66,21 @@ export interface EngineConfig {
   hybridRules: boolean;
   memoryWindow?: number; // 1-10 Slider
 
-  // Pipeline Configuration
-  extractionProvider: LLMProvider | 'rules-only' | 'none';
-  extractionModel: string; // Specific model name (e.g. "llama3-8b")
-  inferenceProvider: LLMProvider;
-  inferenceModel: string; // Specific model name (e.g. "llama3-70b")
+  // Consolidation Settings
+  enableConsolidation?: boolean;
+  pruneConsolidatedEdges?: boolean;
+  consolidationInterval?: number;
 
+  // Pipeline Configuration
+  extractionProvider: LLMProvider | 'rules-only' | 'none'; // DEPRECATED - Use specific providers below
+  nodeExtractionProvider?: LLMProvider | 'rules-only' | 'none';
+  relationExtractionProvider?: LLMProvider | 'rules-only' | 'none';
+
+  extractionModel: string; // DEPRECATED
+  nodeExtractionModel?: string;
+  relationExtractionModel?: string;
+
+  // Provider Settings
   // Provider Settings
   apiKeys: {
     gemini?: string;
@@ -190,11 +200,24 @@ export interface PruningLog {
 }
 
 export interface ExtractedNode {
-  id: string;
-  type: string;
   label: string;
+  type: 'concept' | 'entity' | 'event' | 'preference' | 'constraint' | 'goal';
   content: string;
-  connectTo?: string[];
+  confidence: number;
+  id?: string; // Added optional ID for compatibility
+}
+
+export interface ExtractedRelation {
+  source: string;
+  target: string;
+  type: 'causal' | 'compositional' | 'temporal' | 'preference' | 'contradiction' | 'inference';
+  confidence: number;
+  context?: string;
+}
+
+export interface ExtractionResult {
+  nodes: ExtractedNode[];
+  relations: ExtractedRelation[];
 }
 
 export type PipelineStage = 'idle' | 'activating' | 'querying' | 'complete' | 'security_blocked';

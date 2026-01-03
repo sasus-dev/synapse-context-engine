@@ -44,9 +44,11 @@ The result is memory that is:
 | Security Firewall (rule-based) | ✅ Implemented |
 | LLM Integration (Gemini, Groq, Ollama) | ✅ Implemented |
 | Real-time Visualization | ✅ Implemented |
-| Multi-Persona System | ✅ Implemented |
 | Custom User/AI Identities | ✅ Implemented |
 | Algorithmic Extraction | ✅ Implemented |
+| Hyperedge Consolidation (Clique Compression) | ✅ Implemented |
+| Algorithmic Mesh Wiring | ✅ Implemented |
+| Data Hygiene (Strict Garbage Collection) | ✅ Implemented |
 | Accurate Telemetry (Performance metrics) | ✅ Implemented |
 | Node Connections (Natural Expansion) | ⚠️ In progress |
 | Prompt Optimization | ⚠️ In progress |
@@ -94,7 +96,13 @@ Controlled Graph Propagation
         ↓
 Context Synthesis (Pruned + Weighted)
         ↓
-LLM Inference
+LLM Inference ──→ Response
+        ↓
+Extraction (Phase 1: Concepts, Phase 2: Relations)
+        ↓
+Integrity & Layout (Mesh Wiring + Hygiene)
+        ↓
+Memory Encoding (Graph Update)
         ↓
 Telemetry & Audit Signals
 ```
@@ -221,6 +229,28 @@ SCE is **not** a silver bullet—but it reshapes the threat landscape:
 | Runaway costs | Unbounded context growth | Activation thresholds + energy budgets |
 | Alignment drift | Behavioral nudging post-hoc | Structural constraints pre-inference |
 | Input/Output safety | Post-hoc filtering only | Multi-layer inspection at every stage |
+
+### Security Pipeline Flow
+
+```
+Incoming Query
+       ↓
+[🔥 Cognitive Firewall] ──(Violation)──→ 🛑 Blocked
+  (Regex Patterns + Rules)
+       ↓
+Extraction & Grounding
+       ↓
+Context Anchoring
+       ↓
+Spreading Activation
+       ↓
+[🛡️ System 2 Logic] ──(Contradiction)──→ ⚠️ Flagged
+  (Dissonance Check)
+       ↓
+Context Synthesis ──(Sanitization)──→ 🛑 Filtered
+       ↓
+LLM Inference
+```
 
 **Note on Hallucinations:** While not primarily a security concern, SCE's structured memory with source attribution provides better factual grounding than flat retrieval systems. Each activated node carries metadata about its origin, making fabricated information architecturally harder (though not impossible).
 
@@ -418,7 +448,7 @@ is licensed under **Creative Commons Attribution 4.0 (CC BY 4.0)**.
 
 ---
 
-### 📖 Academic Citation (Strongly Encouraged)
+### 📖 Academic Citation
 
 If you use SCE or its underlying concepts in academic research,
 technical reports, or publications, please cite:

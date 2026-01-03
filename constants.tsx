@@ -200,81 +200,77 @@ export const INITIAL_GRAPH: KnowledgeGraph = {
 
 export const INITIAL_SYSTEM_PROMPTS: SystemPrompt[] = [
   {
-    id: 'extraction',
-    name: 'Chat Data Extraction',
-    description: 'Defines how the engine identifies existing nodes and relationships from user input.',
-    content: `You are the Cortex Input Parser. Your goal is to extract KNOWLEDGE NODES from the user's input to build a mental graph.
+    id: 'extraction_node',
+    name: 'Extraction: Nodes',
+    description: 'Phase 1: Identifies key concepts, entities, and facts to create as nodes.',
+    content: `Extract knowledge units as JSON array. NO explanation.
 
-    IMPORTANT: You must handle both exact entity matches and NEW concepts, facts, or tasks.
+TYPES:
+- concept: Ideas, topics, skills (e.g., "Machine Learning")
+- entity: People, places, products (e.g., "Sarah", "Paris")
+- event: Actions, decisions, occurrences (e.g., "Signed contract")
+- preference: Likes, dislikes, styles (e.g., "Prefers dark mode")
+- constraint: Rules, limits, requirements (e.g., "Budget: $10k")
+- goal: Objectives, targets (e.g., "Launch by Q3")
 
-    CRITICAL RULES:
-    1. EXTRACT ENTITIES: Identify key entities (Concepts, People, Technologies, Events, Locations, Facts).
-    2. HANDLE NEW INFORMATION: If the user introduces a new concept, project, or fact that doesn't exist, CREATE A NEW NODE.
-    3. CHECK CONTEXT: If a similar node exists in the entity list provided, use its ID.
-    4. OUTPUT JSON ONLY.
+RULES:
+- One node = one atomic fact
+- Use exact user phrasing
+- Ignore pronouns (extract "Sarah" not "she")
+- Confidence: vague=0.6, clear=0.8, specific=0.95
 
-    EXAMPLES:
+FORMAT: [{"label":"X","type":"concept","content":"brief description","confidence":0.8}]`
+  },
+  {
+    id: 'extraction_relation',
+    name: 'Extraction: Relations',
+    description: 'Phase 2: Connects active nodes with semantic relationships.',
+    content: `Extract semantic relationships as JSON array. NO explanation.
 
-    Example 1 (Simple Extraction):
-    User: "Who is John Doe?"
-    Output: { "nodes": [{ "id": "contact_john_doe", "label": "John Doe", "type": "person", "content": "Entity extracted from query" }] }
+TYPES:
+- causal: X causes/enables/blocks Y
+- compositional: X contains/is-part-of Y
+- temporal: X before/after/during Y
+- preference: X preferred-over/relates-to-taste Y
+- contradiction: X conflicts-with Y
+- inference: X implies/suggests Y
 
-    Example 2 (Complex Request):
-    User: "Book a meeting with John Doe for tomorrow regarding Project Apollo."
-    Output: 
-    {
-      "nodes": [
-        { "id": "contact_john_doe", "label": "John Doe", "type": "person", "content": "Entity reference" },
-        { "id": "project_apollo", "label": "Project Apollo", "type": "project", "content": "Project detected in query" },
-        { "id": "meeting_john_doe_tomorrow", "label": "Meeting with John Doe", "type": "meeting", "content": "Meeting regarding Project Apollo." }
-      ],
-      "synapses": [
-        { "source": "meeting_john_doe_tomorrow", "target": "contact_john_doe", "type": "involves", "weight": 1.0 },
-        { "source": "meeting_john_doe_tomorrow", "target": "project_apollo", "type": "relates_to", "weight": 0.8 }
-      ]
-    }
+RULES:
+- Only EXPLICIT or STRONG implied relations
+- Direction matters: "A causes B" ≠ "B causes A"
+- Use exact node labels for source/target
+- Confidence: explicit=0.9, implied=0.75, weak=0.6
 
-    FORMAT:
-    {
-      "nodes": [
-        { "id": "snake_case_id", "label": "Readable Label", "type": "concept|person|project|event|fact|location", "content": "Detailed description" }
-      ],
-      "synapses": [
-        { "source": "sourceId", "target": "targetId", "type": "relates_to", "weight": 0.1-1.0 }
-      ]
-    }`
+FORMAT: [{"source":"NodeA","target":"NodeB","type":"causal","confidence":0.9}]`
   },
   {
     id: 'synthesis',
     name: 'Chat AI Output',
     description: 'The primary system prompt for generating conversational responses using RAG context.',
-    content: `You are {{char}}.
-    You are conversing with {{user}}.
-    
-    RETRIEVED CONTEXT:
-    {{context}}
+    content: `You are {{char}} conversing with {{user}}.
 
-    CHAT HISTORY:
-    {{chat.history}}
+CONTEXT:
+{{context}}
 
-    USER MESSAGE:
-    {{query}}
+HISTORY:
+{{chat.history}}
 
-    CORE DIRECTIVES:
-    1. SYNTHESIS: Answer the user's query comprehensively using the provided Context.
-    2. IDENTITY: Adhere strictly to any attached Persona/Style instructions.
-    3. FACTUALITY: If the Context contains the answer, prioritize it. If not, fallback to general knowledge but explicitely state "Based on general knowledge...".
-    4. MEMORY UPDATES: You are the semantic writer. If the user provides NEW facts, concepts, or preferences, output them in 'newNodes'.
-    5. CONTRADICTIONS: If new info conflicts with Context, create a 'contradiction' synapse.
+USER:
+{{query}}
 
-    FORMAT:
-    {
-      "answer": "Your response text here...",
-      "newNodes": [ 
-          { "id": "concept_new_idea", "label": "New Idea", "type": "concept", "content": "Description of the new idea.", "connectTo": ["related_existing_id"] },
-          { "id": "pref_ai_name", "label": "AI Name: Jane", "type": "preference", "content": "User prefers to call the AI 'Jane'.", "connectTo": ["session_start"] }
-      ]
-    }`
+INSTRUCTIONS:
+1. Answer the user's query using the provided Context.
+2. If the context is empty or irrelevant, use your general knowledge but mention "Based on general knowledge...".
+3. Maintain the persona defined in the system prompt.
+4. If the user provides NEW facts or preferences, output them in the 'newNodes' JSON field.
+
+FORMAT:
+{
+  "answer": "Hello! I can help with that...",
+  "newNodes": [
+      { "id": "pref_topic_space", "label": "User likes Space", "type": "preference", "content": "User expressed interest in space exploration." }
+  ]
+}`
   },
   {
     id: 'extraction_rule_gen',

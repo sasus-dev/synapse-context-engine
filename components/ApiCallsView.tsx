@@ -61,7 +61,10 @@ const ApiCallsView = ({ debugLogs }: any) => {
                                         onClick={() => setActiveCallIdx(idx)}
                                         className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${activeCallIdx === idx ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-white/5 border-white/10 text-slate-500'}`}
                                     >
-                                        {call.type}
+                                        {call.type === 'EXTRACTION_NODE' ? 'Phase 1: Concepts' :
+                                            call.type === 'EXTRACTION_RELATION' ? 'Phase 2: Relations' :
+                                                call.type === 'SYNTHESIS' ? 'Phase 3: Synthesis' :
+                                                    call.type}
                                     </button>
                                 ))}
                             </div>

@@ -63,6 +63,10 @@ const DEFAULT_CONFIG: EngineConfig = {
   hybridRules: true,
   extractionProvider: 'groq',
   extractionModel: '',
+  nodeExtractionProvider: 'groq',
+  relationExtractionProvider: 'groq',
+  nodeExtractionModel: '',
+  relationExtractionModel: '',
   inferenceProvider: 'groq',
   inferenceModel: '',
   apiKeys: { gemini: '', groq: '' },
@@ -416,7 +420,7 @@ const App: React.FC = () => {
     } else {
       updateActiveDataset(d => ({
         ...d,
-        graph: INITIAL_GRAPH, // Reset Graph
+        graph: JSON.parse(JSON.stringify(INITIAL_GRAPH)), // Reset Graph (Deep Clone)
         auditLogs: [...(d.auditLogs || []), { id: Math.random().toString(), timestamp: 'System', type: 'system', message: 'Context Nodes Restored', status: 'success' }]
       }));
       setWorkingMemory(['ctx_research']);
@@ -451,7 +455,7 @@ const App: React.FC = () => {
       // Standard Default
       updateActiveDataset(d => ({
         ...d,
-        graph: INITIAL_GRAPH,
+        graph: JSON.parse(JSON.stringify(INITIAL_GRAPH)),
         chatHistory: [],
         auditLogs: [{ id: Math.random().toString(), timestamp: 'System', type: 'system', message: 'Factory Reset Complete (Default)', status: 'success' }],
         debugLogs: [],
@@ -582,7 +586,7 @@ const App: React.FC = () => {
                     name: imported.name || 'Imported Dataset',
                     created: Date.now(),
                     lastActive: Date.now(),
-                    graph: imported.graph || INITIAL_GRAPH,
+                    graph: imported.graph || JSON.parse(JSON.stringify(INITIAL_GRAPH)),
                     chatHistory: imported.chatHistory || [],
                     auditLogs: [],
                     debugLogs: [],

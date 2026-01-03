@@ -29,7 +29,7 @@ function parseJsonSafe(text: string) {
 async function callGemini(
     prompt: string,
     config: EngineConfig,
-    schemaType: 'ARRAY' | 'OBJECT_SYNTHESIS'
+    schemaType: 'ARRAY' | 'OBJECT_SYNTHESIS' | 'CUSTOM'
 ): Promise<{ text: string; tokens: number }> {
     const client = new GoogleGenAI({ apiKey: config.apiKeys.gemini || process.env.API_KEY });
 
@@ -42,7 +42,7 @@ async function callGemini(
     let responseSchema;
     if (schemaType === 'ARRAY') {
         responseSchema = { type: Type.ARRAY, items: { type: Type.STRING } };
-    } else {
+    } else if (schemaType === 'OBJECT_SYNTHESIS') {
         responseSchema = {
             type: Type.OBJECT,
             properties: {
@@ -131,7 +131,7 @@ async function executeProvider(
     provider: LLMProvider,
     config: EngineConfig,
     prompt: string,
-    schemaType: 'ARRAY' | 'OBJECT_SYNTHESIS'
+    schemaType: 'ARRAY' | 'OBJECT_SYNTHESIS' | 'CUSTOM'
 ): Promise<{ text: string; tokens: number }> {
     if (provider === 'gemini') {
         return callGemini(prompt, config, schemaType);
@@ -142,7 +142,7 @@ async function executeProvider(
     let enhancedPrompt = prompt;
     if (schemaType === 'ARRAY') {
         enhancedPrompt += `\n\nRETURN ONLY A JSON ARRAY OF STRINGS: ["entity1", "entity2"]`;
-    } else {
+    } else if (schemaType === 'OBJECT_SYNTHESIS') {
         enhancedPrompt += `\n\nRETURN ONLY JSON. 
         Schema:
         {
@@ -152,6 +152,7 @@ async function executeProvider(
             ]
         }`;
     }
+    // CUSTOM schema does NOT append instructions (Trusts the prompt)
 
     const targetModel = schemaType === 'ARRAY' ? config.extractionModel : config.inferenceModel;
 
@@ -333,6 +334,57 @@ export async function queryJointly(
                 latency: Date.now() - startTime,
                 tokens: 0,
                 model: String(config.inferenceProvider),
+                status: 'error'
+            }
+        };
+    }
+}
+
+/**
+ * Specialized Pipeline Executor for Extraction Phases (Node/Relation)
+ * Bypasses Synthesis schema injection and uses specific provider/model.
+ */
+export async function executeExtractionPipeline(
+    prompt: string,
+    provider: LLMProvider,
+    model: string,
+    config: EngineConfig
+): Promise<{ text: string; call: ApiCall }> {
+    const startTime = Date.now();
+
+    // Create a temporary config override to force the specific model if needed
+    // (Since executeProvider looks at config.extractionModel)
+    const runConfig = { ...config, extractionModel: model };
+
+    try {
+        const result = await executeProvider(provider, runConfig, prompt, 'CUSTOM');
+
+        return {
+            text: result.text,
+            call: {
+                id: Math.random().toString(36),
+                type: 'EXTRACTION', // checkTrace logic in pipeline will override this
+                timestamp: new Date().toLocaleTimeString(),
+                input: prompt,
+                output: result.text,
+                latency: Date.now() - startTime,
+                tokens: result.tokens,
+                model: `${provider}:${model}`,
+                status: 'success'
+            }
+        };
+    } catch (err) {
+        return {
+            text: '[]',
+            call: {
+                id: Math.random().toString(36),
+                type: 'EXTRACTION_ERROR',
+                timestamp: new Date().toLocaleTimeString(),
+                input: prompt,
+                output: String(err),
+                latency: Date.now() - startTime,
+                tokens: 0,
+                model: `${provider}:${model}`,
                 status: 'error'
             }
         };

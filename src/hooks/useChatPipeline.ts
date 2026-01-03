@@ -5,7 +5,9 @@ import {
     SecurityRuleResult, ApiCall, TelemetryPoint, PromptDebug
 } from '../../types';
 import { SCEEngine } from '../../lib/sceCore';
-import { extractEntities, queryJointly } from '../../services/llmService';
+import { extractKnowledge } from '../utils/knowledgeExtraction';
+import { extractKnowledge } from '../utils/knowledgeExtraction';
+import { queryJointly, executeExtractionPipeline } from '../../services/llmService';
 
 export const useChatPipeline = (
     engineRef: React.MutableRefObject<SCEEngine>,
@@ -127,9 +129,9 @@ export const useChatPipeline = (
 
         const calls: ApiCall[] = [];
         try {
-            const extractionPrompt = (globalConfig.systemPrompts || []).find(p => p.id === 'extraction')?.content || '';
+            const nodePrompt = (globalConfig.systemPrompts || []).find(p => p.id === 'extraction_node')?.content;
+            const relationPrompt = (globalConfig.systemPrompts || []).find(p => p.id === 'extraction_relation')?.content;
 
-            // 1. Extraction
             // MERGE KEYS: Robustness against empty dataset keys, fallback to global
             const effectiveConfig: EngineConfig = {
                 ...config,
@@ -141,12 +143,110 @@ export const useChatPipeline = (
             };
 
             let entities: string[] = [];
-            let extractCall: ApiCall | undefined;
+            let createdNodeIds: string[] = []; // Sub-scope tracking across phases
+
             try {
-                const result = await extractEntities(query, engineRef.current.graph, effectiveConfig, extractionPrompt);
-                entities = result.entities || [];
-                extractCall = result.call;
-                if (extractCall) calls.push(extractCall);
+                // v0.4.2 Two-Phase Extraction
+                const extractionResult = await extractKnowledge(
+                    query,
+                    activatedNodes,
+                    engineRef.current.graph.nodes,
+                    // Adapter for LLM Call to capture Trace
+                    async (sys, user, phase, mockResponse) => {
+                        // Explicit Phase Detection
+                        const isNodePhase = phase === 'node';
+                        const type = isNodePhase ? 'EXTRACTION_NODE' : 'EXTRACTION_RELATION';
+
+                        // MOCK / SKIP HANDLING (For Trace Visibility)
+                        if (mockResponse) {
+                            calls.push({
+                                id: Math.random().toString(36),
+                                type,
+                                timestamp: new Date().toLocaleTimeString(),
+                                input: sys, // Show sys prompt as input for context
+                                output: mockResponse,
+                                latency: 0,
+                                tokens: 0,
+                                model: 'SKIPPED',
+                                status: 'success'
+                            });
+                            return mockResponse;
+                        }
+
+                        console.log('[Pipeline] Extraction Call:', { phase, type, isNodePhase });
+
+                        // Use the specialized pipeline executor
+                        const provider = isNodePhase
+                            ? (effectiveConfig.nodeExtractionProvider || effectiveConfig.extractionProvider)
+                            : (effectiveConfig.relationExtractionProvider || effectiveConfig.extractionProvider);
+
+                        const model = isNodePhase
+                            ? (effectiveConfig.nodeExtractionModel || effectiveConfig.extractionModel)
+                            : (effectiveConfig.relationExtractionModel || effectiveConfig.extractionModel);
+
+                        // Combine System Instructions + User Content for the single-prompt pipeline
+                        const fullPrompt = `${sys}\n\n---\n\n${user}`;
+
+                        // Call Executor directly
+                        const res = await executeExtractionPipeline(fullPrompt, provider as any, model, effectiveConfig);
+
+                        // Push distinct type
+                        calls.push({ ...res.call, type });
+                        return res.text;
+                    },
+                    { nodePrompt, relationPrompt }
+                );
+
+                // 1a. Instant Node Creation (Hippocampal Encoding)
+                if (extractionResult.nodes && extractionResult.nodes.length > 0) {
+                    let createdCount = 0;
+                    extractionResult.nodes.forEach((n: any) => {
+                        // Strict ID Generation: Lowercase, trimmed, replace spaces with underscores, REMOVE all non-alphanumeric chars (except underscore)
+                        const rawId = (n.id || n.label).toLowerCase().trim();
+                        const safeId = rawId.replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+
+                        if (!engineRef.current.graph.nodes[safeId]) {
+                            // Create Node
+                            engineRef.current.graph.nodes[safeId] = {
+                                id: safeId,
+                                label: n.label,
+                                type: n.type || 'concept',
+                                content: n.content || 'Extracted Memory',
+                                heat: 1.0, // Fresh nodes are hot
+                                isNew: true
+                            };
+                            createdCount++;
+                            // TOPOLOGY FIX: Natural Growth
+                            // Only connect to System Root if we have no valid Active Context to latch onto.
+                            // Otherwise, we let the 'RELATIONS' phase handle the wiring to existing nodes.
+                            // But for Phase 1 (Hippocampal), we need at least ONE anchor to be reachable.
+
+                            // Check if we have active nodes to anchor to?
+                            if (activatedNodes.length > 0) {
+                                // Anchor to the most active node (Focus)
+                                const anchor = activatedNodes[0].node;
+                                engineRef.current.graph.synapses.push({ source: anchor, target: safeId, weight: 0.5, coActivations: 1 });
+                            } else {
+                                // Fallback: Ground to System Root (Session Start)
+                                engineRef.current.graph.synapses.push({ source: 'session_start', target: safeId, weight: 0.5, coActivations: 0 }); // Restored to 0.5
+                            }
+                            createdNodeIds.push(safeId); // Track Phase 1 creations
+                        }
+                    });
+                    if (createdCount > 0) addAuditLog('extraction', `Cognitive Expansion: +${createdCount} New Concepts`, 'success');
+                }
+
+                // 1b. Form Explicit Relationships
+                if (extractionResult.relations && extractionResult.relations.length > 0) {
+                    const results = engineRef.current.addExplicitRelationships(extractionResult.relations);
+                    if (results.length > 0) {
+                        addAuditLog('extraction', `Formed ${results.length} semantic connections`, 'success');
+                    }
+                }
+
+                // Map for Grounding
+                entities = extractionResult.nodes.map((n: any) => n.id || n.label) || [];
+
             } catch (extractErr) {
                 console.error("Extraction Failed:", extractErr);
                 addAuditLog('system', `Extraction Subsystem Failed: ${extractErr instanceof Error ? extractErr.message : String(extractErr)}`, 'error');
@@ -300,22 +400,31 @@ export const useChatPipeline = (
             const latency = Date.now() - startTime;
 
             // New Node Logic
-            let createdNodeIds: string[] = [];
+            // Phase 3 Creation
             if (config.enableMemoryExpansion && newNodes && newNodes.length > 0) {
                 const nodesToCreate: any[] = [];
                 newNodes.forEach(nn => {
                     if (!nn.id) return;
-                    const safeId = nn.id.toLowerCase().trim().replace(/\s+/g, '_');
+                    // Strict ID Sanitization (Match Phase 1)
+                    const rawId = nn.id.toLowerCase().trim();
+                    const safeId = rawId.replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+
                     const SafeLabel = nn.label || safeId;
                     const safeContent = nn.content || `Entity captured from conversation: ${SafeLabel}`;
                     let type = (nn.type || 'concept').toLowerCase();
                     const validTypes = ['project', 'document', 'contact', 'preference', 'behavior', 'tool', 'config', 'meeting', 'fact', 'benchmark', 'concept'];
                     const safeType = validTypes.includes(type) ? type : 'concept';
 
-                    const existingNode = engineRef.current.graph.nodes[safeId];
+                    const normalizedId = safeId.toLowerCase().trim();
+                    const existingNodeEntry = Object.entries(engineRef.current.graph.nodes).find(([k, v]) =>
+                        k.toLowerCase() === normalizedId || v.label.toLowerCase().trim() === nn.label.toLowerCase().trim()
+                    );
+                    const existingNode = existingNodeEntry ? existingNodeEntry[1] : undefined;
+
                     if (existingNode) {
+                        console.log(`[Pipeline] Skipped Duplicate: "${nn.label}" (Matched existing: ${existingNode.id})`);
                         if (nn.content && !existingNode.content.includes(nn.content)) {
-                            handleUpdateNode(safeId, existingNode.content + "\n\n" + nn.content);
+                            handleUpdateNode(existingNode.id, existingNode.content + "\n\n" + nn.content);
                         }
                         return;
                     }
@@ -329,19 +438,29 @@ export const useChatPipeline = (
                         heat: 0.8,
                         isNew: true
                     });
-                    createdNodeIds.push(safeId);
+                    createdNodeIds.push(safeId); // Track Phase 3 creations
                 });
 
                 if (nodesToCreate.length > 0) {
                     nodesToCreate.forEach(node => {
                         engineRef.current.graph.nodes[node.id] = { ...node };
-                        engineRef.current.graph.synapses.push({ source: node.id, target: 'session_start', weight: 0.1, coActivations: 0 });
+
+                        // TOPOLOGY: Natural Growth Strategy
+                        let anchored = false;
+
+                        // 1. Connect to Working Memory (Explicit Context)
                         workingMemory.forEach(ctxId => {
                             if (engineRef.current.graph.nodes[ctxId]) {
                                 engineRef.current.graph.synapses.push({ source: ctxId, target: node.id, weight: 0.85, coActivations: 1 });
                                 engineRef.current.graph.synapses.push({ source: node.id, target: ctxId, weight: 0.5, coActivations: 0 });
+                                anchored = true;
                             }
                         });
+
+                        // 2. Fallback: Connect to System Root only if orphaned
+                        if (!anchored) {
+                            engineRef.current.graph.synapses.push({ source: 'session_start', target: node.id, weight: 0.5, coActivations: 0 }); // Restored to 0.5
+                        }
                     });
 
                     // Clean mesh connections logic omitted for brevity in hook, usually fine handled by autoConnect but here manually:
@@ -365,6 +484,40 @@ export const useChatPipeline = (
                 }
             }
 
+            const uniqueNewNodeIds = Array.from(new Set(createdNodeIds));
+
+            // ALGORITHMIC MESH: Force-wire all new nodes together
+            // This ensures that even if the LLM misses relationships, nodes created in the same context
+            // form a cohesive cluster (Hebbian Association)
+            if (uniqueNewNodeIds.length > 1) {
+                for (let i = 0; i < uniqueNewNodeIds.length; i++) {
+                    for (let j = i + 1; j < uniqueNewNodeIds.length; j++) {
+                        const idA = uniqueNewNodeIds[i];
+                        const idB = uniqueNewNodeIds[j];
+
+                        // Check if edge exists?
+                        const exists = engineRef.current.graph.synapses.some(s =>
+                            (s.source === idA && s.target === idB) || (s.source === idB && s.target === idA)
+                        );
+
+                        if (!exists) {
+                            // Bias towards "Association"
+                            engineRef.current.graph.synapses.push({
+                                source: idA,
+                                target: idB,
+                                weight: 0.75, // Strong implicit link
+                                coActivations: 1
+                            });
+                            engineRef.current.graph.synapses.push({
+                                source: idB,
+                                target: idA,
+                                weight: 0.75,
+                                coActivations: 0
+                            });
+                        }
+                    }
+                }
+            }
             setChatHistory(prev => [...prev, {
                 id: Math.random().toString(36),
                 role: 'assistant',
@@ -372,8 +525,8 @@ export const useChatPipeline = (
                 timestamp: new Date().toLocaleTimeString(),
                 latency,
                 nodesActivated: activated.length,
-                sourceNodes: pruned.map(p => p.node),
-                newNodes: createdNodeIds
+                sourceNodes: pruned.map(p => p.node).filter(id => !uniqueNewNodeIds.includes(id)),
+                newNodes: uniqueNewNodeIds
             }]);
 
             setStage('complete');
@@ -384,6 +537,7 @@ export const useChatPipeline = (
                 weightChanges = engineRef.current.updateHebbianWeights(activated);
             }
             engineRef.current.applyHeatDiffusion(0.05);
+            engineRef.current.afterQuery();
 
             const metrics = engineRef.current.calculateMetrics(
                 latency,

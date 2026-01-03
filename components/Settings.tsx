@@ -49,41 +49,38 @@ const Settings: React.FC<SettingsProps> = ({ config, setConfig, addAuditLog }) =
                 <p className="text-slate-500 font-bold uppercase tracking-widest text-[11px] mt-1">Manage AI Providers, API Keys, and Pipeline Strategy</p>
             </div>
 
-            {/* Tabs */}
-            <div className="flex space-x-6 border-b border-white/10 pb-4">
+            {/* Tabs (Explorer Style) */}
+            <div className="flex items-center gap-1 mb-8 bg-black/40 p-1.5 rounded-xl border border-white/5 w-fit">
                 <button
                     onClick={() => setActiveTab('providers')}
-                    className={`text-sm font-bold uppercase tracking-widest transition-colors ${activeTab === 'providers' ? 'text-purple-400' : 'text-slate-600 hover:text-slate-400'}`}
+                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'providers' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                 >
                     API Providers
                 </button>
                 <button
                     onClick={() => setActiveTab('pipeline')}
-                    className={`text-sm font-bold uppercase tracking-widest transition-colors ${activeTab === 'pipeline' ? 'text-emerald-400' : 'text-slate-600 hover:text-slate-400'}`}
+                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'pipeline' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 shadow-sm' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                 >
                     Pipeline & Physics
                 </button>
             </div>
 
             {activeTab === 'pipeline' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    {/* Extraction Strategy */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3 text-emerald-400">
-                            <Terminal className="w-5 h-5" />
-                            <h3 className="text-[12px] font-black uppercase tracking-widest">Extraction Strategy (Input Analysis)</h3>
-                        </div>
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-                        <div className="bg-black/20 backdrop-blur-md p-8 rounded-[2rem] border border-white/5 space-y-6">
+                    {/* 1. NODE EXTRACTION (Concept Mining) */}
+                    <div className="flex flex-col space-y-4">
+                        <div className="flex items-center gap-2 text-blue-400 px-2">
+                            <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                            <h3 className="text-[11px] font-black uppercase tracking-widest">Phase 1: Concept Mining</h3>
+                        </div>
+                        <div className="bg-black/20 backdrop-blur-md p-6 rounded-3xl border border-white/5 flex-1 space-y-6 flex flex-col">
                             <label className="block space-y-2">
-                                <span className="text-[11px] font-bold text-slate-500 uppercase">Provider</span>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase">Provider</span>
                                 <select
-                                    value={config.extractionProvider}
-                                    onChange={(e) => {
-                                        updateConfig('extractionProvider', e.target.value);
-                                        addAuditLog('system', `Extraction provider switched to ${e.target.value}`, 'info');
-                                    }}
-                                    className="w-full bg-[#05070a] border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                                    value={config.nodeExtractionProvider || config.extractionProvider}
+                                    onChange={(e) => updateConfig('nodeExtractionProvider', e.target.value)}
+                                    className="w-full bg-[#05070a] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500 transition-colors"
                                 >
                                     <option value="rules-only">Rules / Algorithmic (No AI)</option>
                                     <option value="gemini">Google Gemini</option>
@@ -92,71 +89,127 @@ const Settings: React.FC<SettingsProps> = ({ config, setConfig, addAuditLog }) =
                                 </select>
                             </label>
 
-                            {config.extractionProvider !== 'rules-only' && (
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[11px] font-bold text-slate-500 uppercase">Model ID</span>
-                                        {config.extractionProvider === 'groq' && (
-                                            <button
-                                                onClick={handleFetchModels}
-                                                disabled={isFetching}
-                                                className="text-[10px] font-bold uppercase text-emerald-500 hover:text-emerald-400 disabled:opacity-50 flex items-center gap-1"
-                                            >
-                                                {isFetching ? <RefreshCw className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                                                Fetch Available
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {config.extractionProvider === 'groq' && availableModels.length > 0 ? (
-                                        <select
-                                            value={config.extractionModel}
-                                            onChange={(e) => updateConfig('extractionModel', e.target.value)}
-                                            className="w-full bg-[#05070a] border border-white/10 rounded-xl p-4 text-sm text-white focus:border-emerald-500 outline-none font-mono"
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Model ID</span>
+                                    {config.nodeExtractionProvider === 'groq' && (
+                                        <button
+                                            onClick={handleFetchModels}
+                                            disabled={isFetching}
+                                            className="text-[9px] font-bold uppercase text-blue-500 hover:text-blue-400 disabled:opacity-50 flex items-center gap-1"
                                         >
-                                            <option value="">Select a model...</option>
-                                            {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
-                                        </select>
-                                    ) : (
-                                        <input
-                                            type="text"
-                                            value={config.extractionModel}
-                                            onChange={(e) => updateConfig('extractionModel', e.target.value)}
-                                            placeholder="e.g. llama3-8b-8192"
-                                            className="w-full bg-[#05070a] border border-white/10 rounded-xl p-4 text-sm text-white focus:border-emerald-500 outline-none font-mono"
-                                        />
+                                            {isFetching ? <RefreshCw className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                                            Fetch
+                                        </button>
                                     )}
-                                    <p className="text-[10px] text-slate-500">Specify the model ID for the selected provider.</p>
                                 </div>
-                            )}
-
-                            {config.extractionProvider === 'rules-only' && (
-                                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                                    <p className="text-xs text-emerald-200">
-                                        <strong>Algorithmic Mode Active:</strong> Extraction uses local keyword and fuzzy matching rules. Zero API cost/latency.
-                                    </p>
-                                </div>
-                            )}
+                                {config.nodeExtractionProvider === 'groq' && availableModels.length > 0 ? (
+                                    <select
+                                        value={config.nodeExtractionModel || config.extractionModel}
+                                        onChange={(e) => updateConfig('nodeExtractionModel', e.target.value)}
+                                        className="w-full bg-[#05070a] border border-white/10 rounded-xl p-3 text-xs text-white focus:border-blue-500 outline-none font-mono"
+                                    >
+                                        <option value="">Select a model...</option>
+                                        {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        value={config.nodeExtractionModel || config.extractionModel || ''}
+                                        onChange={(e) => updateConfig('nodeExtractionModel', e.target.value)}
+                                        placeholder="e.g. llama3-8b-8192"
+                                        className="w-full bg-[#05070a] border border-white/10 rounded-xl p-3 text-xs text-white focus:border-blue-500 outline-none font-mono"
+                                    />
+                                )}
+                            </div>
+                            <div className="mt-auto pt-4 border-t border-white/5">
+                                <p className="text-[10px] text-slate-500 leading-relaxed">
+                                    Extracts entities, facts, and concepts from raw text.
+                                    <br /><span className="text-blue-400/80">Recommended: High Speed (e.g. Llama3-8b).</span>
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Inference Strategy */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3 text-purple-400">
-                            <Cpu className="w-5 h-5" />
-                            <h3 className="text-[12px] font-black uppercase tracking-widest">Synthesis Provider (Output Generation)</h3>
+                    {/* 2. RELATION EXTRACTION (Semantic Linking) */}
+                    <div className="flex flex-col space-y-4">
+                        <div className="flex items-center gap-2 text-purple-400 px-2">
+                            <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
+                            <h3 className="text-[11px] font-black uppercase tracking-widest">Phase 2: Semantic Linking</h3>
                         </div>
-
-                        <div className="bg-black/20 backdrop-blur-md p-8 rounded-[2rem] border border-white/5 space-y-6">
+                        <div className="bg-black/20 backdrop-blur-md p-6 rounded-3xl border border-white/5 flex-1 space-y-6 flex flex-col">
                             <label className="block space-y-2">
-                                <span className="text-[11px] font-bold text-slate-500 uppercase">Provider</span>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase">Provider</span>
+                                <select
+                                    value={config.relationExtractionProvider || config.extractionProvider}
+                                    onChange={(e) => updateConfig('relationExtractionProvider', e.target.value)}
+                                    className="w-full bg-[#05070a] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-purple-500 transition-colors"
+                                >
+                                    <option value="rules-only">Rules / Algorithmic (No AI)</option>
+                                    <option value="gemini">Google Gemini</option>
+                                    <option value="groq">Groq (Fast Inference)</option>
+                                    <option value="ollama">Ollama (Local)</option>
+                                </select>
+                            </label>
+
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Model ID</span>
+                                    {config.relationExtractionProvider === 'groq' && (
+                                        <button
+                                            onClick={handleFetchModels}
+                                            disabled={isFetching}
+                                            className="text-[9px] font-bold uppercase text-purple-500 hover:text-purple-400 disabled:opacity-50 flex items-center gap-1"
+                                        >
+                                            {isFetching ? <RefreshCw className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                                            Fetch
+                                        </button>
+                                    )}
+                                </div>
+                                {config.relationExtractionProvider === 'groq' && availableModels.length > 0 ? (
+                                    <select
+                                        value={config.relationExtractionModel || config.extractionModel}
+                                        onChange={(e) => updateConfig('relationExtractionModel', e.target.value)}
+                                        className="w-full bg-[#05070a] border border-white/10 rounded-xl p-3 text-xs text-white focus:border-purple-500 outline-none font-mono"
+                                    >
+                                        <option value="">Select a model...</option>
+                                        {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        value={config.relationExtractionModel || config.extractionModel || ''}
+                                        onChange={(e) => updateConfig('relationExtractionModel', e.target.value)}
+                                        placeholder="e.g. llama3-70b-8192"
+                                        className="w-full bg-[#05070a] border border-white/10 rounded-xl p-3 text-xs text-white focus:border-purple-500 outline-none font-mono"
+                                    />
+                                )}
+                            </div>
+                            <div className="mt-auto pt-4 border-t border-white/5">
+                                <p className="text-[10px] text-slate-500 leading-relaxed">
+                                    Identifies connection types between nodes.
+                                    <br /><span className="text-purple-400/80">Recommended: High Intelligence (e.g. Llama3-70b).</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 3. SYNTHESIS (Output) */}
+                    <div className="flex flex-col space-y-4">
+                        <div className="flex items-center gap-2 text-emerald-400 px-2">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                            <h3 className="text-[11px] font-black uppercase tracking-widest">Phase 3: Synthesis</h3>
+                        </div>
+                        <div className="bg-black/20 backdrop-blur-md p-6 rounded-3xl border border-white/5 flex-1 space-y-6 flex flex-col">
+                            <label className="block space-y-2">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase">Provider</span>
                                 <select
                                     value={config.inferenceProvider}
                                     onChange={(e) => {
                                         updateConfig('inferenceProvider', e.target.value);
                                         addAuditLog('system', `Inference provider switched to ${e.target.value}`, 'info');
                                     }}
-                                    className="w-full bg-[#05070a] border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
+                                    className="w-full bg-[#05070a] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500 transition-colors"
                                 >
                                     <option value="gemini">Google Gemini</option>
                                     <option value="groq">Groq (LPU)</option>
@@ -166,15 +219,15 @@ const Settings: React.FC<SettingsProps> = ({ config, setConfig, addAuditLog }) =
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-bold text-slate-500 uppercase">Model ID</span>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Model ID</span>
                                     {config.inferenceProvider === 'groq' && (
                                         <button
                                             onClick={handleFetchModels}
                                             disabled={isFetching}
-                                            className="text-[10px] font-bold uppercase text-purple-500 hover:text-purple-400 disabled:opacity-50 flex items-center gap-1"
+                                            className="text-[9px] font-bold uppercase text-emerald-500 hover:text-emerald-400 disabled:opacity-50 flex items-center gap-1"
                                         >
                                             {isFetching ? <RefreshCw className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                                            Fetch Available
+                                            Fetch
                                         </button>
                                     )}
                                 </div>
@@ -182,7 +235,7 @@ const Settings: React.FC<SettingsProps> = ({ config, setConfig, addAuditLog }) =
                                     <select
                                         value={config.inferenceModel}
                                         onChange={(e) => updateConfig('inferenceModel', e.target.value)}
-                                        className="w-full bg-[#05070a] border border-white/10 rounded-xl p-4 text-sm text-white focus:border-purple-500 outline-none font-mono"
+                                        className="w-full bg-[#05070a] border border-white/10 rounded-xl p-3 text-xs text-white focus:border-emerald-500 outline-none font-mono"
                                     >
                                         <option value="">Select a model...</option>
                                         {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
@@ -193,10 +246,14 @@ const Settings: React.FC<SettingsProps> = ({ config, setConfig, addAuditLog }) =
                                         value={config.inferenceModel}
                                         onChange={(e) => updateConfig('inferenceModel', e.target.value)}
                                         placeholder="e.g. llama3-70b-8192"
-                                        className="w-full bg-[#05070a] border border-white/10 rounded-xl p-4 text-sm text-white focus:border-purple-500 outline-none font-mono"
+                                        className="w-full bg-[#05070a] border border-white/10 rounded-xl p-3 text-xs text-white focus:border-emerald-500 outline-none font-mono"
                                     />
                                 )}
-                                <p className="text-[10px] text-slate-500">ID of the model to use for generating responses.</p>
+                            </div>
+                            <div className="mt-auto pt-4 border-t border-white/5">
+                                <p className="text-[10px] text-slate-500 leading-relaxed">
+                                    Generates the final conversational response.
+                                </p>
                             </div>
                         </div>
                     </div>

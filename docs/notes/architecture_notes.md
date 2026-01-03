@@ -184,4 +184,58 @@ I separated learning into two streams:
 This separation allows the dashboard to distinguish between *gradual learning* and *paradigm shifts* (rapid rewiring of a specific connection).
 
 ---
+
+## 🛡️ Structural Integrity (v0.4.1)
+
+### 15. The "Hairball" Explosion
+*Hypothesis: Unchecked Hebbian learning creates an O(N²) super-dense graph that is meaningless.*
+
+**✅ Decision:** I implemented a **7-Layer Defense System** to prevent graph saturation:
+1.  **Confidence Gate:** Extraction < 0.7 is rejected.
+2.  **Semantic Distance:** New links allow max 3 hops (BFS) to prevent "teleportation".
+3.  **Rate Limits:** Max 5 connections per query, 15 per session.
+4.  **Orthogonality Enforcement:** "Repels" nodes that are too similar but different types.
+5.  **Weak Edge Pruning:** < 0.05 weight edges are dissolved.
+6.  **Stale Session Reset:** 1 hour timeout ensures fresh rate limits.
+7.  **Consolidation:** (See below).
+
+---
+
+## 🕸️ Hyperedge Consolidation (v0.5.0)
+
+### 16. Clique Compression
+*Hypothesis: Dense cliques (triangles/tetrahedrons) of pairwise edges are inefficient and noisy. They represent a single "Concept Cluster" and should be treated as one unit.*
+
+**✅ Decision:** I implemented an **Online Consolidation System**.
+*   **Trigger:** Every 50 queries (Background Task).
+*   **Algorithm:** Greedy Clique Expansion (Iterative).
+    1.  Sort nodes by degree.
+    2.  Grow clique by adding neighbors that maintain > 80% density.
+    3.  If $|Clique| \ge 3$, convert to **Hyperedge**.
+    4.  **Optimization:** Early termination after 100 cliques to keep it O(1) in practice.
+*   **Outcome:** Reduces O(N²) edge complexity to O(N) hyperedge complexity.
+
+---
+
+### 17. The "Hub-and-Spoke" Correction (Algorithmic Meshing)
+*Hypothesis: LLMs are bad at explicit graph topology. They prefer connecting new items to the "Main Topic" (Hub) rather than to each other (Mesh).*
+
+**✅ Decision:** I implemented a **Post-Processing Mesh Layer**.
+Instead of relying on the LLM to output `A->B`, `B->C`, `C->A` explicitly (which consumes tokens and is unreliable), I treat the *entire extraction batch* as an implict cluster.
+*   **Algorithm:** `Mesh(Nodes[])`: For every pair $\{N_i, N_j\}$ in `NewNodes`, create edge $E_{ij}$ with weight `0.75`.
+*   **Result:** This forces "New-to-New" density. If a user mentions "Apples, Bananas, and Pears", they instantly form a triangle clique, ensuring that recalling "Apples" later will drag "Bananas" into context, even if the LLM forgot to link them explicitly.
+
+---
+
+### 18. Concept Hygiene (The "Stop-Node" List)
+*Hypothesis: Not all nouns are concepts. Is "19:00" a concept? Is "Meeting" a concept?*
+
+**✅ Decision:** I implemented a **Negative Filter List** for extraction.
+Certain patterns are "Information Exhaust"—they are structurally necessary for sentences but semantically empty for a Knowledge Graph.
+*   **Temporal Ban:** `^\d+:\d+$`, `today`, `tomorrow`. Time should be metadata, not a node.
+*   **Generic Ban:** `meeting`, `call`, `discussion`. These are container words, not content.
+*   **Identity Merging:** Strict `a-z0-9` normalization prevents "Apple." != "apple".
+
+---
+
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
