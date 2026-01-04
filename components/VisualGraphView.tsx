@@ -26,7 +26,9 @@ interface Node {
     id: string;
     label: string;
     type: 'concept' | 'entity' | 'event';
-    heat?: number;
+    activation?: number;
+    salience?: number;
+    heat?: number; // Fallback
     x?: number;
     y?: number;
     vx?: number;
@@ -362,7 +364,7 @@ const VisualGraphView: React.FC<VisualGraphViewProps> = ({ graph, activatedNodes
                 const isVisible = (!visibleNodeIds || visibleNodeIds.has(n.id)) && matchesSearch;
 
                 // Base Sizes
-                const heat = n.heat || 0;
+                const heat = n.activation ?? (n.heat || 0); // Prefer Activation
                 const baseR = heatmapMode ? (15 + heat * 25) : (20 + heat * 5);
 
                 // Colors
@@ -415,7 +417,7 @@ const VisualGraphView: React.FC<VisualGraphViewProps> = ({ graph, activatedNodes
                 const matchesSearch = query ? n.label.toLowerCase().includes(query) : true;
                 const isVisible = (!visibleNodeIds || visibleNodeIds.has(n.id)) && matchesSearch;
 
-                const heat = n.heat || 0;
+                const heat = n.activation ?? (n.heat || 0);
                 const baseR = heatmapMode ? (15 + heat * 25) : (20 + heat * 5);
 
                 // Draw Conditions

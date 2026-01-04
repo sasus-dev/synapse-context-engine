@@ -1,4 +1,4 @@
-import { KnowledgeGraph, EngineConfig, ActivatedNode, Node, Synapse, PruningLog, SecurityRuleResult } from '../types';
+import { KnowledgeGraph, EngineConfig, ActivatedNode, Node, Synapse, PruningLog, SecurityRuleResult, EnginePhase } from '../types';
 
 interface ClusterConfig {
   id: string;
@@ -55,9 +55,34 @@ const CLUSTER_CONFIGS: ClusterConfig[] = [
   }
 ];
 
+// Improvement 5: Phase-Specific Parameter Profiles
+const PHASE_PARAMS: Record<EnginePhase, {
+  activationDecay: number; // Retained per cycle (0-1)
+  salienceDecay: number; // Retained per cycle (0-1)
+  plasticity: number; // Hebbian learning rate multiplier
+  diffusionAlpha: number; // Energy spread rate
+}> = {
+  'EXPLORE': { activationDecay: 0.90, salienceDecay: 0.999, plasticity: 1.0, diffusionAlpha: 0.08 },
+  'INFERENCE': { activationDecay: 0.70, salienceDecay: 1.0, plasticity: 0.0, diffusionAlpha: 0.02 },
+  'CONSOLIDATE': { activationDecay: 0.50, salienceDecay: 0.995, plasticity: 0.2, diffusionAlpha: 0.0 }
+};
+
 export class SCEEngine {
   graph: KnowledgeGraph;
   config: EngineConfig;
+  private phase: EnginePhase = 'EXPLORE'; // V2 Cognitive State
+  private semanticCache: Map<string, boolean> = new Map(); // O(N) Cache for BFS
+  // FIXED (v0.5.4): Persistent Adjacency Map for O(1) lookups
+  // IMPROVED (Review): Typed Adjacency to verify "Risk A" (Structure Leak)
+  private adjacencyMap: Map<string, Array<{
+    target: string;
+    weight: number;
+    type?: string;
+    synapseId: string;
+  }>> | null = null;
+
+  // Improvement 4: Activation-Driven Consolidation
+  private frequentCoActivations: Map<string, number> = new Map();
 
   // Safety Gates (Rate Limiting)
   private sessionMetrics = {
@@ -73,10 +98,30 @@ export class SCEEngine {
   private readonly CONSOLIDATION_INTERVAL = 50;
 
   /**
+   * Set the cognitive phase of the engine.
+   * EXPLORE: High plasticity, neurogenesis allowed.
+   * INFERENCE: Zero plasticity, read-only activation.
+   * CONSOLIDATE: Pruning and structural optimization.
+   */
+  setPhase(phase: EnginePhase) {
+    this.phase = phase;
+    console.log(`[SCE] Cognitive Phase switched to: ${phase}`);
+  }
+
+  getPhase(): EnginePhase {
+    return this.phase;
+  }
+
+  /**
    * Call after each query to track consolidation timing
    */
-  afterQuery() {
+  afterQuery(activatedNodes?: ActivatedNode[]) {
     this.queryCount++;
+
+    // Improvement 4: Track Co-Activations
+    if (activatedNodes) {
+      this.trackCoActivations(activatedNodes);
+    }
 
     if (this.config.enableConsolidation &&
       this.queryCount % (this.config.consolidationInterval || this.CONSOLIDATION_INTERVAL) === 0) {
@@ -94,6 +139,58 @@ export class SCEEngine {
   constructor(initialGraph: KnowledgeGraph, config: EngineConfig) {
     this.graph = JSON.parse(JSON.stringify(initialGraph));
     this.config = config;
+
+    // Ensure nodes have physics properties
+    Object.values(this.graph.nodes).forEach(node => {
+      if (node.activation === undefined) node.activation = 0;
+      if (node.salience === undefined) node.salience = 0;
+    });
+
+    // Build initial adjacency
+    this.invalidateAdjacency();
+  }
+
+  /**
+   * Helper: Invalidate Adjacency Map (Call on structural changes)
+   */
+  private invalidateAdjacency() {
+    this.adjacencyMap = null;
+    this.semanticCache.clear();
+  }
+
+  /**
+   * Helper: Get or Build Adjacency Map
+   */
+  /**
+   * Helper: Get or Build Adjacency Map
+   */
+  private getAdjacency(): Map<string, Array<{ target: string, weight: number, type?: string, synapseId: string }>> {
+    if (this.adjacencyMap) return this.adjacencyMap;
+
+    const adj = new Map<string, Array<{ target: string, weight: number, type?: string, synapseId: string }>>();
+
+    this.graph.synapses.forEach(syn => {
+      // Add source -> target
+      if (!adj.has(syn.source)) adj.set(syn.source, []);
+      adj.get(syn.source)!.push({
+        target: syn.target,
+        weight: syn.weight,
+        type: syn.type,
+        synapseId: `${syn.source}_${syn.target}`
+      });
+
+      // Add target -> source (Undirected graph assumption for traversal)
+      if (!adj.has(syn.target)) adj.set(syn.target, []);
+      adj.get(syn.target)!.push({
+        target: syn.source,
+        weight: syn.weight,
+        type: syn.type,
+        synapseId: `${syn.source}_${syn.target}`
+      });
+    });
+
+    this.adjacencyMap = adj;
+    return adj;
   }
 
   /**
@@ -122,7 +219,9 @@ export class SCEEngine {
       return seeds.map(s => ({
         node: s,
         energy: 1.0,
-        heat: this.graph.nodes[s]?.heat || 0.5,
+        activation: this.graph.nodes[s]?.activation || 1.0,
+        salience: this.graph.nodes[s]?.salience || 0.5,
+        heat: this.graph.nodes[s]?.activation || 0.5, // DEPRECATED
         biasedEnergy: 1.0,
         depth: 0,
         path: [s]
@@ -139,13 +238,11 @@ export class SCEEngine {
       paths[seed] = { depth: 0, path: [seed], energy: 1.0 };
     });
 
-    const adjacency: Record<string, { target: string; weight: number }[]> = {};
-    this.graph.synapses.forEach(syn => {
-      if (!adjacency[syn.source]) adjacency[syn.source] = [];
-      adjacency[syn.source].push({ target: syn.target, weight: syn.weight });
-      if (!adjacency[syn.target]) adjacency[syn.target] = [];
-      adjacency[syn.target].push({ target: syn.source, weight: syn.weight });
-    });
+    // Use shared O(1) Adjacency Map
+    const adjacency = this.getAdjacency();
+
+    // FIXED (v0.5.4): Defined outside the loop to cap resonance globally per query
+    const firedHyperedges = new Set<string>();
 
     // Loop by Depth (Generational Processing)
     for (let d = 0; d < this.config.maxActivationDepth; d++) {
@@ -158,7 +255,7 @@ export class SCEEngine {
         const sourceEnergy = activation[sourceId];
         if (!sourceEnergy || sourceEnergy < 0.01) return;
 
-        const neighbors = adjacency[sourceId] || [];
+        const neighbors = adjacency.get(sourceId) || [];
         neighbors.forEach(({ target, weight }) => {
           // If already active at a previous level (lower depth), don't re-activate
           if (activation[target] !== undefined) return;
@@ -177,27 +274,31 @@ export class SCEEngine {
       // Unlike pairwise synapses, Hyperedges can pump energy into existing OR new nodes.
       // We process them at every generation to simulate "Higher Order Resonance".
 
-
       if (this.graph.hyperedges) {
         this.graph.hyperedges.forEach(edge => {
-          // Optimization: Only fire once per activation cycle to prevent runaway feedback?
-          // OR allow continuous checking but track settled state?
-          // For v0.4.1 Polish: We allow re-checking but use Set to track if we already boosted this specific edge at this depth?
-          // Actually, simply checking strict activation is safer.
+          // Cap: Only fire once per activation cycle to prevent infinite feedback
+          if (firedHyperedges.has(edge.id)) return;
 
           // Check active members in the Graph SO FAR (including previous depths)
           const activeMembers = edge.nodes.filter(n => activation[n] && activation[n] > 0.1);
 
           if (activeMembers.length > 2) {
-            // Only fire if not already fired effectively? 
-            // The feedback suggested: "Only fire once per activation cycle" using a persistent set outside the loop.
-            // Let's implement that if we move the Set outside the depth loop.
-            // However, inside the depth loop, we might WANT it to fire if members just woke up.
-            // Compromise: We let it fire, but Max-Pooling prevents explosion.
+            // Mark as fired for this activation cycle (prevents re-firing at deeper recursion)
+            firedHyperedges.add(edge.id);
 
             // Calculate Mean Energy of the active clique
             const avgEnergy = activeMembers.reduce((sum, n) => sum + activation[n], 0) / activeMembers.length;
-            const outputEnergy = avgEnergy * edge.weight * this.config.gamma;
+
+            // Improvement 3: Hyperedge Plasticity (Reinforcement)
+            // If the cluster fires, it becomes more salient (Hebbian-like)
+            const currentSalience = edge.salience || 0.5;
+            edge.salience = Math.min(1.0, currentSalience + (0.05 * avgEnergy));
+
+            const outputEnergy = avgEnergy * edge.weight * this.config.gamma * (edge.salience); // Include salience in output?
+            // User requested plasticity, not necessarily using salience for output multiplier, but it makes sense.
+            // Let's stick to using weight for now to avoid side effects, removing salience factor in output unless explicit.
+            // Wait, if salience decays, it should affect influence. Let's multiply by salience.
+
 
             edge.nodes.forEach(target => {
               // Hyperedges can boost EXISTING nodes (Recurrent) or wake NEW nodes
@@ -258,15 +359,20 @@ export class SCEEngine {
       .map(([node, energy]) => ({
         node,
         energy,
-        heat: this.graph.nodes[node]?.heat || 0,
+        activation: energy,
+        salience: this.graph.nodes[node]?.salience || 0,
+        heat: energy, // DEPRECATED
         biasedEnergy: (() => {
+          // Biasing logic: Combine Activation (Energy) + Salience (LTM)
           const baseEnergy = energy;
-          const heatFactor = (1 - this.config.heatBias) + this.config.heatBias * (this.graph.nodes[node]?.heat || 0);
+          // Salience acts as a permanent weight multiplier
+          const salienceFactor = (1 - this.config.heatBias) + this.config.heatBias * (this.graph.nodes[node]?.salience || 0);
+
           const now = Date.now();
           const lastAccessed = this.graph.nodes[node]?.lastAccessed || now;
           const daysSince = (now - lastAccessed) / (1000 * 60 * 60 * 24);
           const timeDecay = 1 / (1 + 0.1 * daysSince);
-          return baseEnergy * heatFactor * timeDecay;
+          return baseEnergy * salienceFactor * timeDecay;
         })(),
         ...paths[node]
       }))
@@ -298,6 +404,9 @@ export class SCEEngine {
    * Since we simulate embeddings here, we "repel" nodes that are becoming too synonymous without being aliases.
    */
   enforceOrthogonality() {
+    // GATING (v0.5.4): Orthogonality is destructive and should only run during Cleanup.
+    if (this.phase !== 'CONSOLIDATE') return;
+
     // Simulation: Reduce weights between nodes that share > 80% of neighbors but have different Types
     // (Simplified Graph Orthogonality)
     const nodes = Object.keys(this.graph.nodes);
@@ -322,15 +431,20 @@ export class SCEEngine {
   }
 
   /**
-   * Heat Diffusion (Equation 4 & 5 from Paper)
-   * Implements Graph Laplacian Diffusion: dH/dt = -alpha * L * H
-   * Heat flows from hot nodes to cooler connected neighbors.
+   * Energy Dynamics (V2 Physics)
+   * Replaces classic "Heat Diffusion" with a dual-variable system:
+   * 1. Activation (STM): Diffuses rapidly and decays fast (Outcome of thinking).
+   * 2. Salience (LTM): Decays very slowly (Long-term importance).
    */
-  applyHeatDiffusion(alpha: number = 0.05) {
+  applyEnergyDynamics(alpha?: number) {
+    // Improvement 5: Phase-Specific Profiles
+    const params = PHASE_PARAMS[this.phase] || PHASE_PARAMS['EXPLORE'];
+    const effectiveAlpha = alpha !== undefined ? alpha : params.diffusionAlpha;
+
     const changes: Record<string, number> = {};
     const nodeIds = Object.keys(this.graph.nodes);
 
-    // 1. Calculate diffusion (Net flow for each node)
+    // 1. Calculate Activation Diffusion (Thoughts flowing)
     nodeIds.forEach(id => changes[id] = 0);
 
     this.graph.synapses.forEach(syn => {
@@ -338,24 +452,68 @@ export class SCEEngine {
       const t = this.graph.nodes[syn.target];
       if (!s || !t) return;
 
-      // Heat flow proportional to difference and weight
-      // Flow from Source -> Target
-      const grad = (s.heat - t.heat) * syn.weight * alpha; // If s>t, flows to t
+      // Flow from High Activation -> Low Activation
+      // Salience acts as a "conductivity" modifier? For now, keep it simple.
+      const sActive = s.activation || 0;
+      const tActive = t.activation || 0;
+
+      const grad = (sActive - tActive) * syn.weight * effectiveAlpha; // If s>t, flows to t
 
       changes[syn.source] -= grad;
       changes[syn.target] += grad;
     });
 
-    // 2. Apply updates and Global Decay
+    // 2. Apply updates and Decay
+    let totalSystemEnergy = 0; // Improvement 2: Energy Budget
+
     nodeIds.forEach(id => {
-      const current = this.graph.nodes[id].heat || 0;
+      const node = this.graph.nodes[id];
       const diffusion = changes[id] || 0;
-      // Global cooling (entropy) + Diffusion
-      const newHeat = (current + diffusion) * 0.98; // 0.98 is global decay factor
-      this.graph.nodes[id].heat = Math.max(0.0, Math.min(1.0, newHeat));
+      const currentActivation = node.activation || 0;
+      const currentSalience = node.salience || 0;
+
+      // STM: Fast Decay (Working Memory) - Phase Dependent
+      const newActivation = (currentActivation + diffusion) * params.activationDecay;
+
+      // LTM: Slow Decay (Forgetting curve) - Phase Dependent
+      const newSalience = currentSalience * params.salienceDecay;
+
+      node.activation = Math.max(0.0, Math.min(1.0, newActivation));
+      node.salience = Math.max(0.0, Math.min(1.0, newSalience));
+
+      // Sync legacy 'heat' for compatibility if needed
+      node.heat = node.activation;
+
+      totalSystemEnergy += node.activation;
     });
 
-    // 3. Trigger Orthogonality check periodically (e.g. implicitly during diffusion cycles)
+    // Improvement 2: Global Energy Normalization
+    const MAX_TOTAL_ENERGY = 10.0;
+    if (totalSystemEnergy > MAX_TOTAL_ENERGY) {
+      const scale = MAX_TOTAL_ENERGY / totalSystemEnergy;
+      nodeIds.forEach(id => {
+        if (this.graph.nodes[id].activation) {
+          this.graph.nodes[id].activation! *= scale;
+          // Sync heat again if we normalized
+          this.graph.nodes[id].heat = this.graph.nodes[id].activation;
+        }
+      });
+      // console.log(`[SCE] Global Energy Normalized (Scale: ${scale.toFixed(2)})`);
+    }
+
+    // Improvement 3: Hyperedge Plasticity (Decay)
+    if (this.graph.hyperedges) {
+      this.graph.hyperedges.forEach(edge => {
+        if (edge.salience === undefined) edge.salience = 0.5; // Bootstrap
+        edge.salience *= params.salienceDecay; // Phase-dependent decay
+
+        // Remove dead hyperedges? Or leave for pruning method?
+        // Let's leave for pruning method, but ensure it doesn't drop below 0
+        edge.salience = Math.max(0.0, edge.salience);
+      });
+    }
+
+    // 3. Trigger Orthogonality check periodically
     this.enforceOrthogonality();
   }
 
@@ -365,7 +523,14 @@ export class SCEEngine {
    */
   updateHebbianWeights(activatedList: ActivatedNode[]): { source: string, target: string, delta: number }[] {
     if (!this.config.enableHebbian) return [];
-    const eta = 0.15; // Learning Rate
+
+    // Improvement 5: Phase-Specific Profiles
+    const params = PHASE_PARAMS[this.phase] || PHASE_PARAMS['EXPLORE'];
+
+    // GATING: No learning during Inference (Read-Only)
+    if (params.plasticity <= 0.01) return [];
+
+    const eta = 0.15 * params.plasticity; // Learning Rate
 
     // Map: NodeID -> Energy Level
     const energyMap: Record<string, number> = {};
@@ -375,63 +540,47 @@ export class SCEEngine {
     const changes: { source: string, target: string, delta: number }[] = [];
 
     // Increase heat for active nodes (Recency spike)
+    // Increase salience for active nodes (Recency/Importance reinforcement)
     activeIds.forEach(id => {
       if (this.graph.nodes[id]) {
-        this.graph.nodes[id].heat = Math.min(1.0, (this.graph.nodes[id].heat || 0) + 0.3);
+        // Boost Salience (LTM) slightly whenever activated
+        const currentSalience = this.graph.nodes[id].salience || 0;
+        this.graph.nodes[id].salience = Math.min(1.0, currentSalience + (0.05 * params.plasticity));
+
+        // Also boost Activation (STM) to max
+        this.graph.nodes[id].activation = 1.0;
       }
     });
 
-    // O(N^2) over activated subgraph
-    for (let i = 0; i < activeIds.length; i++) {
-      for (let j = i + 1; j < activeIds.length; j++) {
-        const n1 = activeIds[i];
-        const n2 = activeIds[j];
+    // OPTIMIZATION (v0.5.3): O(M) loop instead of O(N^2 * M)
+    // Iterate over all synapses and check if BOTH ends are active.
+    // This is much faster when Active Set (N) is small and Graph (M) is large but sparse.
+
+    // Create Set for O(1) lookup
+    const activeSet = new Set(activeIds);
+
+    this.graph.synapses.forEach(syn => {
+      if (activeSet.has(syn.source) && activeSet.has(syn.target)) {
+        const n1 = syn.source;
+        const n2 = syn.target;
 
         // Joint Activation Strength (Product of energies)
         const jointActivation = energyMap[n1] * energyMap[n2];
 
-        // Theoretical Threshold: 
-        // If jointActivation < currentWeight, the connection weakens (Decay).
-        // If jointActivation > currentWeight, the connection strengthens (LTP).
+        const oldWeight = syn.weight;
 
-        let found = false;
-        this.graph.synapses = this.graph.synapses.map(syn => {
-          if ((syn.source === n1 && syn.target === n2) || (syn.source === n2 && syn.target === n1)) {
-            found = true;
-            const oldWeight = syn.weight;
+        // NEW FORMULA: w(t+1) = w(t) + eta * (Ei * Ej - w(t))
+        // This naturally bounds w between [0,1] assuming inputs are [0,1].
+        const targetWeight = jointActivation;
+        const newWeight = syn.weight + eta * (targetWeight - syn.weight);
 
-            // NEW FORMULA: w(t+1) = w(t) + eta * (Ei * Ej - w(t))
-            // This naturally bounds w between [0,1] assuming inputs are [0,1].
-            // If Ei=1, Ej=1 -> Target 1.0. If Ei=0.1, Ej=0.1 -> Target 0.01 (Decay).
-            const targetWeight = jointActivation;
-            const newWeight = syn.weight + eta * (targetWeight - syn.weight);
+        syn.weight = Math.max(0.01, Math.min(1.0, newWeight));
 
-            syn.weight = Math.max(0.01, Math.min(1.0, newWeight));
-
-            changes.push({ source: n1, target: n2, delta: syn.weight - oldWeight });
-            syn.coActivations = (syn.coActivations || 0) + 1;
-            return syn;
-          }
-          return syn;
-        });
-
-        if (!found) {
-          // GATED NEUROGENESIS (v0.4.1 Fix)
-          // We NO LONGER create synapses implicitly on co-activation.
-          // This prevents the O(N^2) "hairball" explosion.
-          // New synapses must be created Explicitly by the Extraction Engine.
-
-          /* 
-          // DEPRECATED:
-          if (jointActivation > 0.25) {
-            const initialWeight = 0.5 * eta * jointActivation;
-            this.graph.synapses.push({ source: n1, target: n2, weight: initialWeight, coActivations: 1 });
-            changes.push({ source: n1, target: n2, delta: initialWeight });
-          }
-          */
-        }
+        changes.push({ source: n1, target: n2, delta: syn.weight - oldWeight });
+        syn.coActivations = (syn.coActivations || 0) + 1;
       }
-    }
+    });
+
     return changes;
   }
 
@@ -445,6 +594,12 @@ export class SCEEngine {
     const ONE_HOUR = 60 * 60 * 1000;
     if (Date.now() - this.sessionMetrics.lastReset > ONE_HOUR) {
       this.resetSessionMetrics();
+    }
+
+    // GATING: No Neurogenesis during Inference
+    if (this.phase === 'INFERENCE') {
+      console.warn('[SCE] Skipped structural update during INFERENCE phase.');
+      return [];
     }
 
     // 1. Session Rate Limit Check
@@ -500,6 +655,9 @@ export class SCEEngine {
           results.push({ source: rel.source, target: rel.target, status: 'created' });
           connectionsThisCall++;
           this.sessionMetrics.connectionsThisSession++;
+
+          // Invalidate Cache (Topological Change)
+          this.semanticCache.clear();
         }
       }
     }
@@ -513,7 +671,8 @@ export class SCEEngine {
    * This solves the hub-and-spoke problem by creating semantic "containers".
    */
   clusterNodesByType(newNodeIds: string[], contextNodeId: string) {
-    if (this.config.enableHyperedges === false) return; // Feature flag check (default true if undefined)
+    if (this.config.enableHyperedges === false) return;
+    if (this.phase === 'INFERENCE') return; // Read-Only
 
     // Group new nodes by type
     const byType: Record<string, string[]> = {};
@@ -540,11 +699,17 @@ export class SCEEngine {
       // Ensure hyperedges array exists
       if (!this.graph.hyperedges) this.graph.hyperedges = [];
 
+      // Map Node Type to Hyperedge Type (Semantics)
+      let hyperedgeType: 'context' | 'causal' | 'temporal' | 'group' = 'group';
+      if (type === 'event') hyperedgeType = 'temporal';
+      if (type === 'concept') hyperedgeType = 'context';
+
       this.graph.hyperedges.push({
         id: clusterId,
         nodes: clusterNodes,
         weight: 0.7,
         label: `${type.charAt(0).toUpperCase() + type.slice(1)} Cluster`,
+        type: hyperedgeType,
         metadata: {
           createdAt: Date.now(),
           source: 'auto-cluster',
@@ -564,6 +729,12 @@ export class SCEEngine {
    * Exception: If a node has NO connections, we allow it (Bootstrapping).
    */
   private areNodesSemanticallyClose(nodeA: string, nodeB: string, maxDistance = 3): boolean {
+    // 0. Cache Check
+    const cacheKey = [nodeA, nodeB].sort().join(':');
+    if (this.semanticCache.has(cacheKey)) {
+      return this.semanticCache.get(cacheKey)!;
+    }
+
     // 1. Bootstrap Check: If either node is isolated, allow connection
     const hasEdgesA = this.graph.synapses.some(s => s.source === nodeA || s.target === nodeA);
     const hasEdgesB = this.graph.synapses.some(s => s.source === nodeB || s.target === nodeB);
@@ -574,27 +745,31 @@ export class SCEEngine {
     const visited = new Set<string>();
     const queue: { node: string; dist: number }[] = [{ node: nodeA, dist: 0 }];
 
+    // Use cached adjacency for O(1) neighbor lookup
+    const adjacency = this.getAdjacency();
+
     while (queue.length > 0) {
       const current = queue.shift()!;
 
-      if (current.node === nodeB) return true; // Found path
-      if (current.dist >= maxDistance) continue; // Too far
+      if (current.node === nodeB) {
+        this.semanticCache.set(cacheKey, true);
+        return true;
+      }
+      if (current.dist >= maxDistance) continue;
 
       if (visited.has(current.node)) continue;
       visited.add(current.node);
 
-      // Expand neighbors
-      // Find all connected nodes
-      this.graph.synapses.forEach(syn => {
-        if (syn.source === current.node && !visited.has(syn.target)) {
-          queue.push({ node: syn.target, dist: current.dist + 1 });
-        }
-        if (syn.target === current.node && !visited.has(syn.source)) {
-          queue.push({ node: syn.source, dist: current.dist + 1 });
+      // FAST NEIGHBOR EXPANSION (O(1))
+      const neighbors = adjacency.get(current.node) || [];
+      neighbors.forEach(edge => {
+        if (!visited.has(edge.target)) {
+          queue.push({ node: edge.target, dist: current.dist + 1 });
         }
       });
     }
 
+    this.semanticCache.set(cacheKey, false);
     return false; // No path found within maxDistance
   }
 
@@ -616,19 +791,35 @@ export class SCEEngine {
     const issues: SecurityRuleResult[] = [];
     const activeSet = new Set(activated.map(a => a.node));
 
-    this.graph.synapses.forEach(syn => {
-      // If we have an active "contradiction" link between two active nodes
-      if (syn.type === 'contradiction' && activeSet.has(syn.source) && activeSet.has(syn.target)) {
-        const n1 = this.graph.nodes[syn.source];
-        const n2 = this.graph.nodes[syn.target];
-        issues.push({
-          ruleId: 999,
-          ruleDescription: `Cognitive Dissonance: ${n1.label} contradicts ${n2.label}`,
-          passed: false,
-          timestamp: new Date().toLocaleTimeString(),
-          conflictingNodeIds: [n1.id, n2.id]
-        });
-      }
+    // Optimizing Contradiction Check using Adjacency?
+    // Contradictions are a specific EDGE TYPE. adjacencyMap stores weights but not types...
+    // Wait, getAdjacency() only stores target/weight. Types are lost!
+    // We should probably iterate synapses for type-specific checks OR map types too.
+    // For now, keep the iteration as this is a specific type scan.
+
+    // IMPROVED (v0.5.4): Uses Typed Adjacency Map (O(K))
+    const adjacency = this.getAdjacency();
+
+    activeSet.forEach(nodeId => {
+      const neighbors = adjacency.get(nodeId) || [];
+      neighbors.forEach(edge => {
+        if (activeSet.has(edge.target) && edge.type === 'contradiction') {
+          // Avoid duplicate reporting (A-B and B-A) by enforcing order
+          if (nodeId < edge.target) {
+            const n1 = this.graph.nodes[nodeId];
+            const n2 = this.graph.nodes[edge.target];
+            if (n1 && n2) {
+              issues.push({
+                ruleId: 999,
+                ruleDescription: `Cognitive Dissonance: ${n1.label} contradicts ${n2.label}`,
+                passed: false,
+                timestamp: new Date().toLocaleTimeString(),
+                conflictingNodeIds: [n1.id, n2.id]
+              });
+            }
+          }
+        }
+      });
     });
 
     return issues;
@@ -925,10 +1116,93 @@ export class SCEEngine {
     };
   }
   /**
-   * HYPEREDGE CONSOLIDATION SYSTEM
    * Detects densely connected cliques and converts them to hyperedges.
    * This reduces O(N²) pairwise edges to O(N) hyperedge membership.
    */
+
+  /**
+   * Track sets of nodes that are active together (Activation-Driven Consolidation)
+   */
+  private trackCoActivations(activated: ActivatedNode[]) {
+    // Filter for significant activation (> 0.4)
+    const topNodes = activated
+      .filter(a => a.activation > 0.4)
+      .sort((a, b) => b.activation - a.activation)
+      .slice(0, 5)
+      .map(a => a.node)
+      .sort();
+
+    if (topNodes.length < 3) return;
+
+    // Generate cliques of 3 (Triangles)
+    for (let i = 0; i < topNodes.length; i++) {
+      for (let j = i + 1; j < topNodes.length; j++) {
+        for (let k = j + 1; k < topNodes.length; k++) {
+          const key = `${topNodes[i]}|${topNodes[j]}|${topNodes[k]}`;
+          const current = this.frequentCoActivations.get(key) || 0;
+          this.frequentCoActivations.set(key, current + 1);
+        }
+      }
+    }
+  }
+
+  /**
+   * Improvement 4: Consolidate Hyperedges from Frequent Co-Activations (Empirical Evidence)
+   */
+  private consolidateFromCoActivations(): { created: number } {
+    let created = 0;
+    const MIN_CO_ACTIVATIONS = 5;
+
+    this.frequentCoActivations.forEach((count, key) => {
+      if (count >= MIN_CO_ACTIVATIONS) {
+        const nodeIds = key.split('|');
+        // Check if Hyperedge already exists for these nodes
+        const exists = this.graph.hyperedges?.some(h =>
+          h.nodes.length === nodeIds.length &&
+          nodeIds.every(n => h.nodes.includes(n))
+        );
+
+        if (!exists) {
+          // Fetch labels for name
+          const labels = nodeIds.map(id => this.graph.nodes[id]?.label).filter(Boolean);
+          const label = `Context: ${labels.join(', ')}`;
+
+          if (!this.graph.hyperedges) this.graph.hyperedges = [];
+          this.graph.hyperedges.push({
+            id: `hyper_freq_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            nodes: nodeIds,
+            weight: 1.0, // Strong empirical evidence
+            label: label.length > 50 ? label.substring(0, 50) + '...' : label,
+            type: 'context',
+            salience: 1.0,
+            metadata: {
+              source: 'co-activation',
+              frequency: count
+            }
+          });
+          created++;
+          console.log(`[SCE] Created Empirical Hyperedge: ${label}`);
+        } else {
+          // Boost existing
+          const edge = this.graph.hyperedges!.find(h =>
+            h.nodes.length === nodeIds.length &&
+            nodeIds.every(n => h.nodes.includes(n))
+          );
+          if (edge) {
+            edge.salience = Math.min(1.0, (edge.salience || 0.5) + 0.1);
+          }
+        }
+      }
+    });
+
+    // Decay counts to forget old patterns
+    this.frequentCoActivations.forEach((val, key) => {
+      this.frequentCoActivations.set(key, val * 0.9);
+      if (val < 1) this.frequentCoActivations.delete(key);
+    });
+
+    return { created };
+  }
 
   /**
    * Main consolidation method - Call periodically (every 50-100 queries)
@@ -944,6 +1218,10 @@ export class SCEEngine {
       nodesConsolidated: 0
     };
 
+    // Improvement 4: Process Activation-Driven Patterns First
+    const coActiveStats = this.consolidateFromCoActivations();
+    stats.hyperedgesCreated += coActiveStats.created;
+
     // 1. Detect Dense Cliques (3-6 nodes)
     const cliques = this.detectCliques(3, 6, 0.8);
 
@@ -951,13 +1229,23 @@ export class SCEEngine {
     const coherentCliques = cliques.filter(c => this.hasSemanticCoherence(c));
 
     // 3. Convert each clique to hyperedge
+    // FIXED (v0.5.4): Track consolidated nodes to prevent double-counting
+    const consolidatedThisCycle = new Set<string>();
+
     coherentCliques.forEach(clique => {
+      // Check if any node in this clique has already been consolidated this cycle
+      const hasOverlap = clique.some(n => consolidatedThisCycle.has(n));
+      if (hasOverlap) return; // Skip overlapping cliques to avoid redundancy/conficts
+
       const hyperedge = this.cliqueToHyperedge(clique);
       if (hyperedge) {
         if (!this.graph.hyperedges) this.graph.hyperedges = [];
         this.graph.hyperedges.push(hyperedge);
         stats.hyperedgesCreated++;
         stats.nodesConsolidated += clique.length;
+
+        // Mark nodes as consolidated
+        clique.forEach(n => consolidatedThisCycle.add(n));
 
         // Optionally remove redundant pairwise edges (configurable)
         if (this.config.pruneConsolidatedEdges) {
@@ -989,7 +1277,16 @@ export class SCEEngine {
     const processed = new Set<string>();
 
     // Build adjacency for fast lookup
-    const adjacency = this.buildAdjacencyMap();
+    // FIXED (v0.5.4): Use shared O(1) Adjacency Map
+    const adjacency = this.getAdjacency();
+    // Convert to simple string[] map for this function's interface (or refactor downstream?)
+    // This function expects Map<string, string[]>. getAdjacency returns Map<string, {target, weight}[]>
+    // Refactoring this to use the objects directly would be cleaner but riskier for now.
+    // Let's assume we update the downstream usages or map it.
+
+    // Adaptation for detectCliques which expects string[]:
+    // Actually, passing the complex object is fine if we update the `adjacency` iteration logic.
+    // Let's refactor the downstream usage instead of collecting repeatedly.
 
     // Sort nodes by degree (process high-connectivity nodes first)
     const nodesByDegree = Object.keys(this.graph.nodes)
@@ -1005,7 +1302,9 @@ export class SCEEngine {
       if (cliques.length >= maxCliques) break; // NEW: Early termination logic
       if (processed.has(seed)) continue;
 
-      const neighbors = adjacency.get(seed) || [];
+      const neighborsObj = adjacency.get(seed) || [];
+      const neighbors = neighborsObj.map(n => n.target); // Extract IDs
+
       if (neighbors.length < minSize - 1) continue;
 
       // Try to grow clique from this seed
@@ -1034,7 +1333,7 @@ export class SCEEngine {
   private growClique(
     seed: string,
     candidates: string[],
-    adjacency: Map<string, string[]>,
+    adjacency: Map<string, Array<{ target: string, weight: number, type?: string, synapseId: string }>>,
     maxSize: number,
     densityThreshold: number
   ): string[] {
@@ -1044,7 +1343,11 @@ export class SCEEngine {
     const scoredCandidates = candidates.map(c => ({
       id: c,
       connections: clique.filter(member =>
-        this.hasEdge(member, c)
+        // Check edge existence using adjacency map O(1) instead of hasEdge O(E)?
+        // For now, allow hasEdge since loop is small, OR optimize using adjacency.
+        // Let's use hasEdge for safety as adjacency is readily available but hasEdge logic is wrapped.
+        // Optimization:
+        (adjacency.get(member) || []).some(edge => edge.target === c)
       ).length
     })).sort((a, b) => b.connections - a.connections);
 
@@ -1071,10 +1374,14 @@ export class SCEEngine {
 
     let existingEdges = 0;
     const possibleEdges = (nodeIds.length * (nodeIds.length - 1)) / 2;
+    const adjacency = this.getAdjacency();
 
     for (let i = 0; i < nodeIds.length; i++) {
       for (let j = i + 1; j < nodeIds.length; j++) {
-        if (this.hasEdge(nodeIds[i], nodeIds[j])) {
+        const neighbors = adjacency.get(nodeIds[i]) || [];
+        // Check edge existence: O(1) in theory if using Set/Object, O(Degree) with Array.
+        // Degree is usually small (<< N). This is much faster than hasEdge O(Total Edges).
+        if (neighbors.some(e => e.target === nodeIds[j])) {
           existingEdges++;
         }
       }

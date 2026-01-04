@@ -71,6 +71,9 @@ export const useChatPipeline = (
         const startTime = Date.now();
         setStage('activating');
 
+        // P2: Start in EXPLORE to allow Neurogenesis
+        engineRef.current.setPhase('EXPLORE');
+
         // Filter only active rules (Global)
         const activeSecurityRules = (currentConfig.securityRules || []).filter(r => r.isActive);
 
@@ -212,7 +215,9 @@ export const useChatPipeline = (
                                 label: n.label,
                                 type: n.type || 'concept',
                                 content: n.content || 'Extracted Memory',
-                                heat: 1.0, // Fresh nodes are hot
+                                activation: 1.0, // Fresh thoughts are active
+                                salience: 0.5,   // Moderate initial importance
+                                heat: 1.0,       // DEPRECATED
                                 isNew: true
                             };
                             createdCount++;
@@ -344,6 +349,8 @@ export const useChatPipeline = (
             });
 
             setStage('querying');
+            // P2: Switch to INFERENCE (Read-Only) for Synthesis
+            engineRef.current.setPhase('INFERENCE');
 
             // 3. Synthesis
             let synthesisPromptTemplate = (currentConfig.systemPrompts || []).find(p => p.id === 'synthesis')?.content || '';
@@ -438,7 +445,9 @@ export const useChatPipeline = (
                         content: safeContent,
                         type: safeType,
                         subtype: subtype,
-                        heat: 0.8,
+                        activation: 1.0,
+                        salience: 0.5,
+                        heat: 1.0, // DEPRECATED
                         isNew: true
                     });
                     createdNodeIds.push(safeId); // Track Phase 3 creations
@@ -548,12 +557,15 @@ export const useChatPipeline = (
             setStage('complete');
             addAuditLog('synthesis', `Lattice resolution complete in ${latency}ms`, 'success');
 
+            // P2: Switch to CONSOLIDATE for Hebbian Learning & Pruning
+            engineRef.current.setPhase('CONSOLIDATE');
+
             let weightChanges: { source: string, target: string, delta: number }[] = [];
             if (config.enableHebbian && activated.length > 1) {
                 weightChanges = engineRef.current.updateHebbianWeights(activated);
             }
-            engineRef.current.applyHeatDiffusion(0.05);
-            engineRef.current.afterQuery();
+            engineRef.current.applyEnergyDynamics(0.05);
+            engineRef.current.afterQuery(activated);
 
             const metrics = engineRef.current.calculateMetrics(
                 latency,

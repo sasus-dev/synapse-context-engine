@@ -8,13 +8,20 @@ export type NodeSubtype =
   | 'requirement' | 'limitation' | 'policy'
   | 'objective' | 'target' | 'kpi';
 
+export type EnginePhase = 'EXPLORE' | 'INFERENCE' | 'CONSOLIDATE';
+
 export interface Node {
   id: string;
   type: NodeType;
   subtype?: NodeSubtype;
   label: string;
   content: string;
-  heat: number;
+
+  // Physics V2 (v0.5.3)
+  activation: number; // STM: Current thought energy (decays fast)
+  salience: number;   // LTM: Structural importance (decays slow)
+  heat?: number;      // DEPRECATED: Kept for migration compatibility if needed
+
   pulseIndex?: number;
   previousEnergy?: number;
   origin?: string;
@@ -45,6 +52,8 @@ export interface Hyperedge {
   nodes: string[]; // Connected nodes (n > 2)
   weight: number;
   label: string;
+  type?: 'context' | 'causal' | 'temporal' | 'group'; // Typed Hyperedges (v0.5.3)
+  salience?: number; // LTM: Importance of this cluster (v0.6 Hardening)
   metadata?: any;
 }
 
@@ -194,7 +203,8 @@ export interface AuditLog {
 export interface ActivatedNode {
   node: string;
   energy: number;
-  heat: number;
+  activation: number; // Snapshot of Node.activation
+  salience: number;   // Snapshot of Node.salience
   biasedEnergy: number;
   depth: number;
   path: string[];

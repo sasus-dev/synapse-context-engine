@@ -30,8 +30,9 @@ const ConceptsPage = () => {
                     <ConceptCard
                         icon={Zap}
                         title="Spreading Activation"
-                        desc="A method for searching associative networks. Activation energy starts at source nodes and flows through links, fading over distance (decay), identifying relevant context."
+                        desc="Energy flows from source nodes. v0.6 separates this into 'Activation' (Short-term focus, fast decay) and 'Salience' (Long-term importance, slow decay)."
                         color="text-yellow-400"
+                        badge="v0.6 Updated"
                     />
 
                     <ConceptCard
@@ -51,16 +52,18 @@ const ConceptsPage = () => {
 
                     <ConceptCard
                         icon={Network}
-                        title="Hypergraph Topology"
-                        desc="The system can connect multiple nodes (N > 2) with a single 'Hyperedge', allowing for complex, multi-dimensional relationships (e.g. 'Meeting' + 'Sasu' + 'Sarah')."
+                        title="Hyperedge Plasticity"
+                        desc="Clusters (Hyperedges) are no longer static. They have 'salience' and decay over time. Used clusters grow stronger; unused ones fade away, preventing semantic clutter."
                         color="text-cyan-400"
+                        badge="v0.6 New"
                     />
 
                     <ConceptCard
                         icon={Fingerprint}
-                        title="Node Crystallization"
-                        desc="The process where temporary 'working memory' nodes become permanent 'long-term memory' nodes after sufficient reinforcement or manual validation."
+                        title="Empirical Consolidation"
+                        desc="Instead of guessing relationships, the system tracks 'Co-Activations'. If nodes fire together > 5 times, they are fused into a permanent Context Hyperedge."
                         color="text-emerald-400"
+                        badge="v0.6 New"
                     />
 
                     <ConceptCard

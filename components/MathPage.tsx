@@ -100,6 +100,17 @@ const MathPage = () => {
                         icon={Activity}
                         fullWidth
                     />
+
+                    <BlueprintBlock
+                        title="6. Global Energy Budget (v0.6)"
+                        subtitle="Runaway Prevention"
+                        formula="E_new = E_old * (MAX_BUDGET / Σ E_total)"
+                        desc="To prevent 'epileptic' network seizures where the entire graph activates, we enforce a strict global energy budget (Max 10.0). If energy spikes, the entire system is normalized, preserving relative thought rankings."
+                        color="text-red-400"
+                        borderColor="border-red-500/20"
+                        icon={Zap}
+                        fullWidth
+                    />
                 </div>
 
                 {/* Explainer Section */}

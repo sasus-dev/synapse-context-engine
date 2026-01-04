@@ -11,9 +11,11 @@ import UpdateV02 from '../docs/updates/update_v0.2.md?raw';
 import UpdateV03 from '../docs/updates/update_v0.3.md?raw';
 import UpdateV04 from '../docs/updates/update_v0.4.md?raw';
 import UpdateV05 from '../docs/updates/update_v0.5.md?raw';
+import UpdateV06 from '../docs/updates/update_v0.6.md?raw';
 import NotesContent from '../docs/notes/architecture_notes.md?raw';
 
 const UPDATES = [
+    { id: 'v0.6', date: 'Jan 04, 2026', title: 'The Hardening', content: UpdateV06, type: 'major' },
     { id: 'v0.5', date: 'Jan 03, 2026', title: 'Integrity & Extraction', content: UpdateV05, type: 'major' },
     { id: 'v0.4', date: 'Jan 01, 2026', title: 'Cognitive Telemetry', content: UpdateV04, type: 'major' },
     { id: 'v0.3', date: 'Dec 30, 2025', title: 'Identity, Structure & QA', content: UpdateV03, type: 'major' },

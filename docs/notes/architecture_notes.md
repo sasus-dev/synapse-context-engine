@@ -255,4 +255,68 @@ Certain patterns are "Information Exhaust"—they are structurally necessary for
 
 ---
 
-<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
+## ⚡ Cognitive Physics (v0.5.3)
+
+### 20. The Three-Layer Cognitive Model
+*Hypothesis: The complexity of the SCE engine is growing. We need a simpler mental model to reason about its behavior.*
+
+**✅ Decision:** We now model SCE as a three-layer system:
+1.  **Signal Layer**: The "Physics" of the brain. Activation, energy flow, diffusions, and immediate short-term memory. ($E \to E_{t+1}$).
+2.  **Structure Layer**: The "Anatomy" of the brain. Synapses, Hyperedges, Clusters. Where knowledge is stored. ($G = \{V, E, H\}$).
+3.  **Control Layer**: The "Consciousness" or Executive Function. Phases, Gates, Safety checks. Determines *what* operations are allowed when.
+
+### 21. Cognitive Phase Gating
+*Hypothesis: Learning while thinking (Inference) leads to "Memory Poisoning" (hallucinating connections).*
+
+**✅ Decision:** I implemented Explicit Cognitive Phases that gate plasticity.
+*   **EXPLORE**: High plasticity. Neurogenesis allowed. Hebbian learning active. (Thinking "Wide").
+*   **INFERENCE**: Zero plasticity. Graph is effectively Read-Only (except for STM activation). Deterministic recall. (Thinking "Deep").
+*   **CONSOLIDATE**: Structural optimization. Pruning, clustering, and normalizing weights. (Sleep/Cleanup).
+
+### 22. Scalability Mitigation (Adjacency & Caching)
+*Hypothesis: Hebbian updates are $O(N^2)$ and BFS is $O(E)$. This crashes at $> 1000$ active nodes.*
+
+**✅ Decision:** I implemented targeted optimizations:
+1.  **Hebbian O(M)**: Using an $O(1)$ set lookup for active nodes allows us to iterate only actual edges ($M$) instead of all potential semantic pairs ($N^2$).
+2.  **Semantic Caching**: Results of "Are A and B close?" (BFS) are cached in `semanticCache` and invalidated only on structural changes.
+
+### 23. Hyperedge Resonance Control
+*Risk: Hyperedges can create feedback loops if they fire repeatedly in the same activation cycle.*
+
+**✅ Decision:** We implemented a `firedHyperedges` cap in the `spreadingActivation` loop. A hyperedge can only pump energy ONCE per query cycle. This converts potential infinite loops into single-cycle boosts.
+
+---
+
+## 🛡️ The Hardening (v0.6.0)
+
+### 24. Global Energy Budget (Normalization)
+*Risk: In a graph with 1,000 positive feedback loops, activation can explode to infinity ("White-Out").*
+
+**✅ Decision:** We implemented a Hard Energy Cap (`MAX_TOTAL_ENERGY = 10.0`).
+*   **Mechanism:** After every activation cycle, if $\sum Activation > 10$, we scale ALL nodes down by $10 / \sum Activation$.
+*   **Result:** The relative ranking of thoughts is preserved, but the "loudness" of the brain is kept within a safe range.
+
+### 25. Hyperedge Plasticity (Salience)
+*Risk: Hyperedges tend to accumulate ("Semantic Clutter") because they were effectively immortal.*
+
+**✅ Decision:** Hyperedges now have `salience` and `decay`.
+*   **Decay:** They fade over time just like nodes (`salience *= 0.999`).
+*   **Reinforcement:** They are boosted (`+0.05`) only when their member nodes are co-active.
+*   **Pruning:** "Dead" hyperedges (salience < 0.1) can be garbage collected.
+
+### 26. Activation-Driven Consolidation (Empirical Evidence)
+*Comparison: Determining clusters by Structure (Cliques) vs. Activity (Firing Patterns).*
+
+**✅ Decision:** We shifted from "Structural Guessing" to "Empirical Evidence".
+*   **Mechanism:** We track `frequentCoActivations` (Triple-Store).
+*   **Rule:** If Node A, B, and C fire together > 5 times, we create a Hyperedge.
+*   **Philosophy:** "neurons that fire together, wire together" (Hebb) applied to Clusters.
+
+### 27. Phase-Specific Cognitive Profiles
+*Hypothesis: One set of physics parameters fits all situations? No.*
+
+**✅ Decision:** We implemented `PHASE_PARAMS`.
+*   `EXPLORE`: High Plasticity (1.0), Slow Decay (0.90). "Daydreaming".
+*   `INFERENCE`: Zero Plasticity (0.0), Fast Decay (0.70). "Focusing".
+*   `CONSOLIDATE`: Medium Plasticity (0.2). "Sleep".
+
