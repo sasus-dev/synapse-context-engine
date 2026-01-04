@@ -48,3 +48,18 @@ The engine now has distinct "Moods":
 ## ⚠️ Breaking Changes
 *   **Interface Update:** `Node` interface split `heat` into `activation` (STM) and `salience` (LTM).
 *   **Config Update:** `SCEEngine` now requires `setPhase()` calls to function correctly.
+
+## v0.6.1: The Great Refactor (Modularization)
+
+> **"Breaking the God Object"**
+
+As of v0.6.1, the monolithic `SCEEngine` has been dismantled and rebuilt as a modular system. This improves maintainability, testability, and allows for independent iteration of cognitive subsystems.
+
+### New Module Architecture
+*   **Orchestrator:** `lib/sce/engine/SCEEngine.ts` (Thin wrapper)
+*   **Graph:** `lib/sce/graph/` (Adjacency & Traversal)
+*   **Physics:** `lib/sce/activation/` (Energy Dynamics)
+*   **Learning:** `lib/sce/learning/` (Hebbian & Co-Activations)
+*   **Structure:** `lib/sce/hyperedges/` (Clustering & Consolidation)
+*   **Safety:** `lib/sce/safety/` (Contradictions & Orthogonality)
+*   **Metrics:** `lib/sce/metrics/` (Telemetry)

@@ -320,3 +320,21 @@ Certain patterns are "Information Exhaust"—they are structurally necessary for
 *   `INFERENCE`: Zero Plasticity (0.0), Fast Decay (0.70). "Focusing".
 *   `CONSOLIDATE`: Medium Plasticity (0.2). "Sleep".
 
+---
+
+## 🧩 Modularization (v0.6.1)
+
+### 28. The Great Refactor (De-Monolithing)
+*Problem: The `SCEEngine` class became a 2000-line God Object, managing Graph Physics, Learning, Safety, and Telemetry all in one file. This made testing and strictly enforcing architectural boundaries difficult.*
+
+**✅ Decision:** Dismantled `SCEEngine` into an Orchestrator pattern.
+*   **Orchestrator:** `SCEEngine.ts` maintains state and coordinates subsystems.
+*   **Subsystems:**
+    *   **Graph:** `AdjacencyIndex` (O(1) lookups), `GraphTraversal` (BFS/DFS).
+    *   **Physics:** `SpreadingActivation` (Signal flow), `EnergyDynamics` (Decay/Diffusion).
+    *   **Learning:** `HebbianLearning` (Weights), `CoActivationTracker` (Patterns).
+    *   **Structure:** `HyperedgeManager` (Clustering), `EdgePruning` (Hygiene).
+    *   **Safety:** `ContradictionDetector`, `OrthogonalityEnforcer`.
+
+This architecture enforces **Separation of Concerns**. The "Physics" layer cannot accidentally modify the "Graph Structure" (Neurogenesis) without going through the explicit `RelationshipManager`. This improves safety by making side-effects explicit.
+

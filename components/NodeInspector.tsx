@@ -57,14 +57,25 @@ const NodeInspector: React.FC<NodeInspectorProps> = ({ selectedNode, energy = 0,
 const NodeViewer = ({ node, energy, onEdit, graph, onSelectNode }: { node: Node; energy: number; onEdit: () => void; graph?: any; onSelectNode?: (id: string) => void; }) => {
 
   // Computed Metrics
-  const synapses = graph?.synapses.filter((s: any) => s.source === node.id || s.target === node.id) || [];
+  // Computed Metrics
+  const synapses = graph?.synapses?.filter((s: any) => s.source === node.id || s.target === node.id) || [];
   const degree = synapses.length;
-  const strongConnections = synapses
-    .filter((s: any) => s.weight > 0.3)
+
+  // Dedup neighbors (merge A->B and B->A into single entry)
+  const uniqueNeighbors = new Map<string, any>();
+  synapses.forEach((s: any) => {
+    const otherId = s.source === node.id ? s.target : s.source;
+    const existing = uniqueNeighbors.get(otherId);
+    if (!existing || s.weight > existing.weight) {
+      uniqueNeighbors.set(otherId, s);
+    }
+  });
+
+  const strongConnections = Array.from(uniqueNeighbors.values())
     .sort((a: any, b: any) => b.weight - a.weight)
     .slice(0, 5);
 
-  const hyperedges = graph?.hyperedges?.filter((h: any) => h.nodes.includes(node.id)) || [];
+  const hyperedges = graph?.hyperedges?.filter((h: any) => h.nodes && h.nodes.includes(node.id)) || [];
 
   return (
     <div className="flex flex-col animate-in fade-in duration-300 gap-6">

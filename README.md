@@ -198,7 +198,17 @@ Failure modes become visible instead of implicit.
 ## 🖥️ The Core Engine (UI & Orchestration)
 
 The engine consists of two main components:
-- **[`lib/sceCore.ts`](lib/sceCore.ts)** - Core graph engine (spreading activation, Hebbian learning, heat diffusion)
+- **[`lib/sce/`](lib/sce/)** - Modular Cognitive Engine (Orchestrator, Physics, Learning, Structure)
+- **[`components/CoreEngine.tsx`](components/CoreEngine.tsx)** - UI orchestration and visualization
+
+### Engine Layout (v0.6+)
+- **Orchestrator**: [`lib/sce/engine/SCEEngine.ts`](lib/sce/engine/SCEEngine.ts) (Thin wrapper, manages subsystems)
+- **Graph**: `lib/sce/graph/` (Adjacency Index)
+- **Physics**: `lib/sce/activation/` (Spreading Activation, Energy Dynamics)
+- **Learning**: `lib/sce/learning/` (Hebbian, Co-Activation)
+- **Structure**: `lib/sce/hyperedges/` (Clustering, Consolidation)
+- **Safety**: `lib/sce/safety/` (Contradictions, Orthogonality)
+- **Metrics**: `lib/sce/metrics/` (Telemetry)
 - **[`components/CoreEngine.tsx`](components/CoreEngine.tsx)** - UI orchestration and visualization
 
 The `CoreEngine` component acts as a **memory observatory** rather than a simple demo UI.
