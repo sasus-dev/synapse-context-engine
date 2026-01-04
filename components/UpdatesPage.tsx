@@ -7,28 +7,16 @@ import { ArrowLeft, History, FileText, X, CircleHelp } from 'lucide-react';
 // @ts-ignore
 // @ts-ignore
 // @ts-ignore
-import UpdateV031 from '../docs/updates/update_v0.3.1.md?raw';
-// @ts-ignore
-import UpdateV030 from '../docs/updates/update_v0.3.0.md?raw';
-// @ts-ignore
-import UpdateV021 from '../docs/updates/Update_v0.2.1.md?raw';
-// @ts-ignore
-import NotesContent from '../docs/notes/architecture_notes.md?raw';
-// Other updates commented out to match user request
-// import Update20251225 from '../docs/updates/Update_2025_12_25.md?raw';
-// import Update20251220 from '../docs/updates/Update_2025_12_20.md?raw';
-// @ts-ignore
-// @ts-ignore
-import UpdateV050 from '../docs/updates/update_v0.5.0.md?raw';
-// @ts-ignore
-import UpdateV040 from '../docs/updates/update_v0.4.0.md?raw';
+import UpdateV02 from '../docs/updates/update_v0.2.md?raw';
+import UpdateV03 from '../docs/updates/update_v0.3.md?raw';
+import UpdateV04 from '../docs/updates/update_v0.4.md?raw';
+import UpdateV05 from '../docs/updates/update_v0.5.md?raw';
 
 const UPDATES = [
-    { id: 'v0.5.0', date: 'Jan 03, 2026', title: 'Extraction Refinement', content: UpdateV050, type: 'major' },
-    { id: 'v0.4.0', date: 'Jan 01, 2026', title: 'Cognitive Telemetry', content: UpdateV040, type: 'major' },
-    { id: 'v0.3.1', date: 'Dec 30, 2025', title: 'Quality of Life & Stability', content: UpdateV031, type: 'major' },
-    { id: 'v0.3.0', date: 'Dec 29, 2025', title: 'Identity & Structural Mesh', content: UpdateV030, type: 'major' },
-    { id: 'v0.2.1', date: 'Dec 26, 2025', title: 'Academic Refinement (Alpha)', content: UpdateV021, type: 'major' },
+    { id: 'v0.5.0', date: 'Jan 03, 2026', title: 'Extraction Refinement', content: UpdateV05, type: 'major' },
+    { id: 'v0.4.0', date: 'Jan 01, 2026', title: 'Cognitive Telemetry', content: UpdateV04, type: 'major' },
+    { id: 'v0.3.x', date: 'Dec 30, 2025', title: 'Identity, Structure & QA', content: UpdateV03, type: 'major' },
+    { id: 'v0.2.1', date: 'Dec 26, 2025', title: 'Academic Refinement (Alpha)', content: UpdateV02, type: 'major' },
     {
         id: 'v0.2.0', date: 'Dec 25, 2025', title: 'SCE Demo (Tauri v2)', type: 'minor',
         content: `# SCE Demo (Tauri v2)\n\n**Release Note**\n\nSuccessful migration to Tauri v2. Performance improvements and native window handling.`

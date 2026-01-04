@@ -112,7 +112,7 @@ export interface ChatMessage {
 
 export interface ApiCall {
   id: string;
-  type: 'EXTRACTION' | 'SYNTHESIS' | 'PRUNING' | 'REASONING';
+  type: 'EXTRACTION' | 'SYNTHESIS' | 'PRUNING' | 'REASONING' | 'EXTRACTION_NODE' | 'EXTRACTION_RELATION';
   timestamp: string;
   input: string;
   output: string;

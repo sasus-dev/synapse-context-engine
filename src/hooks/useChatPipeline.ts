@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     KnowledgeGraph, EngineConfig, GlobalConfig, ChatMessage,
     AuditLog, PipelineStage, ActivatedNode, SecurityRule,
@@ -6,7 +6,7 @@ import {
 } from '../../types';
 import { SCEEngine } from '../../lib/sceCore';
 import { extractKnowledge } from '../utils/knowledgeExtraction';
-import { extractKnowledge } from '../utils/knowledgeExtraction';
+
 import { queryJointly, executeExtractionPipeline } from '../../services/llmService';
 
 export const useChatPipeline = (
@@ -417,7 +417,7 @@ export const useChatPipeline = (
 
                     const normalizedId = safeId.toLowerCase().trim();
                     const existingNodeEntry = Object.entries(engineRef.current.graph.nodes).find(([k, v]) =>
-                        k.toLowerCase() === normalizedId || v.label.toLowerCase().trim() === nn.label.toLowerCase().trim()
+                        k.toLowerCase() === normalizedId || (v.label && nn.label && v.label.toLowerCase().trim() === nn.label.toLowerCase().trim())
                     );
                     const existingNode = existingNodeEntry ? existingNodeEntry[1] : undefined;
 
