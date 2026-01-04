@@ -1,9 +1,17 @@
 
-export type NodeType = 'project' | 'document' | 'contact' | 'preference' | 'behavior' | 'tool' | 'config' | 'meeting' | 'fact' | 'benchmark' | 'concept' | 'goal';
+export type NodeType = 'concept' | 'entity' | 'event' | 'preference' | 'constraint' | 'goal';
+
+export type NodeSubtype =
+  | 'person' | 'organization' | 'place' | 'product'
+  | 'meeting' | 'decision' | 'milestone' | 'deadline'
+  | 'technology' | 'methodology' | 'domain' | 'tool'
+  | 'requirement' | 'limitation' | 'policy'
+  | 'objective' | 'target' | 'kpi';
 
 export interface Node {
   id: string;
   type: NodeType;
+  subtype?: NodeSubtype;
   label: string;
   content: string;
   heat: number;
@@ -37,6 +45,7 @@ export interface Hyperedge {
   nodes: string[]; // Connected nodes (n > 2)
   weight: number;
   label: string;
+  metadata?: any;
 }
 
 export interface KnowledgeGraph {
@@ -64,6 +73,7 @@ export interface EngineConfig {
   safeMode: boolean;
   repulsionStrength?: number;
   hybridRules: boolean;
+  enableHyperedges?: boolean;
   memoryWindow?: number; // 1-10 Slider
 
   // Consolidation Settings

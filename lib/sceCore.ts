@@ -1,5 +1,60 @@
 import { KnowledgeGraph, EngineConfig, ActivatedNode, Node, Synapse, PruningLog, SecurityRuleResult } from '../types';
 
+interface ClusterConfig {
+  id: string;
+  types: string[];
+  label: string;
+  minNodes?: number;
+  weight?: number;
+  priority?: number; // Lower = higher priority
+}
+
+const CLUSTER_CONFIGS: ClusterConfig[] = [
+  // Priority 1: Core organizational clusters
+  {
+    id: 'actors',
+    types: ['entity'],
+    label: 'People & Organizations',
+    minNodes: 2,
+    weight: 0.8,
+    priority: 1
+  },
+  {
+    id: 'knowledge',
+    types: ['concept'],
+    label: 'Concepts & Knowledge',
+    minNodes: 2,
+    weight: 0.75,
+    priority: 1
+  },
+  {
+    id: 'timeline',
+    types: ['event'],
+    label: 'Events & Timeline',
+    minNodes: 2,
+    weight: 0.8,
+    priority: 1
+  },
+
+  // Priority 2: Combined clusters
+  {
+    id: 'boundaries',
+    types: ['constraint', 'preference'],
+    label: 'Constraints & Preferences',
+    minNodes: 2,
+    weight: 0.7,
+    priority: 2
+  },
+  {
+    id: 'objectives',
+    types: ['goal'],
+    label: 'Goals & Objectives',
+    minNodes: 1, // Goals are important even alone
+    weight: 0.85,
+    priority: 1
+  }
+];
+
 export class SCEEngine {
   graph: KnowledgeGraph;
   config: EngineConfig;
@@ -450,6 +505,56 @@ export class SCEEngine {
     }
 
     return results;
+  }
+
+  /**
+   * [NEW v0.5.2] Auto-Clustering
+   * Groups provided nodes into Hyperedges based on their type.
+   * This solves the hub-and-spoke problem by creating semantic "containers".
+   */
+  clusterNodesByType(newNodeIds: string[], contextNodeId: string) {
+    if (this.config.enableHyperedges === false) return; // Feature flag check (default true if undefined)
+
+    // Group new nodes by type
+    const byType: Record<string, string[]> = {};
+    newNodeIds.forEach(id => {
+      const node = this.graph.nodes[id];
+      if (!node) return;
+      const type = node.type || 'concept';
+      if (!byType[type]) byType[type] = [];
+      byType[type].push(id);
+    });
+
+    // Create Hyperedges
+    Object.entries(byType).forEach(([type, ids]) => {
+      // Logic: 
+      // 1. If we have 2+ nodes of the same type, they form a cluster.
+      // 2. We ALSO include the contextNodeId to anchor this cluster to the current conversation/task.
+
+      if (ids.length < 2) return;
+
+      const clusterNodes = [...ids, contextNodeId];
+      // Sanitize ID
+      const clusterId = `cluster_${type}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+      // Ensure hyperedges array exists
+      if (!this.graph.hyperedges) this.graph.hyperedges = [];
+
+      this.graph.hyperedges.push({
+        id: clusterId,
+        nodes: clusterNodes,
+        weight: 0.7,
+        label: `${type.charAt(0).toUpperCase() + type.slice(1)} Cluster`,
+        metadata: {
+          createdAt: Date.now(),
+          source: 'auto-cluster',
+          contextNode: contextNodeId,
+          clusterType: type
+        }
+      });
+
+      console.log(`[SCE] Created Hyperedge: ${type} (${ids.length} nodes)`);
+    });
   }
 
   /**
@@ -1219,5 +1324,255 @@ export class SCEEngine {
   private isSubset(arrayA: string[], arrayB: string[]): boolean {
     const setB = new Set(arrayB);
     return arrayA.every(item => setB.has(item));
+  }
+
+  /**
+   * [NEW v0.5.2] Intelligent Hierarchical Clustering
+   * Creates Hyperedges based on semantic types and relationships.
+   */
+  createIntelligentClusters(
+    newNodeIds: string[],
+    contextNodeId: string,
+    contextLabel: string = 'Context'
+  ): {
+    hyperedgesCreated: number;
+    clusters: Array<{ type: string; nodeCount: number }>;
+  } {
+    if (this.config.enableHyperedges === false) return { hyperedgesCreated: 0, clusters: [] };
+    if (newNodeIds.length === 0) return { hyperedgesCreated: 0, clusters: [] };
+
+    if (!this.graph.hyperedges) this.graph.hyperedges = [];
+
+    const stats = {
+      hyperedgesCreated: 0,
+      clusters: [] as Array<{ type: string; nodeCount: number }>
+    };
+
+    // Group nodes by type
+    const nodesByType: Record<string, string[]> = {};
+    newNodeIds.forEach(id => {
+      const node = this.graph.nodes[id];
+      if (!node || node.isArchived) return;
+
+      if (!nodesByType[node.type]) nodesByType[node.type] = [];
+      nodesByType[node.type].push(id);
+    });
+
+    // Create clusters based on configuration
+    CLUSTER_CONFIGS
+      .sort((a, b) => (a.priority || 99) - (b.priority || 99))
+      .forEach(config => {
+        // Collect all nodes matching this cluster's types
+        const clusterNodes: string[] = [];
+        config.types.forEach(type => {
+          if (nodesByType[type]) {
+            clusterNodes.push(...nodesByType[type]);
+          }
+        });
+
+        // Check if we have enough nodes
+        if (clusterNodes.length < (config.minNodes || 2)) return;
+
+        // Special handling for goals: always include context
+        const includeContext = config.types.includes('goal');
+        const hyperedgeNodes = includeContext
+          ? [...clusterNodes, contextNodeId]
+          : clusterNodes;
+
+        // Generate descriptive label
+        const nodeLabels = clusterNodes
+          .slice(0, 3)
+          .map(id => this.graph.nodes[id]?.label)
+          .filter(Boolean);
+
+        const label = nodeLabels.length > 0
+          ? `${config.label}: ${nodeLabels.join(', ')}${clusterNodes.length > 3 ? '...' : ''}`
+          : config.label;
+
+        // Create hyperedge
+        this.graph.hyperedges!.push({
+          id: `cluster_${config.id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          nodes: hyperedgeNodes,
+          weight: config.weight || 0.75,
+          label,
+          metadata: {
+            createdAt: Date.now(),
+            source: 'intelligent-cluster',
+            clusterType: config.id,
+            contextNode: includeContext ? contextNodeId : undefined,
+            nodeTypes: config.types
+          }
+        });
+
+        stats.hyperedgesCreated++;
+        stats.clusters.push({
+          type: config.id,
+          nodeCount: clusterNodes.length
+        });
+        console.log(`[SCE Cluster] Created ${config.label} with ${clusterNodes.length} nodes`);
+      });
+
+    // Create cross-type semantic clusters for remaining nodes
+    const clusteredNodeIds = new Set<string>();
+    stats.clusters.forEach(c => {
+      const cfg = CLUSTER_CONFIGS.find(cfg => cfg.id === c.type);
+      if (cfg) {
+        cfg.types.forEach(type => {
+          if (nodesByType[type]) {
+            nodesByType[type].forEach(id => clusteredNodeIds.add(id));
+          }
+        });
+      }
+    });
+
+    const unclusteredNodes = newNodeIds.filter(id => !clusteredNodeIds.has(id));
+
+    if (unclusteredNodes.length >= 2) {
+      // Create a mixed semantic cluster
+      const semanticCluster = this.createSemanticSubCluster(
+        unclusteredNodes,
+        contextNodeId
+      );
+
+      if (semanticCluster) {
+        stats.hyperedgesCreated++;
+        stats.clusters.push({
+          type: 'semantic',
+          nodeCount: unclusteredNodes.length
+        });
+      }
+    }
+
+    return stats;
+  }
+
+  /**
+   * Create a semantic cluster for nodes that don't fit type-based clusters
+   */
+  createSemanticSubCluster(
+    nodeIds: string[],
+    contextNodeId: string
+  ): boolean {
+    if (nodeIds.length < 2) return false;
+
+    // Check if nodes share semantic keywords
+    const keywords = new Map<string, Set<string>>();
+    nodeIds.forEach(id => {
+      const node = this.graph.nodes[id];
+      if (!node) return;
+
+      const text = `${node.label} ${node.content}`.toLowerCase();
+      const words = text
+        .split(/\s+/)
+        .filter(w => w.length > 3)
+        .filter(w => !['the', 'and', 'that', 'this', 'with', 'from'].includes(w));
+
+      keywords.set(id, new Set(words));
+    });
+
+    // Calculate shared keywords
+    const allKeywords = new Set<string>();
+    keywords.forEach(words => words.forEach(w => allKeywords.add(w)));
+
+    const sharedKeywords: string[] = [];
+    allKeywords.forEach(keyword => {
+      const appearsIn = Array.from(keywords.values()).filter(set => set.has(keyword)).length;
+      if (appearsIn >= Math.ceil(nodeIds.length * 0.5)) {
+        sharedKeywords.push(keyword);
+      }
+    });
+
+    // Only create cluster if nodes share semantic meaning
+    if (sharedKeywords.length === 0) return false;
+
+    const label = sharedKeywords.slice(0, 2).join(' & ');
+
+    this.graph.hyperedges!.push({
+      id: `semantic_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      nodes: [...nodeIds, contextNodeId],
+      weight: 0.65,
+      label: `Related: ${label}`,
+      metadata: {
+        createdAt: Date.now(),
+        source: 'semantic-cluster',
+        sharedKeywords,
+        contextNode: contextNodeId
+      }
+    });
+
+    return true;
+  }
+
+  /**
+   * Optional: Create advanced cross-cluster relationships
+   * Detects patterns like "Team working on Goal using Concepts"
+   */
+  detectCrossClusterPatterns(
+    contextNodeId: string
+  ): any[] {
+    if (!this.graph.hyperedges) return [];
+
+    // Find clusters in this context
+    const contextClusters = this.graph.hyperedges.filter(h =>
+      h.metadata?.contextNode === contextNodeId
+    );
+
+    const patternsFound: any[] = [];
+
+    // Pattern 1: Project Pattern (People + Goal + Concepts)
+    const actorCluster = contextClusters.find(c => c.metadata?.clusterType === 'actors');
+    const goalCluster = contextClusters.find(c => c.metadata?.clusterType === 'objectives');
+    const knowledgeCluster = contextClusters.find(c => c.metadata?.clusterType === 'knowledge');
+
+    if (actorCluster && goalCluster && knowledgeCluster) {
+      // Create a "Project Pattern" meta-hyperedge
+      const allNodes = new Set([
+        ...actorCluster.nodes,
+        ...goalCluster.nodes,
+        ...knowledgeCluster.nodes
+      ]);
+
+      this.graph.hyperedges.push({
+        id: `pattern_project_${Date.now()}`,
+        nodes: Array.from(allNodes),
+        weight: 0.9,
+        label: 'Project Context',
+        metadata: {
+          createdAt: Date.now(),
+          source: 'pattern-detection',
+          pattern: 'project',
+          subClusters: [actorCluster.id, goalCluster.id, knowledgeCluster.id]
+        }
+      });
+      patternsFound.push({ type: 'Project Context', nodes: allNodes.size });
+    }
+
+    // Pattern 2: Decision Pattern (Events + Constraints + Actors)
+    const eventCluster = contextClusters.find(c => c.metadata?.clusterType === 'timeline');
+    const boundaryCluster = contextClusters.find(c => c.metadata?.clusterType === 'boundaries');
+
+    if (eventCluster && boundaryCluster && actorCluster) {
+      const allNodes = new Set([
+        ...eventCluster.nodes,
+        ...boundaryCluster.nodes,
+        ...actorCluster.nodes
+      ]);
+
+      this.graph.hyperedges.push({
+        id: `pattern_decision_${Date.now()}`,
+        nodes: Array.from(allNodes),
+        weight: 0.85,
+        label: 'Decision Context',
+        metadata: {
+          createdAt: Date.now(),
+          source: 'pattern-detection',
+          pattern: 'decision',
+          subClusters: [eventCluster.id, boundaryCluster.id, actorCluster.id]
+        }
+      });
+      patternsFound.push({ type: 'Decision Context', nodes: allNodes.size });
+    }
+
+    return patternsFound;
   }
 }

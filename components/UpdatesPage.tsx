@@ -11,12 +11,13 @@ import UpdateV02 from '../docs/updates/update_v0.2.md?raw';
 import UpdateV03 from '../docs/updates/update_v0.3.md?raw';
 import UpdateV04 from '../docs/updates/update_v0.4.md?raw';
 import UpdateV05 from '../docs/updates/update_v0.5.md?raw';
+import NotesContent from '../docs/notes/architecture_notes.md?raw';
 
 const UPDATES = [
-    { id: 'v0.5.0', date: 'Jan 03, 2026', title: 'Extraction Refinement', content: UpdateV05, type: 'major' },
-    { id: 'v0.4.0', date: 'Jan 01, 2026', title: 'Cognitive Telemetry', content: UpdateV04, type: 'major' },
-    { id: 'v0.3.x', date: 'Dec 30, 2025', title: 'Identity, Structure & QA', content: UpdateV03, type: 'major' },
-    { id: 'v0.2.1', date: 'Dec 26, 2025', title: 'Academic Refinement (Alpha)', content: UpdateV02, type: 'major' },
+    { id: 'v0.5', date: 'Jan 03, 2026', title: 'Integrity & Extraction', content: UpdateV05, type: 'major' },
+    { id: 'v0.4', date: 'Jan 01, 2026', title: 'Cognitive Telemetry', content: UpdateV04, type: 'major' },
+    { id: 'v0.3', date: 'Dec 30, 2025', title: 'Identity, Structure & QA', content: UpdateV03, type: 'major' },
+    { id: 'v0.2', date: 'Dec 26, 2025', title: 'Academic Refinement (Alpha)', content: UpdateV02, type: 'major' },
     {
         id: 'v0.2.0', date: 'Dec 25, 2025', title: 'SCE Demo (Tauri v2)', type: 'minor',
         content: `# SCE Demo (Tauri v2)\n\n**Release Note**\n\nSuccessful migration to Tauri v2. Performance improvements and native window handling.`

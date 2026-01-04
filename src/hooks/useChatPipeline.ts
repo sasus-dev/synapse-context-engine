@@ -412,8 +412,10 @@ export const useChatPipeline = (
                     const SafeLabel = nn.label || safeId;
                     const safeContent = nn.content || `Entity captured from conversation: ${SafeLabel}`;
                     let type = (nn.type || 'concept').toLowerCase();
-                    const validTypes = ['project', 'document', 'contact', 'preference', 'behavior', 'tool', 'config', 'meeting', 'fact', 'benchmark', 'concept'];
+                    const validTypes = ['concept', 'entity', 'event', 'preference', 'constraint', 'goal'];
                     const safeType = validTypes.includes(type) ? type : 'concept';
+
+                    const subtype = inferSubtype(safeType as any, SafeLabel, safeContent);
 
                     const normalizedId = safeId.toLowerCase().trim();
                     const existingNodeEntry = Object.entries(engineRef.current.graph.nodes).find(([k, v]) =>
@@ -435,6 +437,7 @@ export const useChatPipeline = (
                         label: SafeLabel,
                         content: safeContent,
                         type: safeType,
+                        subtype: subtype,
                         heat: 0.8,
                         isNew: true
                     });
@@ -485,6 +488,19 @@ export const useChatPipeline = (
             }
 
             const uniqueNewNodeIds = Array.from(new Set(createdNodeIds));
+
+            // [NEW v0.5.2] Intelligent Clustering (Hierarchical)
+            if (uniqueNewNodeIds.length > 0) {
+                // Use primary context (most recent) or session start
+                const primaryContext = workingMemory.length > 0 ? workingMemory[workingMemory.length - 1] : 'session_start';
+
+                engineRef.current.createIntelligentClusters(uniqueNewNodeIds, primaryContext);
+
+                // Pattern Detection
+                if (uniqueNewNodeIds.length >= 3) {
+                    engineRef.current.detectCrossClusterPatterns(primaryContext);
+                }
+            }
 
             // ALGORITHMIC MESH: Force-wire all new nodes together
             // This ensures that even if the LLM misses relationships, nodes created in the same context
@@ -592,6 +608,43 @@ export const useChatPipeline = (
 
         }
     };
+
+    // Heuristic subtype inference
+    function inferSubtype(
+        type: 'concept' | 'entity' | 'event' | 'preference' | 'constraint' | 'goal',
+        label: string,
+        content: string
+    ): string | undefined {
+        const text = `${label} ${content}`.toLowerCase();
+
+        if (type === 'entity') {
+            if (/company|corp|inc|ltd/i.test(label)) return 'organization';
+            if (/place|city|country|location/i.test(content)) return 'place';
+            if (/\b[A-Z][a-z]+ [A-Z][a-z]+\b/.test(label)) return 'person';
+            return 'person';
+        }
+
+        if (type === 'event') {
+            if (/meeting|call|standup|sync|discussion/i.test(text)) return 'meeting';
+            if (/decide|decision|chose|agreement/i.test(text)) return 'decision';
+            if (/deadline|due|ship|launch/i.test(text)) return 'deadline';
+            return 'milestone';
+        }
+
+        if (type === 'concept') {
+            if (/api|framework|library|language|react|node|typescript/i.test(text)) return 'technology';
+            if (/agile|scrum|waterfall|kanban|method/i.test(text)) return 'methodology';
+        }
+
+        if (type === 'constraint') {
+            if (/require|must|should/i.test(text)) return 'requirement';
+            if (/limit|max|min|only/i.test(text)) return 'limitation';
+        }
+
+        return undefined;
+    }
+
+    // End Helper
 
     return {
         stage,

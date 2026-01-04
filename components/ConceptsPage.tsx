@@ -83,6 +83,14 @@ const ConceptsPage = () => {
                         desc="Unlike probabilistic LLM guardrails, SCE uses rigid logic gates. If a prompt matches a 'Block' rule (e.g. 'ignore instructions'), it is rejected instantly before inference."
                         color="text-red-500"
                     />
+
+                    <ConceptCard
+                        icon={Network}
+                        title="Hierarchical Clustering"
+                        desc="v0.5.2: The graph groups nodes into semantically rich clusters (e.g., 'Project Context', 'Decision Loop') based on their types and subtypes, creating a structured mental model."
+                        color="text-orange-400"
+                        badge="v0.5.2 New"
+                    />
                 </div>
 
                 {/* Deep Dive Section */}

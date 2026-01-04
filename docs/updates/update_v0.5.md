@@ -55,3 +55,11 @@ A new background system that automatically detects dense cliques of semantic nod
 *   **Data Reset:** Fixed a bug where "Reset All" failed to reload default data because `INITIAL_GRAPH` was being passed by reference. Implemented deep cloning to ensure a fresh state on every reset.
 *   **Pipeline Stability:** Added safety checks for `nodes.filter` to prevent crashes when the LLM returns malformed JSON.
 *   **Green Tags:** Fixed a UI bug where "New" tags weren't appearing correctly for Phase 1 nodes.
+
+## 10. Hierarchical Auto-Clustering (v0.5.2)
+*   **Problem:** Previous clustering was flat. "Project A" and "Meeting B" were just nodes, counting on simple links to define structure.
+*   **Solution:** Implemented **Intelligent Hierarchical Clustering**.
+    *   **Semantic Types:** Restricted system to 6 core types (`entity`, `event`, `concept`, `preference`, `constraint`, `goal`) with fine-grained **Subtypes** (e.g., `meeting`, `person`).
+    *   **Heuristic Inference:** System automatically infers subtype (e.g., "Friday" -> `deadline` subtype of `event`).
+    *   **Pattern Detection:** Recognizes high-level contexts. If it sees {Actor + Goal + Concept}, it creates a **"Project Context"** meta-hyperedge. If it sees {Event + Constraint}, it creates a **"Decision Context"**.
+    *   **Outcome:** The graph now explicitly models *situations*, not just distinct facts.

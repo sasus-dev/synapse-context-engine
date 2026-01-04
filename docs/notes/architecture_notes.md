@@ -238,4 +238,21 @@ Certain patterns are "Information Exhaust"—they are structurally necessary for
 
 ---
 
+## 🏗️ Semantic Architecture (v0.5.2)
+
+### 19. Intelligent Hierarchical Clustering
+*Hypothesis: Flat hyperedges are insufficient. We need to distinguish between a "Group of People" (Team) and a "Group of Concepts" (Stack).*
+
+**✅ Decision:** I implemented a **Configuration-Driven Semantic Clustering Layer**.
+1.  **Restricted Ontology:** Moved from open-ended types to 6 Semantic Roots: `entity`, `event`, `concept`, `goal`, `constraint`, `preference`.
+2.  **Subtype Inference:** Added a heuristic layer (`inferSubtype`) to classify nodes *before* they enter the graph. e.g., "Sasu" -> `entity` (Root) -> `person` (Subtype).
+3.  **Pattern Detection Logic:**
+    *   **Primary Clusters:** created immediately based on type (e.g., "People Cluster").
+    *   **Meta-Patterns:** checks for **heterogeneous** combinations.
+        *   `Actor` + `Goal` + `Concept` = **Project Context** Hyperedge.
+        *   `Event` + `Constraint` + `Actor` = **Decision Context** Hyperedge.
+**Result:** The graph can now "understand" what a Project is, rather than just seeing a list of nodes that happen to be connected.
+
+---
+
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.

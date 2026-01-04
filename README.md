@@ -51,6 +51,7 @@ The result is memory that is:
 | Data Hygiene (Strict Garbage Collection) | ✅ Implemented |
 | Accurate Telemetry (Performance metrics) | ✅ Implemented |
 | Node Connections (Natural Expansion) | ⚠️ In progress |
+| Hierarchical Auto-Clustering | ⚠️ In progress |
 | Prompt Optimization | ⚠️ In progress |
 | Production Ready | ⚠️ Research system |
 | Benchmarks | ❌ Community-needed |
