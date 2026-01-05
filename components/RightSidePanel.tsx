@@ -78,6 +78,29 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
                   <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">Engine Idle</span>
                 </div>
               </div>
+
+              {/* GLOBAL CLUSTERS (Restored) */}
+              {graph?.hyperedges && graph.hyperedges.length > 0 && (
+                <div className="pt-4 space-y-3">
+                  <span className="text-[10px] font-black uppercase text-slate-600 tracking-widest pl-1">Active Clusters</span>
+                  <div className="flex flex-col gap-2">
+                    {graph.hyperedges.slice(0, 5).map((h: any) => (
+                      <div key={h.id} className="p-3 rounded-lg bg-black/20 border border-white/[0.04] flex items-center justify-between group hover:bg-white/5 transition-colors">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[11px] font-bold text-indigo-300 truncate max-w-[180px]">{h.label}</span>
+                          <span className="text-[9px] text-slate-500 font-mono">{h.nodes.length} nodes • {((h.salience || 0) * 100).toFixed(0)}% Salience</span>
+                        </div>
+                        <div className="w-1.5 h-1.5 bg-indigo-500/50 rounded-full" />
+                      </div>
+                    ))}
+                    {graph.hyperedges.length > 5 && (
+                      <p className="text-[10px] text-center text-slate-600 italic mt-1">
+                        + {graph.hyperedges.length - 5} more clusters
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

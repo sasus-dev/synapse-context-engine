@@ -50,11 +50,12 @@ The result is memory that is:
 | Algorithmic Mesh Wiring | ✅ Implemented |
 | Data Hygiene (Strict Garbage Collection) | ✅ Implemented |
 | Accurate Telemetry (Performance metrics) | ✅ Implemented |
-| Node Connections (Natural Expansion) | ⚠️ In progress |
+| Node Connections (Natural Expansion) | ⚠️ Partly Implemented |
 | Hierarchical Auto-Clustering | ⚠️ In progress |
 | Prompt Optimization | ⚠️ In progress |
-| Production Ready | ⚠️ Research system |
-| Benchmarks | ❌ Community-needed |
+| Production Ready | ⚠️ Architecture Preview / Research system |
+| Optimization | ❌ Community-driven (once core is solidified) |
+| Benchmarks | ❌ Community-driven (once core is solidified) |
 
 **License:** Apache 2.0 • **Maintainer:** [Sasu](https://www.sasus.dev) • **Updates:** [docs/updates/](docs/updates/)
 
@@ -197,10 +198,6 @@ Failure modes become visible instead of implicit.
 
 ## 🖥️ The Core Engine (UI & Orchestration)
 
-The engine consists of two main components:
-- **[`lib/sce/`](lib/sce/)** - Modular Cognitive Engine (Orchestrator, Physics, Learning, Structure)
-- **[`components/CoreEngine.tsx`](components/CoreEngine.tsx)** - UI orchestration and visualization
-
 ### Engine Layout (v0.6+)
 - **Orchestrator**: [`lib/sce/engine/SCEEngine.ts`](lib/sce/engine/SCEEngine.ts) (Thin wrapper, manages subsystems)
 - **Graph**: `lib/sce/graph/` (Adjacency Index)
@@ -231,7 +228,7 @@ Think of it as **mission control for context assembly**—designed for debugging
   <p><sub><em>Security rules block harmful queries before LLM inference</em></sub></p>
 </div>
 
-SCE is **not** a silver bullet—but it reshapes the threat landscape:
+SCE is **not** a silver bullet for all security concerns— but it reshapes the threat landscape:
 
 | Attack Vector | RAG Systems | SCE |
 |--------------|-------------|-----|
@@ -395,7 +392,7 @@ This project is developed by a single independent dev, not a software company, n
 
 **Project Status:** The core architecture is functional, but it needs more testing, tweaking and optimization. The current challenge is how the system creates connections / evolves / flows naturally (how the graph expands naturally and learns along the way). This require a deep dive / experimentations on hypergraphs, graph theory and cognitive architecture research.
 
-**Why Open-Sourced:** While SCE was built to solve memory architecture challenges in games and digital twin systems, it was open-sourced specifically because of its potential to address many security concerns in current AI systems and perhaps even enable safer alignment. If this were purely about better memory optimization, it would have remained proprietary.
+**Why Open-Sourced:** While SCE was built to solve memory architecture challenges in games and digital twin systems, it was open-sourced specifically because of its potential to address many security concerns in current AI systems and perhaps enable safer alignment. If this were purely about better memory optimization, it would have remained proprietary.
 
 **What's Needed from the Community:**
 

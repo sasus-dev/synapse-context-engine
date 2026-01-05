@@ -43,17 +43,26 @@ export class SCEEngine {
 
     constructor(initialGraph?: KnowledgeGraph, config?: Partial<EngineConfig>) {
         this.config = {
-            maxSteps: 5,
-            decay: 0.8,
             gamma: 0.9,
             theta: 0.1,
+            heatBias: 0.4,
+            mmrLambda: 0.7,
             maxActivationDepth: 3,
             enableHebbian: true,
+            enableMemoryExpansion: true,
+            enablePruning: true,
             enableSpreadingActivation: true,
             enableHyperedges: true,
             pruneConsolidatedEdges: true,
+            safeMode: true,
+            enableFirewall: true,
+            hybridRules: true,
+            extractionModel: 'llama3-70b-8192', // Default fallback
+            apiKeys: {},
+            baseUrls: {},
+            models: {},
             ...config
-        };
+        } as EngineConfig; // Cast to satisfy strict type checking if Partial misses some nested required props
 
         this.graph = initialGraph || { nodes: {}, synapses: [], hyperedges: [] };
 
@@ -164,7 +173,7 @@ export class SCEEngine {
      * Energy Dynamics
      */
     applyEnergyDynamics(alpha?: number) {
-        applyEnergyDynamics(this.graph, this.phase, alpha);
+        applyEnergyDynamics(this.graph, this.phase, this.config, alpha);
     }
 
     /**
@@ -202,8 +211,8 @@ export class SCEEngine {
         return { ...stats, pruned, edgesRemoved: stats.edgesRemoved + pruned };
     }
 
-    createIntelligentClusters(newNodeIds: string[], contextNodeId: string): { hyperedgesCreated: number; clusters: any[] } {
-        return this.hyperedgeManager.createIntelligentClusters(newNodeIds, contextNodeId);
+    createIntelligentClusters(newNodeIds: string[], contextNodeId: string, config?: EngineConfig): { hyperedgesCreated: number; clusters: any[] } {
+        return this.hyperedgeManager.createIntelligentClusters(newNodeIds, contextNodeId, config);
     }
 
     detectCrossClusterPatterns(contextNodeId: string): any[] {

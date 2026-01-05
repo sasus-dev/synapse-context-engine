@@ -5,7 +5,7 @@ import {
   ChatMessage, SystemPrompt, SecurityRuleResult, ApiCall, ExtractionRule, EngineConfig, Dataset, GlobalConfig, Identity
 } from './types';
 import { INITIAL_GRAPH, INITIAL_SECURITY_RULES, INITIAL_SYSTEM_PROMPTS, INITIAL_EXTRACTION_RULES, INITIAL_IDENTITIES } from './constants';
-import { SCEEngine } from './lib/sceCore';
+import { SCEEngine } from './lib/sce/engine/SCEEngine';
 import { extractEntities, queryJointly } from './services/llmService';
 import { ShieldAlert, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -58,7 +58,10 @@ const DEFAULT_CONFIG: EngineConfig = {
   enableMemoryExpansion: true,
   enablePruning: true,
   enableSpreadingActivation: true,
+  enableHyperedges: true,
   safeMode: true,
+  enableFirewall: true, // v0.6.3 default
+  globalEnergyBudget: 10.0, // v0.6.3 default
   repulsionStrength: -1200,
   hybridRules: true,
   extractionProvider: 'groq',
@@ -182,7 +185,7 @@ const App: React.FC = () => {
   const config: EngineConfig = {
     ...DEFAULT_CONFIG,
     ...(globalConfig.engineConfig || {}), // Merge preserved logic/tuning
-    memoryWindow: globalConfig.engineConfig?.memoryWindow || 6 // Ensure explicit override matches
+    memoryWindow: globalConfig.engineConfig?.memoryWindow ?? 6 // Ensure explicit override matches
   };
   const securityRules = globalConfig.securityRules;
   const extractionRules = globalConfig.extractionRules;
@@ -956,6 +959,7 @@ const App: React.FC = () => {
                 addAuditLog('system', `User Updated Node: ${id}`, 'success');
               }}
               graph={graph}
+              onSelectNode={setSelectedNodeId}
             />
           </div>
         </div>

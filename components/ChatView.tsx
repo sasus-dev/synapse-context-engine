@@ -3,7 +3,7 @@ import { ChatMessage, NodeType, Identity, GlobalConfig } from '../types';
 import { dbService } from '../services/dbService';
 import { MessageSquare, RefreshCw, Zap, User, Bot, ChevronDown, Plus } from 'lucide-react';
 import { INITIAL_IDENTITIES } from '../constants';
-import ExtractionDropdown from './chat/ExtractionDropdown';
+
 import ChatMessageItem from './chat/ChatMessageItem';
 import QuickActionBtn from './chat/QuickActionBtn';
 import ActiveFocusBar from './chat/ActiveFocusBar';
@@ -245,7 +245,7 @@ const ChatView: React.FC<ChatViewProps> = ({
               </button>
             )}
 
-            <ExtractionDropdown config={config} setConfig={setConfig} />
+
           </div>
         </div>
 

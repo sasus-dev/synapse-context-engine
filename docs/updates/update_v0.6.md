@@ -63,3 +63,31 @@ As of v0.6.1, the monolithic `SCEEngine` has been dismantled and rebuilt as a mo
 *   **Structure:** `lib/sce/hyperedges/` (Clustering & Consolidation)
 *   **Safety:** `lib/sce/safety/` (Contradictions & Orthogonality)
 *   **Metrics:** `lib/sce/metrics/` (Telemetry)
+
+## v0.6.2: Customization & Polish (User Control)
+
+> **"Power to the User"**
+
+v0.6.2 focuses on giving the user granular control over the engine's cognitive parameters and safety layers.
+
+### 1. Custom Physics Presets
+*   Users can now save their own fine-tuned configurations (Theta, Gamma, MMR).
+*   Added UI for naming, saving, and deleting custom presets.
+*   Presets are persisted in `EngineConfig`.
+
+### 2. Firewall Separation (Granular Safety)
+We have split the unified "Safety" toggle into two distinct layers:
+*   **Active Firewall (Algorithmic):** Enforces Regex-based rules (blacklists, system prompt protection).
+*   **Safe Mode (Cognitive):** Enforces Logic-based checks (Contradictions, Orthogonality).
+*   *Why?* Allows debugging of raw outputs (Firewall OFF) while maintaining logical coherence (Safe Mode ON), or vice versa.
+
+### 3. UI Polish
+*   Renamed "Layer III" to "Firewall" for clarity.
+*   Inlined "History & Debug" into "Session Context".
+*   Dynamic API Key validation for LLM providers.
+
+### 4. Critical Engine Repairs
+*   **Restored Intelligent Clustering:** Fixed Type Mapping logic in `HyperedgeManager` that prevented nodes from forming conceptual clusters.
+*   **UI Synchronization:** Fixed a race condition where new Hyperedges were created in the Engine but not rendered in the UI.
+*   **Configuration Propagation:** Fixed an issue where the Engine fell back to default settings, ignoring user toggles (e.g. `enableHyperedges`).
+*   **Legacy Code Cleanup:** Removed deprecated `sceCore.ts` and updated all import paths, resolving build errors.

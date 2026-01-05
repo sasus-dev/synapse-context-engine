@@ -79,11 +79,14 @@ export interface EngineConfig {
   enableMemoryExpansion: boolean;
   enablePruning: boolean;
   enableSpreadingActivation: boolean;
-  safeMode: boolean;
+  safeMode: boolean; // Prevents Contradictions / Orthogonality violations
+  enableFirewall: boolean; // Enforces Algorithmic Security Rules (Regex)
   repulsionStrength?: number;
   hybridRules: boolean;
   enableHyperedges?: boolean;
+  globalEnergyBudget?: number; // v0.6.2
   memoryWindow?: number; // 1-10 Slider
+  customPresets?: Record<string, { theta: number; gamma: number; mmrLambda: number; globalEnergyBudget: number }>; // User saved presets
 
   // Consolidation Settings
   enableConsolidation?: boolean;

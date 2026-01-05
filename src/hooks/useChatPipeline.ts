@@ -4,7 +4,7 @@ import {
     AuditLog, PipelineStage, ActivatedNode, SecurityRule,
     SecurityRuleResult, ApiCall, TelemetryPoint, PromptDebug
 } from '../../types';
-import { SCEEngine } from '../../lib/sceCore';
+import { SCEEngine } from '../../lib/sce/engine/SCEEngine';
 import { extractKnowledge } from '../utils/knowledgeExtraction';
 
 import { queryJointly, executeExtractionPipeline } from '../../services/llmService';
@@ -44,6 +44,10 @@ export const useChatPipeline = (
 
     const handleRunQuery = async (query: string, overrides?: { activeAiId?: string, activeUserId?: string }) => {
         const currentConfig = globalConfigRef.current;
+        // Defensive Capture to debug ReferenceError
+        const scopeConfig = config;
+        console.log("[Pipeline Debug] Scope Config:", scopeConfig ? "FOUND" : "MISSING", "Type:", typeof scopeConfig);
+
         if (!query.trim()) return;
 
         // NUCLEAR SECURITY CHECK (Bypasses State)
@@ -74,9 +78,9 @@ export const useChatPipeline = (
         // P2: Start in EXPLORE to allow Neurogenesis
         engineRef.current.setPhase('EXPLORE');
 
-        // Filter only active rules (Global)
-        const activeSecurityRules = (currentConfig.securityRules || []).filter(r => r.isActive);
-
+        // Filter only active rules (Global) IF Firewall is enabled
+        // Use scopeConfig to avoid any closure weirdness
+        const activeSecurityRules = (scopeConfig && scopeConfig.enableFirewall) ? (currentConfig.securityRules || []).filter(r => r.isActive) : [];
 
         const securityResults: SecurityRuleResult[] = activeSecurityRules.map(r => {
             let regex: RegExp;
@@ -137,11 +141,11 @@ export const useChatPipeline = (
 
             // MERGE KEYS: Robustness against empty dataset keys, fallback to global
             const effectiveConfig: EngineConfig = {
-                ...config,
+                ...scopeConfig,
                 apiKeys: {
-                    gemini: config.apiKeys?.gemini || globalConfig?.engineConfig?.apiKeys?.gemini,
-                    groq: config.apiKeys?.groq || globalConfig?.engineConfig?.apiKeys?.groq,
-                    ollama: config.apiKeys?.ollama || globalConfig?.engineConfig?.apiKeys?.ollama,
+                    gemini: scopeConfig?.apiKeys?.gemini || globalConfig?.engineConfig?.apiKeys?.gemini,
+                    groq: scopeConfig?.apiKeys?.groq || globalConfig?.engineConfig?.apiKeys?.groq,
+                    ollama: scopeConfig?.apiKeys?.ollama || globalConfig?.engineConfig?.apiKeys?.ollama,
                 }
             };
 
@@ -320,14 +324,17 @@ export const useChatPipeline = (
             } catch (actErr) { throw actErr; }
 
             // System 2: Contradiction
-            try {
-                const contradictions = engineRef.current.detectContradictions(activated);
-                if (contradictions.length > 0) {
-                    addAuditLog('security', `System 2 Alert: ${contradictions[0].ruleDescription}`, 'warning');
-                    securityResults.push(...contradictions);
-                    setActiveContradiction(contradictions[0]);
-                }
-            } catch (e) { console.warn("Contradiction check failed", e); }
+            // System 2: Contradiction (Safe Mode)
+            if (config.safeMode) {
+                try {
+                    const contradictions = engineRef.current.detectContradictions(activated);
+                    if (contradictions.length > 0) {
+                        addAuditLog('security', `System 2 Alert: ${contradictions[0].ruleDescription}`, 'warning');
+                        securityResults.push(...contradictions);
+                        setActiveContradiction(contradictions[0]);
+                    }
+                } catch (e) { console.warn("Contradiction check failed", e); }
+            }
 
             const { selected: pruned } = engineRef.current.pruneWithMMR(activated, query, 8);
 
@@ -376,7 +383,7 @@ export const useChatPipeline = (
                 ? `${activeAiParams.name}.\n\nYOUR ROLE: ${activeAiParams.role}\nYOUR STYLE: ${activeAiParams.style}\n\nCORE INSTRUCTIONS:\n${activeAiParams.content}`
                 : `Standard Assistant`;
 
-            const historyLimit = currentConfig.engineConfig?.memoryWindow || 6;
+            const historyLimit = currentConfig.engineConfig?.memoryWindow ?? 6;
             const historySlice = chatHistory.slice(-historyLimit).map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
 
             let synthesisPrompt = synthesisPromptTemplate
@@ -503,7 +510,7 @@ export const useChatPipeline = (
                 // Use primary context (most recent) or session start
                 const primaryContext = workingMemory.length > 0 ? workingMemory[workingMemory.length - 1] : 'session_start';
 
-                engineRef.current.createIntelligentClusters(uniqueNewNodeIds, primaryContext);
+                engineRef.current.createIntelligentClusters(uniqueNewNodeIds, primaryContext, effectiveConfig);
 
                 // Pattern Detection
                 if (uniqueNewNodeIds.length >= 3) {
@@ -543,6 +550,14 @@ export const useChatPipeline = (
                     }
                 }
             }
+            // [SYNC] Final Graph Sync (Vital for Hyperedge Visibility)
+            setGraph(prev => ({
+                ...prev,
+                nodes: { ...engineRef.current.graph.nodes },
+                synapses: [...engineRef.current.graph.synapses],
+                hyperedges: [...(engineRef.current.graph.hyperedges || [])]
+            }));
+
             setChatHistory(prev => [...prev, {
                 id: Math.random().toString(36),
                 role: 'assistant',
@@ -561,24 +576,41 @@ export const useChatPipeline = (
             engineRef.current.setPhase('CONSOLIDATE');
 
             let weightChanges: { source: string, target: string, delta: number }[] = [];
-            if (config.enableHebbian && activated.length > 1) {
-                weightChanges = engineRef.current.updateHebbianWeights(activated);
+
+            try {
+                if (scopeConfig.enableHebbian && activated.length > 1) {
+                    weightChanges = engineRef.current.updateHebbianWeights(activated);
+                }
+            } catch (e) { console.error("Hebbian Error", e); }
+
+            try {
+                engineRef.current.applyEnergyDynamics(0.05);
+            } catch (e) {
+                console.error("EnergyDynamics Error", e);
+                addAuditLog('system', `Energy Failure: ${e}`, 'error');
             }
-            engineRef.current.applyEnergyDynamics(0.05);
-            engineRef.current.afterQuery(activated);
 
-            const metrics = engineRef.current.calculateMetrics(
-                latency,
-                weightChanges,
-                activated.map(a => a.depth)
-            );
+            try {
+                engineRef.current.afterQuery(activated);
+            } catch (e) { console.error("AfterQuery Error", e); }
 
-            setTelemetry(prev => [...prev, {
-                timestamp: new Date().toLocaleTimeString(),
-                ...metrics,
-                pruningRate: (activated.length - pruned.length) / (activated.length || 1),
-                activationPct: activated.length / (Object.keys(graph.nodes).length || 1)
-            }].slice(-20));
+            let metrics;
+            try {
+                metrics = engineRef.current.calculateMetrics(
+                    latency,
+                    weightChanges,
+                    activated.map(a => a.depth)
+                );
+            } catch (e) { console.error("Metrics Error", e); }
+
+            if (metrics) {
+                setTelemetry(prev => [...prev, {
+                    timestamp: new Date().toLocaleTimeString(),
+                    ...metrics,
+                    pruningRate: (activated.length - pruned.length) / (activated.length || 1),
+                    activationPct: activated.length / (Object.keys(graph.nodes).length || 1)
+                }].slice(-20));
+            }
 
             // SAVE DEBUG LOG (TRACE) - Moved before catch to ensure capture, or duplicate in catch
             const debugEntry: PromptDebug = {
@@ -591,7 +623,7 @@ export const useChatPipeline = (
 
         } catch (err) {
             setStage('idle');
-            console.error(err);
+            // console.error(err); // Duplicate
             const errorMessage = err instanceof Error ? err.message : String(err);
             addAuditLog('system', `Critical Pipeline Failure: ${errorMessage}`, 'error');
 

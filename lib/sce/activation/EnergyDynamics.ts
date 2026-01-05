@@ -1,4 +1,4 @@
-import { KnowledgeGraph, EnginePhase } from '../../../types';
+import { KnowledgeGraph, EnginePhase, EngineConfig } from '../../../types';
 import { PHASE_PARAMS } from '../engine/PhaseManager';
 
 /**
@@ -10,6 +10,7 @@ import { PHASE_PARAMS } from '../engine/PhaseManager';
 export const applyEnergyDynamics = (
     graph: KnowledgeGraph,
     phase: EnginePhase,
+    config: EngineConfig,
     alpha?: number // Override
 ) => {
     // Phase-Specific Profiles
@@ -61,7 +62,7 @@ export const applyEnergyDynamics = (
     });
 
     // Improvement 2: Global Energy Normalization
-    const MAX_TOTAL_ENERGY = 10.0;
+    const MAX_TOTAL_ENERGY = config.globalEnergyBudget || 10.0;
     if (totalSystemEnergy > MAX_TOTAL_ENERGY) {
         const scale = MAX_TOTAL_ENERGY / totalSystemEnergy;
         nodeIds.forEach(id => {

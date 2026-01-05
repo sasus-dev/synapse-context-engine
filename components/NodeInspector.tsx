@@ -105,7 +105,7 @@ const NodeViewer = ({ node, energy, onEdit, graph, onSelectNode }: { node: Node;
       </div>
 
       {/* Structural Context (Hyperedges) */}
-      {hyperedges.length > 0 && (
+      {hyperedges.length > 0 ? (
         <div className="flex flex-col gap-2 relative z-10">
           <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest pl-1">Hyperedge Context</span>
           <div className="flex flex-wrap gap-2">
@@ -116,6 +116,11 @@ const NodeViewer = ({ node, energy, onEdit, graph, onSelectNode }: { node: Node;
               </div>
             ))}
           </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2 relative z-10 opacity-50">
+          <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest pl-1">Hyperedge Context</span>
+          <p className="text-[10px] text-slate-500 italic pl-1">No clustering data detected for this node.</p>
         </div>
       )}
 

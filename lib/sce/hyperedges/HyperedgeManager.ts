@@ -257,13 +257,17 @@ export class HyperedgeManager {
      */
     createIntelligentClusters(
         newNodeIds: string[],
-        contextNodeId: string
+        contextNodeId: string,
+        configOverride?: EngineConfig
     ): {
         hyperedgesCreated: number;
         clusters: Array<{ type: string; nodeCount: number }>;
     } {
-        if (this.config.enableHyperedges === false) return { hyperedgesCreated: 0, clusters: [] };
+        const effectiveConfig = configOverride || this.config;
+        if (effectiveConfig.enableHyperedges === false) return { hyperedgesCreated: 0, clusters: [] };
         if (newNodeIds.length === 0) return { hyperedgesCreated: 0, clusters: [] };
+
+        console.log(`[SCE Cluster] Attempting to cluster ${newNodeIds.length} nodes. Context: ${contextNodeId}`);
 
         if (!this.graph.hyperedges) this.graph.hyperedges = [];
 
@@ -272,15 +276,18 @@ export class HyperedgeManager {
             clusters: [] as Array<{ type: string; nodeCount: number }>
         };
 
-        // Group nodes by type
+        // Group nodes by SEMANTIC type (mapped from domain types)
         const nodesByType: Record<string, string[]> = {};
         newNodeIds.forEach(id => {
             const node = this.graph.nodes[id];
             if (!node || node.isArchived) return;
 
-            if (!nodesByType[node.type]) nodesByType[node.type] = [];
-            nodesByType[node.type].push(id);
+            const semanticType = this.mapToSemanticType(node.type);
+            if (!nodesByType[semanticType]) nodesByType[semanticType] = [];
+            nodesByType[semanticType].push(id);
         });
+
+        console.log('[SCE Cluster] Nodes by Semantic Type:', nodesByType);
 
         // Create clusters based on configuration
         CLUSTER_CONFIGS
@@ -294,14 +301,26 @@ export class HyperedgeManager {
                     }
                 });
 
-                // Check if we have enough nodes
-                if (clusterNodes.length < (config.minNodes || 2)) return;
+                if (clusterNodes.length === 0) return;
 
-                // Special handling for goals: always include context
-                const includeContext = config.types.includes('goal');
-                const hyperedgeNodes = includeContext
-                    ? [...clusterNodes, contextNodeId]
-                    : clusterNodes;
+                // Special handling: Include context for Goals, Concepts, and Entities to anchor them
+                const includeContext = ['goal', 'concept', 'entity'].includes(config.types[0]);
+
+                // Deduplicate context if it's already in the list
+                const contextId = (includeContext && contextNodeId) ? contextNodeId : null;
+                const uniqueClusterNodes = clusterNodes.filter(id => id !== contextId);
+
+                const hyperedgeNodes = contextId
+                    ? [...uniqueClusterNodes, contextId]
+                    : uniqueClusterNodes;
+
+                console.log(`[SCE Cluster] Config '${config.id}': Nodes=${hyperedgeNodes.length} (Min=${config.minNodes || 2})`, hyperedgeNodes);
+
+                // Check if we have enough nodes (including context if applicable)
+                if (hyperedgeNodes.length < (config.minNodes || 2)) {
+                    console.log(`[SCE Cluster] Skipped '${config.id}': Not enough nodes.`);
+                    return;
+                }
 
                 // Generate descriptive label
                 const nodeLabels = clusterNodes
@@ -319,6 +338,7 @@ export class HyperedgeManager {
                     nodes: hyperedgeNodes,
                     weight: config.weight || 0.75,
                     label,
+                    type: 'context', // Ensure type is 'context' or 'cluster' for UI
                     metadata: {
                         createdAt: Date.now(),
                         source: 'intelligent-cluster',
@@ -327,6 +347,8 @@ export class HyperedgeManager {
                         nodeTypes: config.types
                     }
                 });
+
+                console.log(`[SCE Cluster] Created Hyperedge: ${label}`);
 
                 stats.hyperedgesCreated++;
                 stats.clusters.push({
@@ -470,6 +492,7 @@ export class HyperedgeManager {
             nodes: [...nodeIds, contextNodeId],
             weight: 0.65,
             label: `Related: ${label}`,
+            type: 'context', // Ensure consistent type
             metadata: {
                 createdAt: Date.now(),
                 source: 'semantic-cluster',
@@ -479,6 +502,59 @@ export class HyperedgeManager {
         });
 
         return true;
+    }
+
+    /**
+     * Map domain-specific node types to semantic cluster types
+     */
+    private mapToSemanticType(nodeType: string): string {
+        const TYPE_MAPPING: Record<string, string> = {
+            // Entity types
+            'contact': 'entity',
+            'person': 'entity',
+            'organization': 'entity',
+            'team': 'entity',
+
+            // Concept types
+            'concept': 'concept',
+            'tool': 'concept',
+            'technology': 'concept',
+            'methodology': 'concept',
+            'fact': 'concept',
+            'document': 'concept',
+
+            // Event types
+            'event': 'event',
+            'meeting': 'event',
+            'decision': 'event',
+            'milestone': 'event',
+
+            // Constraint types
+            'constraint': 'constraint',
+            'requirement': 'constraint',
+            'policy': 'constraint',
+            'benchmark': 'constraint',
+
+            // Preference types
+            'preference': 'preference',
+            'behavior': 'preference',
+            'config': 'preference',
+
+            // Goal types
+            'goal': 'goal',
+            'objective': 'goal',
+            'target': 'goal',
+            'project': 'goal' // Projects are goals
+        };
+
+        const mapped = TYPE_MAPPING[nodeType];
+
+        if (!mapped) {
+            // console.warn(`[SCE Cluster] Unknown node type '${nodeType}', defaulting to 'concept'`);
+            return 'concept';
+        }
+
+        return mapped;
     }
 }
 
