@@ -274,7 +274,7 @@ LLM Inference
 
 Instead of asking the model to behave, SCE limits **what it can meaningfully see**
 
-Note: in order to force security at runtime / memory layers production C++ or Rust is required.
+Note: in order to force security at runtime / memory layers C++ or Rust is required.
 
 ---
 
@@ -289,7 +289,6 @@ SCE is an exploratory architecture with  challenges:
 - **Node creation heuristics**: What triggers new node creation vs. updating existing nodes?
 - **Node hierarchy** different configurations / layers for node creation
 - **Natural weight distribution**: How should weights evolve to reflect true semantic relationships?
-- These are active areas of experimentation —no settled solutions yet
 
 **Prompt Engineering**
 - Entity extraction prompts need refinement for different domains
@@ -301,17 +300,16 @@ SCE is an exploratory architecture with  challenges:
 **Over-Connection Issues**
 - Over-connection creates performance issues as graphs grow beyond 1K+ nodes (visible in TypeScript, in Rust "production" this is almost impossible to see)
 - Need pruning strategies: temporal decay, relevance thresholds, or periodic consolidation
-- What are the practical memory and latency bounds?
 
-**🟢 Q&A:**
+**🟢 Thoughts / Findings:**
 
 **RAG Comparison**
-- Production versions (C++ or Rust) of SCE can be used to replace RAG, but should it? At it's core it's nothing like RAG (it's a physics / neuroscience based "human brain-like" system) so viewing it as a pure "RAG replacement" is a bit wrong.
-- While the production version allows extreme performance and capabilities, even after extreme optimization it still cannot beat the RAG / Vector database in pure performance.
-- So my suggestions is, do not try to use it to replace RAG, instead find novel ways to truly utilize it.
+- While the "production" versions (C++ or Rust) of the SCE can be used to replace RAG, I don't think it should. At it's core it's nothing like RAG (SCE is a brain-like a physics based memory engine) so viewing it as a pure "RAG replacement" is waste of capabilities.
+- Rust / C++ allow extreme performance and capabilities, but even after extreme optimization it still cannot beat the RAG / Vector database in pure performance.
+- My suggestions is, do not try to use / view it as RAG replacement, instead find novel ways to truly utilize it.
 
 **Parameter Sensitivity**
-- The preview has manual inputs, but these be automatically tuned instead than hand-tuned.
+- The preview has manual inputs, but these be automated instead than hand-tuned.
 
 ---
 
@@ -322,10 +320,12 @@ SCE is an exploratory architecture with  challenges:
 - Acting as a drop‑in RAG replacement
 - Claiming solved alignment
 
-This TypeScript standdalone version of SCE is an exploratory research architecture preview, not a production framework:
-- I have build my own production version of SCE for broader system, but even I cannot quarantee my approach was the best one, so I'm quite interested to see where others will take it.
-
-I build this standloane research preview on TypeScript, so others can experiment with the architecture more easily and take it to various different directions. The benefits of TypeScript is that it reveals architectural & algorithmic problems more clearly than production Rust or C++ iterations. This is a physics based system, so C++ or Rust is required for production performance and true security. 
+This TypeScript / standalone version of SCE is an exploratory architecture & research preview, not a production framework:
+- I have created an production version of SCE (for broader system), but even I cannot quarantee my approach was the best one, so I'm quite interested to see where others will take this.
+- Created so more people can experiment with the architecture and share their (non production) version of the architecture
+- Can be benefial for multiple fields: ML, Neuroscience, Cybersecurity, Biology and so on.
+- The benefits of TypeScript is that it reveals architectural & algorithmic problems in physics based systems more clearly than "production" Rust or C++ versions.
+- This is a physics based system, so C++ or Rust is required for production performance and true security. 
 
 ---
 
@@ -374,7 +374,7 @@ Add an API key in settings to use the app (Default / Recommended is Groq)
 | Desktop | Tauri 2.0, Rust, SQLite |
 | AI Integration | Gemini, Groq, Ollama (Local) |
 
-**Note:** The stack prioritizes inspectability and cross-platform deployment. TypeScript for the engine enables real-time browser visualization; Tauri allows the same codebase to run as desktop app with SQLite persistence.
+**Note:** The stack prioritizes inspectability and cross-platform deployment. Tauri allows the codebase to run as desktop app with SQLite persistence.
 
 ---
 
@@ -391,11 +391,11 @@ For full citations and detailed connections to research traditions, see [CITATIO
 
 ---
 
-## 🤝 Collaboration
+## 🤝 Background & Community
 
-This project is developed by a single independent dev, not a software company, nor a research lab. This project is the result of my personal research "originally" imed to create more realistic (agent) behavior & long-term memory for NPCs.
+This project is developed by a single dev (not a software company, nor a research lab). This project is the result of my personal research, "originally" intended to create more realistic NPC behavior & long-term memory for agentic systems.
 
-**Why Open-Sourced:** While SCE was built to solve long-term memory challenges in NPCs, it was open-sourced specifically because of its potential to address many security concerns in current AI systems and perhaps enable safer alignment. If this were purely about better memory architecture, it would have remained proprietary.
+**Why Open-Sourced:** While SCE was built to solve long-term memory challenges, it was open-sourced specifically because of its potential to address many security concerns in current AI systems and perhaps enable safer alignment. If this were purely about better memory architecture, it would have remained proprietary.
 
 **Community:**
 
@@ -411,25 +411,23 @@ If you are interested in:
 - Graph-based context construction
 - Inspectable AI reasoning
 
-Your contributions, research, and extensions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-Check the [Issues](https://github.com/sasus-dev/synapse-context-engine/issues) tab for specific areas where help is needed.
-
 ---
 
-## 📊 About Benchmarks
+## 📊 Benchmarks
 
-SCE research priview is meant for experimentation and does not ship with traditional retrieval benchmarks.
+SCE (TypeScript) research preview is meant for experimentation and does not ship with traditional retrieval benchmarks.
 
-TypeScript version (this research preview) cannot be used to produce Benchmarks for physics based system (requires production C++ or Rust to utilize the performance of physics based systems).
+TypeScript is not fit for creating accurate Benchmarks for physics based systems, requires "production" C++ or Rust to utilize the full performance & security.
 
-Also the architecture is still stabilizing, and there is currently no accepted baseline for evaluating:
+Even for production versions, there is currently no accepted baseline for evaluating:
 - Relational memory coherence
 - Context inspectability
 - Activation trace quality
-- Long-term memory evolution
+- Long-term memory
 
 Premature benchmarks would bias development toward legacy retrieval metrics and misrepresent SCE’s goals.
+
+WARNING: if you plan to proceed with production, make sure you know what you're doing (when you play with runtimes / kernels etc, has the potential to fry your computer)!
 
 ---
 
