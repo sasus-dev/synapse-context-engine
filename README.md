@@ -2,17 +2,19 @@
 
 # 🧠 Synapse Context Engine (SCE)
 
-> **A safety-first, inspectable memory and context-construction architecture for AI systems**  
+> **A safety-first, inspectable memory and context-construction architecture for Agentic systems**  
 > Think of it as a synthetic hippocampus with a kill switch—designed to make context construction visible, bounded, and auditable *before* inference happens.
 
-**TL;DR** — SCE replaces flat retrieval and opaque prompt assembly with an explicit, graph-based context engine. Context is *constructed*, not fetched. Memory emerges through controlled activation, not hidden weights. **This is a working system with full LLM integration, not a conceptual demo.**
+**TL;DR** — SCE replaces flat retrieval and opaque prompt assembly with an explicit, graph-based context engine. Context is *constructed*, not fetched. Memory emerges through controlled activation, not hidden weights. 
+
+I build this standloane research preview on TypeScript, so others can experiment with the architecture more easily and take it to various different directions. Currently sits on a sweet spot to take the research on various different directions. The benefits of TypeScript is that it reveals architectural & algorithmic problems more clearly than production Rust or C++ iterations. This is a physics based system, so C++ or Rust is required for production performance and true security. **This is a research preview / working system with full LLM integration.**
 
 [![Code License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Docs License](https://img.shields.io/badge/License-CC_BY_4.0-blue.svg)](docs/LICENSE_CC-BY-4.0.md)
 [![Platform](https://img.shields.io/badge/platform-Web%20%7C%20Desktop-lightgrey.svg)](#-quick-start)
 [![Built with Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 
-[📄 Original Blueprint / Concept Paper](docs/blueprints/sce_initial_concept.pdf) • [🚀 Quick Start](https://github.com/sasus-dev/synapse-context-engine/blob/main/docs/guides/Quick-Start-Tutorial.md) • [🎯 Use Cases](USE-CASES.md) • [💬 Discussions](https://github.com/sasus-dev/synapse-context-engine/discussions) • [🤝 Contribute](CONTRIBUTING.md)
+[🚀 Quick Start](https://github.com/sasus-dev/synapse-context-engine/blob/main/docs/guides/Quick-Start-Tutorial.md) • [🎯 Use Cases](USE-CASES.md) • [💬 Discussions](https://github.com/sasus-dev/synapse-context-engine/discussions) • [🤝 Contribute](CONTRIBUTING.md)
 
 </div>
 
@@ -51,8 +53,8 @@ The result is memory that is:
 | Data Hygiene (Strict Garbage Collection) | ✅ Implemented |
 | Accurate Telemetry (Performance metrics) | ✅ Implemented |
 | Node Connections (Natural Expansion) | ⚠️ Partly Implemented |
-| Hierarchical Auto-Clustering | ⚠️ In progress |
-| Prompt Optimization | ⚠️ In progress |
+| Hierarchical Auto-Clustering | ⚠️ Missing |
+| Prompt Optimization | ⚠️ Missing |
 | Production Ready | ⚠️ Architecture Preview / Research system |
 | Optimization | ❌ Community-driven (once core is solidified) |
 | Benchmarks | ❌ Community-driven (once core is solidified) |
@@ -71,7 +73,7 @@ SCE shifts safety and alignment concerns **upstream**, from model behavior to me
 
 ## 🧩 Why This Exists
 
-As AI systems move toward greater autonomy and persistence, their memory architectures remain fragile:
+As AI systems move toward greater autonomy and persistence, their memory architectures become fragile:
 
 - Vector databases retrieve isolated chunks and lose relational structure
 - Prompt assembly hides context construction inside token sequences
@@ -81,7 +83,7 @@ As AI systems move toward greater autonomy and persistence, their memory archite
 
 SCE explores a different axis of control: **architectural safety through explicit structure and observability**.
 
-This project originated from building a digital twin platform that needed better memory architecture. While capability improvements were the initial driver, the **safety properties that emerged from the architecture** became the primary reason for open-sourcing. The core insight: context construction should be inspectable, bounded, and auditable **by design**—not retrofitted with behavioral constraints after the model is already deployed.
+This project originated from need for better memory architecture for agentic systems. While capability / long-term memory improvements were the initial driver, the **safety properties that emerged from the architecture** became the primary reason for open-sourcing. The core insight: context construction should be inspectable, bounded, and auditable **by design** —not retrofitted with behavioral constraints after the model is already deployed.
 
 ---
 
@@ -109,7 +111,7 @@ Memory Encoding (Graph Update)
 Telemetry & Audit Signals
 ```
 
-**Modular Design:** Each stage in the pipeline is independently configurable. Security layers, pruning strategies, and activation mechanics can be added, modified, or replaced without changing the core architecture. This allows for experimentation with different safety mechanisms, custom context filters, and domain-specific optimizations.
+**Modular Design:** Each stage in the pipeline is independently configurable. Security layers, pruning strategies, and activation mechanics can be added, modified, or replaced without changing the core architecture. This allows base level experimentation with different safety mechanisms, custom context filters, and domain-specific optimizations. You can always create more advanced methods pipelines (these were created so you can just get a feel of the engine).
 
 ---
 
@@ -118,6 +120,8 @@ Telemetry & Audit Signals
 ### 1. Hypergraph‑Based Memory
 
 Memory is represented as a **hypergraph**:
+
+Note: there are multiple ways to build these configurations, the following was just created for the preview.
 
 - **Nodes** represent heterogeneous entities (projects, artifacts, preferences, behaviors, constraints)
 - **Synapses** encode weighted pairwise relationships (source→target)
@@ -133,13 +137,15 @@ When any node in a hyperedge activates, energy distributes to all connected memb
 SCE can group these as a hyperedge:
 - `{Alice, Meeting, Budget, Project_X}` labeled `DECISION_CONTEXT`
 
-When you query about Alice, all four nodes activate simultaneously through the hyperedge—not by traversing three separate edges.
+When you query about Alice, all four nodes activate simultaneously through the hyperedge —not by traversing three separate edges.
 
 ---
 
 ### 2. Active Focus Anchoring
 
 All activation is evaluated relative to an explicit **Active Focus** node representing the current task or operational context.
+
+Note: This is just an one idea / mechanism to alter the energy flow, there are unlimited possibilities here.
 
 This anchoring prevents free‑floating activation and helps contain:
 - Prompt injection
@@ -170,6 +176,8 @@ Activated nodes are distilled into a **structured synthesis layer**:
 
 The LLM never sees the raw graph—only the synthesized context.
 
+Note: This is very experimental and can be taken to multiple different directions.
+
 ---
 
 ### 5. Auditable Cognitive Telemetry
@@ -180,6 +188,8 @@ SCE exposes internal dynamics through rigorous, information-theoretic metrics—
 - **Plasticity (Burst vs Mean):** Distinguishes between background learning and sudden "paradigm shift" rewiring.
 
 These signals enable runtime safety gating (e.g., "Stop generation if Focus < 0.1") and precise post-hoc auditing. The math is pure, visible, and unchangeable by the model.
+
+Note: Simple telemetry to check what actually happens inside the engine.
 
 ---
 
@@ -262,21 +272,24 @@ LLM Inference
 
 **Note on Hallucinations:** While not primarily a security concern, SCE's structured memory with source attribution provides better factual grounding than flat retrieval systems. Each activated node carries metadata about its origin, making fabricated information architecturally harder (though not impossible).
 
-Instead of asking the model to behave, SCE limits **what it can meaningfully see**.
+Instead of asking the model to behave, SCE limits **what it can meaningfully see**
+
+Note: in order to force security at runtime / memory layers production C++ or Rust is required.
 
 ---
 
 ## ⚠️ Known Unknowns, Limitations & Open Questions
 
-SCE is an exploratory architecture with unresolved challenges:
+SCE is an exploratory architecture with  challenges:
 
-**🔴 Critical Research Focus (Active Development):**
+**🔴 Critical / Not mature (can be taken to various different directions):**
 
 **Graph Growth Mechanics**
 - **Connection strategy**: Currently connects everything during chat, leading to over-dense graphs
 - **Node creation heuristics**: What triggers new node creation vs. updating existing nodes?
+- **Node hierarchy** different configurations / layers for node creation
 - **Natural weight distribution**: How should weights evolve to reflect true semantic relationships?
-- These are active areas of experimentation—no settled solutions yet
+- These are active areas of experimentation —no settled solutions yet
 
 **Prompt Engineering**
 - Entity extraction prompts need refinement for different domains
@@ -286,22 +299,19 @@ SCE is an exploratory architecture with unresolved challenges:
 **🟡 Scalability & Performance:**
 
 **Over-Connection Issues**
-- Over-connection creates performance issues as graphs grow beyond 1K+ nodes
+- Over-connection creates performance issues as graphs grow beyond 1K+ nodes (visible in TypeScript, in Rust "production" this is almost impossible to see)
 - Need pruning strategies: temporal decay, relevance thresholds, or periodic consolidation
 - What are the practical memory and latency bounds?
 
-**🟢 Future Research Questions:**
+**🟢 Q&A:**
 
-**Adversarial Robustness**
-- Can activation thresholds be tuned to hide relevant context?
-- What if weights are maliciously manipulated?
-- How does SCE handle ambiguous focus transitions?
+**RAG Comparison**
+- Production versions (C++ or Rust) of SCE can be used to replace RAG, but should it? At it's core it's nothing like RAG (it's a physics / neuroscience based "human brain-like" system) so viewing it as a pure "RAG replacement" is a bit wrong.
+- While the production version allows extreme performance and capabilities, even after extreme optimization it still cannot beat the RAG / Vector database in pure performance.
+- So my suggestions is, do not try to use it to replace RAG, instead find novel ways to truly utilize it.
 
 **Parameter Sensitivity**
-- How sensitive is performance to decay factors, thresholds, and depth limits?
-- Can these be learned rather than hand-tuned?
-
-These are open research questions. Help us answer them—see [CONTRIBUTING.md](CONTRIBUTING.md).
+- The preview has manual inputs, but these be automatically tuned instead than hand-tuned.
 
 ---
 
@@ -312,15 +322,8 @@ These are open research questions. Help us answer them—see [CONTRIBUTING.md](C
 - Acting as a drop‑in RAG replacement
 - Claiming solved alignment
 
-SCE is an exploratory architecture, not a production framework.
-
-### Knowledge Structure Requirements
-
-SCE requires explicit graph relationships between entities:
-- Example datasets (like the included knowledge bases) provide working starting points for experimentation
-- Conversion utilities exist for seeding from structured data sources (see [v0.3.1 release notes](https://github.com/sasus-dev/synapse-context-engine/releases))
-- Relationships evolve and strengthen through usage via Hebbian weight learning
-- Trade-off: More upfront structure needed, but richer relational context that improves over time
+This TypeScript standdalone version of SCE is an exploratory research architecture preview, not a production framework:
+- I have build my own production version of SCE for broader system, but even I cannot quarantee my approach was the best one, so I'm quite interested to see where others will take it.
 
 ---
 
@@ -386,37 +389,23 @@ For full citations and detailed connections to research traditions, see [CITATIO
 
 ---
 
-## 🤝 Call for Collaboration
+## 🤝 Collaboration
 
-This project is developed by a single independent dev, not a software company, nor a research lab. This project is the result of my personal research to in order to create more realistic NPC behavior in games and the ability to create true digital twin. This project is a proof of concept for a larger AI game project and digital twin platform I'm currently working on.
+This project is developed by a single independent dev, not a software company, nor a research lab. This project is the result of my personal research "originally" imed to create more realistic (agent) behavior & long-term memory for NPCs.
 
-**Project Status:** The core architecture is functional, but it needs more testing, tweaking and optimization. The current challenge is how the system creates connections / evolves / flows naturally (how the graph expands naturally and learns along the way). This require a deep dive / experimentations on hypergraphs, graph theory and cognitive architecture research.
+**Why Open-Sourced:** While SCE was built to solve long-term memory challenges in NPCs, it was open-sourced specifically because of its potential to address many security concerns in current AI systems and perhaps enable safer alignment. If this were purely about better memory architecture, it would have remained proprietary.
 
-**Why Open-Sourced:** While SCE was built to solve memory architecture challenges in games and digital twin systems, it was open-sourced specifically because of its potential to address many security concerns in current AI systems and perhaps enable safer alignment. If this were purely about better memory optimization, it would have remained proprietary.
-
-**What's Needed from the Community:**
-
-**Research & Validation:**
-- Benchmark studies comparing SCE to RAG baselines (once core architecture is established)
-- Adversarial testing of security mechanisms
-- Formal analysis of activation dynamics
-- Comparison studies across different domains
-
-**Engineering Improvements:**
-- Test coverage for core engine
-- Performance optimization for large graphs (>100k nodes)
-- SQL backend implementation for true scalability
-- Additional LLM provider integrations
+**Community:**
 
 **Applications & Extensions:**
 - Domain-specific adaptations
 - Alternative activation strategies
-- Novel security rule patterns
-- Integration with existing AI frameworks
+- New core engine ideas
+- Novel security methods
 
 If you are interested in:
 - AI safety & alignment through architectural constraints
-- Alternative memory architectures for persistent AI systems
+- Alternative memory architectures for agentic / evolving AI systems
 - Graph-based context construction
 - Inspectable AI reasoning
 
@@ -428,17 +417,17 @@ Check the [Issues](https://github.com/sasus-dev/synapse-context-engine/issues) t
 
 ## 📊 About Benchmarks
 
-SCE intentionally does not ship with traditional retrieval benchmarks yet.
+SCE research priview is meant for experimentation and does not ship with traditional retrieval benchmarks.
 
-The architecture is still stabilizing, and there is currently no accepted baseline for evaluating:
+TypeScript version (this research preview) cannot be used to produce Benchmarks for physics based system (requires production C++ or Rust to utilize the performance of physics based systems).
+
+Also the architecture is still stabilizing, and there is currently no accepted baseline for evaluating:
 - Relational memory coherence
 - Context inspectability
 - Activation trace quality
 - Long-term memory evolution
 
 Premature benchmarks would bias development toward legacy retrieval metrics and misrepresent SCE’s goals.
-
-Benchmarks will be introduced once the architecture is considered stable and native evaluation criteria are defined.
 
 ---
 
