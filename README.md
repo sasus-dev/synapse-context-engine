@@ -5,9 +5,9 @@
 > **A safety-first, inspectable memory and context-construction architecture for Agentic systems**  
 > Think of it as a synthetic hippocampus with a kill switch—designed to make context construction visible, bounded, and auditable *before* inference happens.
 
-**TL;DR** — SCE replaces flat retrieval and opaque prompt assembly with an explicit, graph-based context engine. Context is *constructed*, not fetched. Memory emerges through controlled activation, not hidden weights. 
+**TL;DR** — SCE replaces opaque prompt assembly with an explicit, graph-based context engine. Context is *constructed*, not fetched. Memory emerges through controlled activation, not hidden weights. 
 
-I build this standloane research preview on TypeScript, so others can experiment with the architecture more easily and take it to various different directions. Currently sits on a sweet spot to take the research on various different directions. The benefits of TypeScript is that it reveals architectural & algorithmic problems more clearly than production Rust or C++ iterations. This is a physics based system, so C++ or Rust is required for production performance and true security. **This is a research preview / working system with full LLM integration.**
+**This is a research preview / working system with full LLM integration.**
 
 [![Code License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Docs License](https://img.shields.io/badge/License-CC_BY_4.0-blue.svg)](docs/LICENSE_CC-BY-4.0.md)
@@ -324,6 +324,8 @@ SCE is an exploratory architecture with  challenges:
 
 This TypeScript standdalone version of SCE is an exploratory research architecture preview, not a production framework:
 - I have build my own production version of SCE for broader system, but even I cannot quarantee my approach was the best one, so I'm quite interested to see where others will take it.
+
+I build this standloane research preview on TypeScript, so others can experiment with the architecture more easily and take it to various different directions. The benefits of TypeScript is that it reveals architectural & algorithmic problems more clearly than production Rust or C++ iterations. This is a physics based system, so C++ or Rust is required for production performance and true security. 
 
 ---
 
