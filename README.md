@@ -3,11 +3,11 @@
 # 🧠 Synapse Context Engine (SCE)
 
 > **A safety-first, inspectable memory and context-construction architecture for Agentic systems**  
-> Think of it as a synthetic hippocampus with a kill switch—designed to make context construction visible, bounded, and auditable *before* inference happens.
+> Think of it as a synthetic hippocampus with a kill switch —designed to make context construction visible, bounded, and auditable *before* inference happens.
 
-**TL;DR** — SCE replaces opaque prompt assembly with an explicit, graph-based context engine. Context is *constructed*, not fetched. Memory emerges through controlled activation, not hidden weights. 
+**TL;DR** - SCE replaces opaque prompt assembly with an explicit, graph-based context engine. Context is *constructed*, not fetched. Memory emerges through controlled activation, not hidden weights. 
 
-**This is a research preview / working system with full LLM integration.**
+**This is a research preview with full LLM & Database integration.**
 
 [![Code License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Docs License](https://img.shields.io/badge/License-CC_BY_4.0-blue.svg)](docs/LICENSE_CC-BY-4.0.md)
@@ -83,7 +83,9 @@ As AI systems move toward greater autonomy and persistence, their memory archite
 
 SCE explores a different axis of control: **architectural safety through explicit structure and observability**.
 
-This project originated from need for better memory architecture for agentic systems. While capability / long-term memory improvements were the initial driver, the **safety properties that emerged from the architecture** became the primary reason for open-sourcing. The core insight: context construction should be inspectable, bounded, and auditable **by design** —not retrofitted with behavioral constraints after the model is already deployed.
+Note: This project originated from need for better memory architecture for agentic systems. While capability / long-term memory improvements were the initial driver, the **safety properties that emerged from the architecture** became the primary reason for open-sourcing. 
+
+The core insight: context construction should be inspectable, bounded, and auditable **by design** —not retrofitted with behavioral constraints after the model is already deployed.
 
 ---
 
@@ -188,8 +190,6 @@ SCE exposes internal dynamics through rigorous, information-theoretic metrics—
 - **Plasticity (Burst vs Mean):** Distinguishes between background learning and sudden "paradigm shift" rewiring.
 
 These signals enable runtime safety gating (e.g., "Stop generation if Focus < 0.1") and precise post-hoc auditing. The math is pure, visible, and unchangeable by the model.
-
-Note: Simple telemetry to check what actually happens inside the engine.
 
 ---
 
